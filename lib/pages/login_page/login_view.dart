@@ -5,6 +5,7 @@ import 'package:cashify/widgets/text_button_widget.dart';
 import 'package:cashify/widgets/titled_input_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:get/utils.dart';
 import 'package:shape_of_view_null_safe/shape_of_view_null_safe.dart';
 
 class LoginView extends StatelessWidget {
@@ -33,12 +34,19 @@ class LoginView extends StatelessWidget {
                     ),
                     child: Container(
                       color: mainColor,
-                      child: const Column(
+                      child: Column(
                         children: [
                           SizedBox(
-                            height: 30,
+                            height: width * 0.17,
                           ),
-                          SafeArea(child: Text('welcome statemnet'))
+                          SafeArea(
+                            child: CustomText(
+                              spacing: 5,
+                              text: 'CASHIFY',
+                              color: backgroundColor,
+                              size: width * 0.1,
+                            ),
+                          )
                         ],
                       ),
                     ),

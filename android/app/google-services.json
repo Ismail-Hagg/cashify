@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "820712947905",
+    "project_id": "cashify-a431e",
+    "storage_bucket": "cashify-a431e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:820712947905:android:159b48f071a56e4ef09440",
+        "android_client_info": {
+          "package_name": "com.example.cashify"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "820712947905-qojcanjmm41d9ige3ud0kkreqlkdb8o7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.cashify",
+            "certificate_hash": "6be843003c94c9ca7279fa92ab3dbd58ae0c26ff"
+          }
+        },
+        {
+          "client_id": "820712947905-h5nffuht1tivttgbuo6kom4kuefvvh8i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkB1DMpFoQZHyPtaTan8dXtjjSDP9L-x4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "820712947905-h5nffuht1tivttgbuo6kom4kuefvvh8i.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "820712947905-hqralc3g2v965h1l5c3k14a2c6jv2usc.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.cashify"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
