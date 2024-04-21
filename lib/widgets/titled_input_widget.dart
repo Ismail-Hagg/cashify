@@ -12,6 +12,9 @@ class TitledInput extends StatelessWidget {
   final bool? password;
   final bool? obscurePass;
   final bool? enabled;
+  final Widget? otherInput;
+  final bool? otherHere;
+  final FocusNode? node;
 
   const TitledInput(
       {super.key,
@@ -23,7 +26,10 @@ class TitledInput extends StatelessWidget {
       required this.active,
       this.password,
       this.obscurePass,
-      this.enabled});
+      this.enabled,
+      this.otherInput,
+      this.otherHere,
+      this.node});
 
   @override
   Widget build(BuildContext context) {
@@ -38,15 +44,19 @@ class TitledInput extends StatelessWidget {
         SizedBox(
           height: width * 0.015,
         ),
-        InputWidget(
-          enable: enabled,
-          obscurepass: obscurePass,
-          password: password,
-          height: width * 0.13,
-          width: width,
-          active: active,
-          textColor: textColor,
-        )
+        otherHere == true
+            ? otherInput ?? Container()
+            : InputWidget(
+                node: node,
+                otherInput: otherInput,
+                enable: enabled,
+                obscurepass: obscurePass,
+                password: password,
+                height: width * 0.13,
+                width: width,
+                active: active,
+                textColor: textColor,
+              )
       ],
     );
   }

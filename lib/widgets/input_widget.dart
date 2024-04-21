@@ -11,6 +11,8 @@ class InputWidget extends StatelessWidget {
   final bool? password;
   final bool? obscurepass;
   final bool? enable;
+  final Widget? otherInput;
+  final FocusNode? node;
 
   const InputWidget({
     super.key,
@@ -22,6 +24,8 @@ class InputWidget extends StatelessWidget {
     this.password,
     this.obscurepass,
     this.enable,
+    this.otherInput,
+    this.node,
   });
 
   @override
@@ -36,23 +40,25 @@ class InputWidget extends StatelessWidget {
       ),
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: password == true ? 8.0 : 0),
-        child: TextField(
-          obscureText: obscurepass != null ? obscurepass as bool : false,
-          style: TextStyle(color: textColor),
-          showCursor: false,
-          decoration: InputDecoration(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-              suffixIcon: password != null
-                  ? FaIcon(
-                      obscurepass == true
-                          ? FontAwesomeIcons.eyeSlash
-                          : FontAwesomeIcons.eye,
-                      size: width * 0.06,
-                    )
-                  : null,
-              border: InputBorder.none,
-              enabled: enable ?? true),
-        ),
+        child: otherInput ??
+            TextField(
+              focusNode: node,
+              obscureText: obscurepass != null ? obscurepass as bool : false,
+              style: TextStyle(color: textColor),
+              showCursor: false,
+              decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  suffixIcon: password != null
+                      ? FaIcon(
+                          obscurepass == true
+                              ? FontAwesomeIcons.eyeSlash
+                              : FontAwesomeIcons.eye,
+                          size: width * 0.06,
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  enabled: enable ?? true),
+            ),
       ),
     );
   }
