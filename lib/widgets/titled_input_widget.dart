@@ -15,21 +15,32 @@ class TitledInput extends StatelessWidget {
   final Widget? otherInput;
   final bool? otherHere;
   final FocusNode? node;
+  final TextEditingController controller;
+  final TextInputAction? action;
+  final Function()? obsFunc;
+  final Widget? otherSuffix;
+  final TextInputType? type;
 
-  const TitledInput(
-      {super.key,
-      required this.title,
-      required this.titleSize,
-      required this.titleColor,
-      required this.width,
-      required this.textColor,
-      required this.active,
-      this.password,
-      this.obscurePass,
-      this.enabled,
-      this.otherInput,
-      this.otherHere,
-      this.node});
+  const TitledInput({
+    super.key,
+    required this.title,
+    required this.titleSize,
+    required this.titleColor,
+    required this.width,
+    required this.textColor,
+    required this.active,
+    this.password,
+    this.obscurePass,
+    this.enabled,
+    this.otherInput,
+    this.otherHere,
+    this.node,
+    required this.controller,
+    this.action,
+    this.obsFunc,
+    this.otherSuffix,
+    this.type,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +58,10 @@ class TitledInput extends StatelessWidget {
         otherHere == true
             ? otherInput ?? Container()
             : InputWidget(
+                type: type,
+                obscureFunc: obsFunc,
+                action: action,
+                controller: controller,
                 node: node,
                 otherInput: otherInput,
                 enable: enabled,

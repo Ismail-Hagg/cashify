@@ -15,18 +15,21 @@ class ButtonWidget extends StatelessWidget {
   final Function() onClick;
   final String text;
   final Color? borderColor;
-  const ButtonWidget(
-      {super.key,
-      required this.isIos,
-      this.height,
-      this.width,
-      required this.textSize,
-      this.color,
-      required this.type,
-      required this.onClick,
-      required this.text,
-      this.textColor,
-      this.borderColor});
+  final Widget? loading;
+  const ButtonWidget({
+    super.key,
+    required this.isIos,
+    this.height,
+    this.width,
+    required this.textSize,
+    this.color,
+    required this.type,
+    required this.onClick,
+    required this.text,
+    this.textColor,
+    this.borderColor,
+    this.loading,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -35,11 +38,12 @@ class ButtonWidget extends StatelessWidget {
             ? CupertinoButton(
                 padding: const EdgeInsets.all(4),
                 onPressed: onClick,
-                child: CustomText(
-                  text: text,
-                  color: textColor,
-                  size: textSize,
-                ),
+                child: loading ??
+                    CustomText(
+                      text: text,
+                      color: textColor,
+                      size: textSize,
+                    ),
               )
             : type == ButtonType.outlined
                 ? Container(
@@ -54,11 +58,12 @@ class ButtonWidget extends StatelessWidget {
                     child: CupertinoButton(
                       padding: const EdgeInsets.all(4),
                       onPressed: onClick,
-                      child: CustomText(
-                        text: text,
-                        color: textColor,
-                        size: textSize,
-                      ),
+                      child: loading ??
+                          CustomText(
+                            text: text,
+                            color: textColor,
+                            size: textSize,
+                          ),
                     ),
                   )
                 : SizedBox(
@@ -68,21 +73,23 @@ class ButtonWidget extends StatelessWidget {
                       color: color,
                       padding: const EdgeInsets.all(4),
                       onPressed: onClick,
-                      child: CustomText(
-                        text: text,
-                        color: textColor,
-                        size: textSize,
-                      ),
+                      child: loading ??
+                          CustomText(
+                            text: text,
+                            color: textColor,
+                            size: textSize,
+                          ),
                     ),
                   )
         : type == ButtonType.text
             ? TextButton(
                 onPressed: onClick,
-                child: CustomText(
-                  text: text,
-                  color: textColor,
-                  size: textSize,
-                ),
+                child: loading ??
+                    CustomText(
+                      text: text,
+                      color: textColor,
+                      size: textSize,
+                    ),
               )
             : type == ButtonType.raised
                 ? SizedBox(
@@ -95,11 +102,12 @@ class ButtonWidget extends StatelessWidget {
                         ),
                       ),
                       onPressed: onClick,
-                      child: CustomText(
-                        text: text,
-                        color: textColor,
-                        size: textSize,
-                      ),
+                      child: loading ??
+                          CustomText(
+                            text: text,
+                            color: textColor,
+                            size: textSize,
+                          ),
                     ),
                   )
                 : SizedBox(
@@ -113,11 +121,12 @@ class ButtonWidget extends StatelessWidget {
                         ),
                       ),
                       onPressed: onClick,
-                      child: CustomText(
-                        text: text,
-                        color: textColor,
-                        size: textSize,
-                      ),
+                      child: loading ??
+                          CustomText(
+                            text: text,
+                            color: textColor,
+                            size: textSize,
+                          ),
                     ),
                   );
   }

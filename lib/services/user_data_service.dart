@@ -6,9 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class UserData {
   // save user data
-  Future<void> saveUser(UserModel model) async {
+  Future<bool> saveUser({required model}) async {
     SharedPreferences pref = await SharedPreferences.getInstance();
-    await pref.setString(userDataKey, json.encode(model.toMap()));
+    return await pref.setString(userDataKey, json.encode(model.toMap()));
   }
 
   // retrieve user data
@@ -19,17 +19,19 @@ class UserData {
       return UserModel.fromMap(json.decode(value.toString()));
     } catch (e) {
       return UserModel(
-          username: 'username',
-          email: '',
-          userId: '',
-          localImage: false,
-          localPath: '',
-          onlinePath: '',
-          language: languageDev(),
-          defaultCurrency: '',
-          messagingToken: '',
-          errorMessage: e.toString(),
-          isError: true);
+        phoneNumber: '',
+        username: '',
+        email: '',
+        userId: '',
+        localImage: false,
+        localPath: '',
+        onlinePath: '',
+        language: languageDev(),
+        defaultCurrency: '',
+        messagingToken: '',
+        errorMessage: e.toString(),
+        isError: true,
+      );
     }
   }
 

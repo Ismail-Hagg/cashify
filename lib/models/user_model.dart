@@ -10,6 +10,7 @@ class UserModel {
   String messagingToken;
   String errorMessage;
   bool isError;
+  String phoneNumber;
   UserModel(
       {required this.username,
       required this.email,
@@ -21,6 +22,7 @@ class UserModel {
       required this.defaultCurrency,
       required this.messagingToken,
       required this.errorMessage,
+      required this.phoneNumber,
       required this.isError});
 
   toMap() {
@@ -35,7 +37,8 @@ class UserModel {
       'defaultCurrency': defaultCurrency,
       'messagingToken': messagingToken,
       'errorMessage': errorMessage,
-      'isError': isError
+      'isError': isError,
+      'phoneNumber': phoneNumber
     };
   }
 
@@ -52,6 +55,7 @@ class UserModel {
       messagingToken: map['messagingToken'],
       errorMessage: map['errorMessage'],
       isError: map['isError'],
+      phoneNumber: map['phoneNumber'],
     );
   }
 }

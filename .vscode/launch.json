@@ -32,6 +32,12 @@
       "request": "launch",
       "type": "dart",
       "deviceId": "DF25501D-3812-42D1-A5D1-C59AD660ADC7"
+    },
+    {
+      "name": "real",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "RZCRB05EWAZ"
     }
   ],
   "compounds": [

@@ -13,6 +13,10 @@ class InputWidget extends StatelessWidget {
   final bool? enable;
   final Widget? otherInput;
   final FocusNode? node;
+  final TextEditingController controller;
+  final TextInputAction? action;
+  final Function()? obscureFunc;
+  final TextInputType? type;
 
   const InputWidget({
     super.key,
@@ -26,6 +30,10 @@ class InputWidget extends StatelessWidget {
     this.enable,
     this.otherInput,
     this.node,
+    required this.controller,
+    this.action,
+    this.obscureFunc,
+    this.type,
   });
 
   @override
@@ -42,6 +50,9 @@ class InputWidget extends StatelessWidget {
         padding: EdgeInsets.symmetric(vertical: password == true ? 8.0 : 0),
         child: otherInput ??
             TextField(
+              keyboardType: type,
+              textInputAction: action,
+              controller: controller,
               focusNode: node,
               obscureText: obscurepass != null ? obscurepass as bool : false,
               style: TextStyle(color: textColor),
@@ -49,11 +60,14 @@ class InputWidget extends StatelessWidget {
               decoration: InputDecoration(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                   suffixIcon: password != null
-                      ? FaIcon(
-                          obscurepass == true
-                              ? FontAwesomeIcons.eyeSlash
-                              : FontAwesomeIcons.eye,
-                          size: width * 0.06,
+                      ? GestureDetector(
+                          onTap: obscureFunc,
+                          child: FaIcon(
+                            obscurepass == true
+                                ? FontAwesomeIcons.eyeSlash
+                                : FontAwesomeIcons.eye,
+                            size: width * 0.06,
+                          ),
                         )
                       : null,
                   border: InputBorder.none,
