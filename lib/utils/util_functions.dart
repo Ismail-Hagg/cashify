@@ -62,6 +62,9 @@ String getMessageFromErrorCode({required String errorMessage}) {
     case 'INVALID_LOGIN_CREDENTIALS':
     case 'invalid-credential':
       return 'invalidcred'.tr;
+    case 'invalid-phone-number':
+      return 'invalidpgone'.tr;
+
     default:
       return "firelogin".tr;
   }

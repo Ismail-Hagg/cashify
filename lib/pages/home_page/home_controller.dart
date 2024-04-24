@@ -13,6 +13,7 @@ class HomeController extends GetxController {
   void onInit() {
     super.onInit();
     print('too sweet for me');
+    Get.reload<GloableAuthController>();
   }
 
   void signOut() async {

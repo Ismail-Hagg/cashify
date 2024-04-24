@@ -70,6 +70,7 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
     FieldType.password: TextEditingController(),
     FieldType.username: TextEditingController(),
     FieldType.phone: TextEditingController(),
+    FieldType.otp: TextEditingController(),
   };
 
   late AnimationController _loadingController;
@@ -149,6 +150,8 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
     unclear();
     _picPath = '';
     _loginLoading = false;
+    _codeSent = false;
+    _verificationId = '';
     _pageController.jumpToPage(
       page,
     );
@@ -488,19 +491,19 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
                 await userExists(userId: user.user!.uid);
             if (callUser.$1) {
               // old user
-              _authController
-                  .userChange(model: callUser.$2 as UserModel)
-                  .then((userSet) {
-                if (userSet) {
-                  // data saved
-                  loading();
-                  loginLangCahange();
-                  Get.offAll(() => const GloableViewController());
-                } else {
-                  // data not saved
-                  throw Exception('wrong'.tr);
-                }
-              });
+              _authController.userChange(model: callUser.$2 as UserModel).then(
+                (userSet) {
+                  if (userSet) {
+                    // data saved
+                    loading();
+                    loginLangCahange();
+                    Get.offAll(() => const GloableViewController());
+                  } else {
+                    // data not saved
+                    throw Exception('wrong'.tr);
+                  }
+                },
+              );
             } else {
               // new user
 

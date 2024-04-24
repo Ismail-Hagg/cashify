@@ -692,7 +692,13 @@ class LoginView extends StatelessWidget {
                                               textColor: mainColor,
                                               active: true,
                                               otherInput: PinFieldAutoFill(
-                                                //controller: controller.otpController,
+                                                currentCode: controller
+                                                    .txtControllers[
+                                                        FieldType.otp]!
+                                                    .text,
+                                                controller:
+                                                    controller.txtControllers[
+                                                        FieldType.otp],
                                                 autoFocus: false,
                                                 decoration: BoxLooseDecoration(
                                                   textStyle: TextStyle(
@@ -704,15 +710,11 @@ class LoginView extends StatelessWidget {
                                                       FixedColorBuilder(
                                                           Colors.grey.shade200),
                                                 ),
-                                                // currentCode:
-                                                //     controller.otpController.text,
-                                                // onCodeSubmitted: (code) {
-                                                //   print(code);
-                                                // },
                                                 onCodeChanged: (code) =>
                                                     controller.otpVerify(
                                                         context: context,
                                                         otp: code.toString()),
+                                                onCodeSubmitted: (code) {},
                                               ),
                                             ),
                                           ),

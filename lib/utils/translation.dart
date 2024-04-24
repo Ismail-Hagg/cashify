@@ -26,7 +26,8 @@ class Translation extends Translations {
           'fireverification': 'invalid verification code',
           'invalidcred': 'Invalid Login Credentials',
           'firelogin': 'Login failed. Please try again',
-          'test': 'Test'
+          'test': 'Test',
+          'invalidpgone': 'Invalid Phone Number',
         },
         'ar_SA': {
           'email': 'البريد الالكتروني',
@@ -51,7 +52,8 @@ class Translation extends Translations {
           'fireverification': 'رقم التحقق غير صحيح',
           'invalidcred': 'بيانات تسجيل دخول خاطئة',
           'firelogin': 'فشل في تسجيل الدخول حاول مره اخرى',
-          'test': 'اختبار'
+          'test': 'اختبار',
+          'invalidpgone': 'رقم الهاتف غير صحيح'
         },
       };
 }
