@@ -1,5 +1,4 @@
 import 'package:cashify/gloable_controllers/auth_controller.dart';
-import 'package:cashify/gloable_controllers/controller_view.dart';
 import 'package:cashify/models/user_model.dart';
 import 'package:cashify/services/firebase_service.dart';
 import 'package:cashify/utils/enums.dart';
@@ -9,6 +8,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -106,6 +106,15 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
     update();
   }
 
+  // back button only kill app when on main login view
+  void backButton() {
+    if (_pageController.page == 0) {
+      SystemNavigator.pop();
+    } else {
+      loginViews(page: 0);
+    }
+  }
+
   // dispose of the focus nodes
   void nodesDispose() {
     _nodes.forEach(
@@ -174,91 +183,92 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
   void googleLogin({required BuildContext context}) async {
     dismissKeyboard(context);
     loading();
-    await GoogleSignIn().signIn().then((value) async {
-      if (value != null) {
-        try {
-          final GoogleSignInAuthentication gAuth = await value.authentication;
+    await GoogleSignIn().signIn().then(
+      (value) async {
+        if (value != null) {
+          try {
+            final GoogleSignInAuthentication gAuth = await value.authentication;
 
-          final credential = GoogleAuthProvider.credential(
-              accessToken: gAuth.accessToken, idToken: gAuth.idToken);
-          await _auth.signInWithCredential(credential).then(
-            (user) async {
-              (bool, UserModel?) callUser =
-                  await userExists(userId: user.user!.uid);
-              if (callUser.$1) {
-                // old user
-                _authController
-                    .userChange(model: callUser.$2 as UserModel)
-                    .then(
-                  (userSet) {
-                    if (userSet) {
-                      // data saved
-                      loading();
-                      loginLangCahange();
-                      Get.offAll(() => const GloableViewController());
-                    } else {
-                      // data not saved
-                      throw Exception('wrong'.tr);
-                    }
-                  },
-                );
-              } else {
-                // new user
-                UserModel gModel = UserModel(
-                    username: user.user!.displayName ?? '',
-                    email: user.user!.email ?? '',
-                    userId: user.user!.uid,
-                    localImage: false,
-                    localPath: '',
-                    onlinePath: user.user!.photoURL ?? '',
-                    language: _authController.userModel.language,
-                    defaultCurrency: 'SAR',
-                    messagingToken: '',
-                    errorMessage: '',
-                    phoneNumber: user.user!.phoneNumber ?? '',
-                    isError: false);
-                _authController.userChange(model: gModel).then(
-                  (userSet) async {
-                    if (userSet) {
-                      loading();
-                      Get.offAll(() => const GloableViewController());
-                      await _firebaseService.addUsers(model: _userModel);
-                    } else {
-                      throw Exception('wrong'.tr);
-                    }
-                  },
-                );
-              }
-            },
-          );
-        } on FirebaseAuthException catch (e) {
+            final credential = GoogleAuthProvider.credential(
+                accessToken: gAuth.accessToken, idToken: gAuth.idToken);
+            await _auth.signInWithCredential(credential).then(
+              (user) async {
+                (bool, UserModel?) callUser =
+                    await userExists(userId: user.user!.uid);
+                if (callUser.$1) {
+                  // old user
+                  _authController
+                      .userChange(model: callUser.$2 as UserModel)
+                      .then(
+                    (userSet) {
+                      if (userSet) {
+                        // data saved
+                        loading();
+                        _authController.reload();
+                      } else {
+                        // data not saved
+                        throw Exception('wrong'.tr);
+                      }
+                    },
+                  );
+                } else {
+                  // new user
+                  UserModel gModel = UserModel(
+                      username: user.user!.displayName ?? '',
+                      email: user.user!.email ?? '',
+                      userId: user.user!.uid,
+                      localImage: false,
+                      localPath: '',
+                      onlinePath: user.user!.photoURL ?? '',
+                      language: _authController.userModel.language,
+                      defaultCurrency: 'SAR',
+                      messagingToken: '',
+                      errorMessage: '',
+                      phoneNumber: user.user!.phoneNumber ?? '',
+                      isError: false);
+                  _authController.userChange(model: gModel).then(
+                    (userSet) async {
+                      if (userSet) {
+                        loading();
+                        _authController.reload();
+                        await _firebaseService.addUsers(model: _userModel);
+                      } else {
+                        throw Exception('wrong'.tr);
+                      }
+                    },
+                  );
+                }
+              },
+            );
+          } on FirebaseAuthException catch (e) {
+            loading();
+            showToast(
+                // ignore: use_build_context_synchronously
+                context: context,
+                type: ToastificationType.warning,
+                isEng: _userModel.language == 'en_US',
+                title: CustomText(text: 'error'.tr),
+                description: CustomText(
+                    text: getMessageFromErrorCode(errorMessage: e.code)),
+                seconds: 3);
+          } catch (e) {
+            loading();
+            showToast(
+                // ignore: use_build_context_synchronously
+                context: context,
+                type: ToastificationType.warning,
+                isEng: _userModel.language == 'en_US',
+                title: CustomText(text: 'error'.tr),
+                description: CustomText(text: e.toString()),
+                seconds: 3);
+            await GoogleSignIn().signOut();
+            _authController.reload();
+          }
+        } else {
           loading();
-          showToast(
-              // ignore: use_build_context_synchronously
-              context: context,
-              type: ToastificationType.warning,
-              isEng: _userModel.language == 'en_US',
-              title: CustomText(text: 'error'.tr),
-              description: CustomText(
-                  text: getMessageFromErrorCode(errorMessage: e.code)),
-              seconds: 3);
-        } catch (e) {
-          loading();
-          showToast(
-              // ignore: use_build_context_synchronously
-              context: context,
-              type: ToastificationType.warning,
-              isEng: _userModel.language == 'en_US',
-              title: CustomText(text: 'error'.tr),
-              description: CustomText(text: e.toString()),
-              seconds: 3);
-          await GoogleSignIn().signOut();
-          Get.offAll(() => const GloableViewController());
         }
-      } else {
-        loading();
-      }
-    });
+      },
+    );
   }
 
   // email login
@@ -284,8 +294,9 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
                     .then(
                   (userSet) {
                     if (userSet) {
+                      _authController.reload();
                       loading();
-                      Get.offAll(() => const GloableViewController());
+                      unclear();
                     } else {
                       loading();
                       // user is not saved
@@ -319,7 +330,7 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
             description: CustomText(text: e.toString()),
             seconds: 3);
         await _auth.signOut();
-        Get.offAll(() => const GloableViewController());
+        _authController.reload();
       }
     } else {
       // display error message to complete user info
@@ -367,8 +378,8 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
               (userSet) async {
                 if (userSet) {
                   // user is saved
+                  _authController.reload();
                   loading();
-                  Get.offAll(() => const GloableViewController());
                   unclear();
                   await _firebaseService.addUsers(model: _userModel);
                 } else {
@@ -401,7 +412,7 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
             description: CustomText(text: e.toString()),
             seconds: 3);
         await _auth.signOut();
-        Get.offAll(() => const GloableViewController());
+        _authController.reload();
       }
     } else {
       // display error message to complete user info
@@ -496,8 +507,7 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
                   if (userSet) {
                     // data saved
                     loading();
-                    loginLangCahange();
-                    Get.offAll(() => const GloableViewController());
+                    _authController.reload();
                   } else {
                     // data not saved
                     throw Exception('wrong'.tr);
@@ -525,7 +535,7 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
                 (userSet) async {
                   if (userSet) {
                     loading();
-                    Get.offAll(() => const GloableViewController());
+                    _authController.reload();
                     await _firebaseService.addUsers(model: _userModel);
                   } else {
                     throw Exception('wrong'.tr);
@@ -557,7 +567,7 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
             description: CustomText(text: e.toString()),
             seconds: 3);
         await _auth.signOut();
-        Get.offAll(() => const GloableViewController());
+        _authController.reload();
       }
     }
   }
@@ -566,7 +576,6 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
   void forgotPassword() {}
 
   // select pic from device
-
   void selectPic() async {
     if (_picPath == '') {
       await FilePicker.platform.pickFiles(
@@ -597,17 +606,5 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
           ? UserModel.fromMap(user.data() as Map<String, dynamic>)
           : null
     );
-  }
-
-  // change app language on login if needed
-  void loginLangCahange() async {
-    String devOne = languageDev().substring(0, 2);
-    String localOne = _userModel.language.substring(0, 2);
-    String localTwo = _userModel.language.substring(3, 5);
-
-    if (devOne != localOne) {
-      await Get.updateLocale(Locale(localOne, localTwo));
-      update();
-    }
   }
 }

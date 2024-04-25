@@ -7,7 +7,7 @@ class Translation extends Translations {
           'email': 'Email Adress',
           'username': 'Username',
           'password': 'Password',
-          'forgot': 'Forgot Password',
+          'forgot': 'Forgot Password ?',
           'login': 'Login',
           'or': 'or',
           'phone': 'Phone Number',
@@ -28,12 +28,20 @@ class Translation extends Translations {
           'firelogin': 'Login failed. Please try again',
           'test': 'Test',
           'invalidpgone': 'Invalid Phone Number',
+          'home': 'Home',
+          'trans': 'All Transactions',
+          'mnthset': 'Month Set',
+          'settings': 'Settings',
+          'thismnth': 'This Month',
+          'lastmnth': 'Last Month',
+          'thisyear': 'This Year',
+          'custom': 'Custom'
         },
         'ar_SA': {
           'email': 'البريد الالكتروني',
           'password': 'كلمة المرور',
           'username': 'اسم المستخدم',
-          'forgot': 'نسيت كلمة المرور',
+          'forgot': 'نسيت كلمة المرور ؟',
           'login': 'تسجيل الدخول',
           'or': 'او',
           'phone': 'رقم الجوال',
@@ -53,7 +61,15 @@ class Translation extends Translations {
           'invalidcred': 'بيانات تسجيل دخول خاطئة',
           'firelogin': 'فشل في تسجيل الدخول حاول مره اخرى',
           'test': 'اختبار',
-          'invalidpgone': 'رقم الهاتف غير صحيح'
+          'invalidpgone': 'رقم الهاتف غير صحيح',
+          'home': 'الرئيسية',
+          'trans': 'كل العمليات',
+          'mnthset': 'اعداد الشهر',
+          'settings': 'اعدادات',
+          'thismnth': 'هذا الشهر',
+          'lastmnth': 'الشهر الفائت',
+          'thisyear': 'هذه السنه',
+          'custom': 'اختيار'
         },
       };
 }

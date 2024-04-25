@@ -11,6 +11,12 @@ class UserData {
     return await pref.setString(userDataKey, json.encode(model.toMap()));
   }
 
+  // reload
+  void reload() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
+  }
+
   // retrieve user data
   Future<UserModel> getUserData() async {
     SharedPreferences pref = await SharedPreferences.getInstance();
