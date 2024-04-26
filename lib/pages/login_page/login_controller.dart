@@ -1,6 +1,8 @@
 import 'package:cashify/gloable_controllers/auth_controller.dart';
 import 'package:cashify/models/user_model.dart';
+import 'package:cashify/models/wallet_model.dart';
 import 'package:cashify/services/firebase_service.dart';
+import 'package:cashify/utils/constants.dart';
 import 'package:cashify/utils/enums.dart';
 import 'package:cashify/utils/util_functions.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';
@@ -197,6 +199,7 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
                     await userExists(userId: user.user!.uid);
                 if (callUser.$1) {
                   // old user
+                  print('old user =======');
                   _authController
                       .userChange(model: callUser.$2 as UserModel)
                       .then(
@@ -213,7 +216,12 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
                   );
                 } else {
                   // new user
+                  print('new user =======');
                   UserModel gModel = UserModel(
+                      catagories: [],
+                      wallets: [
+                        Wallet(name: 'cash', amount: 0.0, currency: 'SAR')
+                      ],
                       username: user.user!.displayName ?? '',
                       email: user.user!.email ?? '',
                       userId: user.user!.uid,
@@ -231,7 +239,7 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
                       if (userSet) {
                         loading();
                         _authController.reload();
-                        await _firebaseService.addUsers(model: _userModel);
+                        await _firebaseService.addUsers(model: gModel);
                       } else {
                         throw Exception('wrong'.tr);
                       }
@@ -362,6 +370,8 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
             .then(
           (user) {
             _userModel = UserModel(
+                catagories: [],
+                wallets: [Wallet(name: 'cash', amount: 0.0, currency: 'SAR')],
                 username: username,
                 email: email,
                 userId: user.user!.uid,
@@ -499,7 +509,7 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
         await _auth.signInWithCredential(creds).then(
           (user) async {
             (bool, UserModel?) callUser =
-                await userExists(userId: user.user!.uid);
+                await userExists(userId: user.user!.uid, upload: true);
             if (callUser.$1) {
               // old user
               _authController.userChange(model: callUser.$2 as UserModel).then(
@@ -518,6 +528,8 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
               // new user
 
               UserModel phoneModel = UserModel(
+                  catagories: [],
+                  wallets: [Wallet(name: 'cash', amount: 0.0, currency: 'SAR')],
                   username: username,
                   email: user.user!.email ?? '',
                   userId: user.user!.uid,
@@ -536,7 +548,7 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
                   if (userSet) {
                     loading();
                     _authController.reload();
-                    await _firebaseService.addUsers(model: _userModel);
+                    await _firebaseService.addUsers(model: phoneModel);
                   } else {
                     throw Exception('wrong'.tr);
                   }
@@ -598,12 +610,15 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
   }
 
   // check if the user exists
-  Future<(bool, UserModel?)> userExists({required String userId}) async {
+  Future<(bool, UserModel?)> userExists(
+      {required String userId, bool? upload}) async {
     var user = await _firebaseService.getCurrentUser(userId: userId);
     return (
       user.exists,
       user.exists
-          ? UserModel.fromMap(user.data() as Map<String, dynamic>)
+          ? UserModel.fromMap(
+              user.data() as Map<String, dynamic>,
+            )
           : null
     );
   }

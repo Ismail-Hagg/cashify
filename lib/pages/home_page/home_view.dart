@@ -23,19 +23,22 @@ class HomeView extends StatelessWidget {
         bottomNavigationBar: GetBuilder<HomeController>(
           init: Get.find<HomeController>(),
           builder: (controller) => StylishBottomBar(
-            notchStyle: NotchStyle.themeDefault,
+            notchStyle: NotchStyle.circle,
             backgroundColor: forgroundColor,
             option: AnimatedBarOptions(
-              iconSize: 24,
+              iconSize: 18,
               barAnimation: BarAnimation.fade,
               iconStyle: IconStyle.animated,
               opacity: 0.3,
             ),
             items: [
               BottomBarItem(
-                icon: const FaIcon(FontAwesomeIcons.house),
+                icon: const FaIcon(
+                  FontAwesomeIcons.house,
+                ),
                 title: CustomText(
                   text: 'home'.tr,
+                  size: 12,
                 ),
                 selectedColor: mainColor,
                 selectedIcon: FaIcon(
@@ -48,6 +51,7 @@ class HomeView extends StatelessWidget {
                 title: CustomText(
                   isFit: true,
                   text: 'trans'.tr,
+                  size: 12,
                 ),
                 selectedColor: mainColor,
                 selectedIcon: FaIcon(
@@ -60,6 +64,7 @@ class HomeView extends StatelessWidget {
                 title: CustomText(
                   isFit: true,
                   text: 'mnthset'.tr,
+                  size: 12,
                 ),
                 selectedColor: mainColor,
                 selectedIcon: FaIcon(
@@ -71,6 +76,7 @@ class HomeView extends StatelessWidget {
                 icon: const FaIcon(FontAwesomeIcons.gear),
                 title: CustomText(
                   text: 'settings'.tr,
+                  size: 12,
                 ),
                 selectedColor: mainColor,
                 selectedIcon: FaIcon(

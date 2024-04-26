@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class UserData {
   // save user data
-  Future<bool> saveUser({required model}) async {
+  Future<bool> saveUser({required UserModel model}) async {
     SharedPreferences pref = await SharedPreferences.getInstance();
     return await pref.setString(userDataKey, json.encode(model.toMap()));
   }
@@ -25,6 +25,8 @@ class UserData {
       return UserModel.fromMap(json.decode(value.toString()));
     } catch (e) {
       return UserModel(
+        catagories: [],
+        wallets: [],
         phoneNumber: '',
         username: '',
         email: '',

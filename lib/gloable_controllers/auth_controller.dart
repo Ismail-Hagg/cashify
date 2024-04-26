@@ -26,6 +26,7 @@ class GloableAuthController extends GetxController {
   void onInit() async {
     super.onInit();
     _user.bindStream(_auth.authStateChanges());
+    getUser();
   }
 
   void reload() {
@@ -33,10 +34,22 @@ class GloableAuthController extends GetxController {
     update();
   }
 
+  // get the user
+  void getUser() async {
+    _userModel = await userData.getUserData();
+  }
+
   // update and save the user locally
   Future<bool> userChange({required UserModel model}) async {
-    _userModel = model;
-    return await userData.saveUser(model: model);
+    print(model.email);
+    try {
+      _userModel = model;
+      await userData.saveUser(model: model);
+      return true;
+    } catch (e) {
+      print(e);
+      return false;
+    }
   }
 
   // change app language on login if needed

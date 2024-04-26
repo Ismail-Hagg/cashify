@@ -11,3 +11,6 @@ Color mainColor = const Color.fromRGBO(60, 92, 180, 1);
 // variables
 
 var userDataKey = 'userDataKey';
+
+var amount = 'amount';
+var currency = 'currency';

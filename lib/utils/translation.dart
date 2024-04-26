@@ -35,7 +35,8 @@ class Translation extends Translations {
           'thismnth': 'This Month',
           'lastmnth': 'Last Month',
           'thisyear': 'This Year',
-          'custom': 'Custom'
+          'custom': 'Custom',
+          'ave': 'Average'
         },
         'ar_SA': {
           'email': 'البريد الالكتروني',
@@ -69,7 +70,8 @@ class Translation extends Translations {
           'thismnth': 'هذا الشهر',
           'lastmnth': 'الشهر الفائت',
           'thisyear': 'هذه السنه',
-          'custom': 'اختيار'
+          'custom': 'اختيار',
+          'ave': 'متوسط'
         },
       };
 }

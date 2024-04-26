@@ -1,16 +1,23 @@
+import 'dart:convert';
 import 'dart:math';
-
 import 'package:cashify/pages/home_page/home_controller.dart';
 import 'package:cashify/utils/constants.dart';
+import 'package:cashify/utils/enums.dart';
+import 'package:cashify/widgets/animeted_icon_widget.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';
+import 'package:cashify/widgets/expense_tile_widget.dart';
 import 'package:cashify/widgets/icon_button.dart';
+import 'package:cashify/widgets/text_button_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_circle_chart/flutter_circle_chart.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_animated_icons/icons8.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
 
 import 'package:mrx_charts/mrx_charts.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+import 'package:string_2_icon/string_2_icon.dart';
 
 class HomeBody extends StatelessWidget {
   const HomeBody({super.key});
@@ -25,6 +32,7 @@ class HomeBody extends StatelessWidget {
           builder: (BuildContext context, BoxConstraints constraints) {
             double width = constraints.maxWidth;
             return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
               child: Column(
                 children: [
                   const SizedBox(
@@ -41,17 +49,13 @@ class HomeBody extends StatelessWidget {
                             scrollDirection: Axis.horizontal,
                             child: Row(
                               children: List.generate(
-                                controller.test.length,
+                                controller.userModel.wallets.length,
                                 (index) {
-                                  final key =
-                                      controller.test.keys.toList()[index];
-                                  final value = controller.test[key];
                                   return Padding(
-                                    padding: const EdgeInsets.all(6.0),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 6.0, horizontal: 12),
                                     child: GestureDetector(
-                                      onTap: () {
-                                        // print(value!.truncate());
-                                      },
+                                      onTap: () {},
                                       child: Container(
                                         decoration: BoxDecoration(
                                           border: Border.all(
@@ -67,7 +71,7 @@ class HomeBody extends StatelessWidget {
                                           padding: const EdgeInsets.all(8.0),
                                           child: CustomText(
                                             text:
-                                                '$key : ${value![0]}  ${value[1]}',
+                                                '${controller.userModel.wallets[index].name} : ${controller.walletAmount(amount: controller.userModel.wallets[index].amount)}  ${controller.userModel.wallets[index].currency}',
                                           ),
                                         ),
                                       ),
@@ -96,10 +100,9 @@ class HomeBody extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       vertical: 24,
-                      horizontal: 12,
+                      horizontal: 16,
                     ),
                     child: Container(
-                      height: width,
                       width: width,
                       decoration: BoxDecoration(
                         boxShadow: [
@@ -115,28 +118,53 @@ class HomeBody extends StatelessWidget {
                       child: Column(
                         children: [
                           Padding(
-                            padding: const EdgeInsets.all(12.0),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 12.0),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 CustomText(
                                   color: mainColor,
                                   size: 14,
-                                  text: '2024/12/01 - 2024/12/15',
+                                  text: controller.chosenTime,
                                 ),
                                 PopupMenuButton<String>(
+                                  splashRadius: 10,
                                   icon: FaIcon(
                                     FontAwesomeIcons.ellipsisVertical,
                                     color: mainColor,
                                   ),
-                                  onSelected: (val) {},
+                                  onSelected: (val) =>
+                                      controller.changeTimePeriod(time: val),
                                   itemBuilder: (BuildContext context) {
-                                    return ['one', 'two', 'another', 'love']
-                                        .map(
+                                    return [
+                                      'thismnth'.tr,
+                                      'lastmnth'.tr,
+                                      'thisyear'.tr,
+                                      'custom'.tr
+                                    ].map(
                                       (String choice) {
                                         return PopupMenuItem<String>(
                                           value: choice,
-                                          child: Text(choice),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              CustomText(
+                                                color: mainColor,
+                                                text: choice,
+                                                size: 14,
+                                              ),
+                                              if (controller.track[choice] ==
+                                                  controller.trackNum) ...[
+                                                FaIcon(
+                                                  FontAwesomeIcons.check,
+                                                  size: 18,
+                                                  color: mainColor,
+                                                )
+                                              ]
+                                            ],
+                                          ),
                                         );
                                       },
                                     ).toList();
@@ -145,46 +173,93 @@ class HomeBody extends StatelessWidget {
                               ],
                             ),
                           ),
+                          SizedBox(
+                              height: width * 0.45,
+                              width: width * 0.45,
+                              child: controller.loading
+                                  ? IconAnimated(
+                                      name: Icons8.circles_menu_1_iOS,
+                                      controller: controller.loadingController,
+                                      color: mainColor)
+                                  : Stack(
+                                      children: [
+                                        Chart(
+                                          layers: [
+                                            ChartGroupPieLayer(
+                                              items: [
+                                                List.generate(
+                                                  1,
+                                                  (index) =>
+                                                      ChartGroupPieDataItem(
+                                                          amount: Random()
+                                                                  .nextInt(
+                                                                      300) *
+                                                              Random()
+                                                                  .nextDouble(),
+                                                          color: Colors.red,
+                                                          label: [
+                                                            'Life',
+                                                            'Work',
+                                                            'Medicine',
+                                                            'Bills',
+                                                            'Hobby',
+                                                            'Holiday',
+                                                          ][Random()
+                                                              .nextInt(6)]),
+                                                ),
+                                              ],
+                                              settings:
+                                                  const ChartGroupPieSettings(),
+                                            ),
+                                          ],
+                                        ),
+                                        Center(
+                                          child: ButtonWidget(
+                                            isIos: controller.isIos,
+                                            textSize: 16,
+                                            type: ButtonType.text,
+                                            onClick: () {
+                                              print(
+                                                  controller.humanFormat(3540));
+                                            },
+                                            text:
+                                                controller.humanFormat(300.76),
+                                          ),
+                                        )
+                                      ],
+                                    )),
                         ],
                       ),
                     ),
                   ),
-                  Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        children: List.generate(
-                          CircleChartType.values.length,
-                          (index) => Column(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(
-                                  '${CircleChartType.values[index]}',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: mainColor,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              CircleChart(
-                                chartType: CircleChartType.values[index],
-                                items: List.generate(
-                                  3,
-                                  (index) => CircleChartItemData(
-                                    color: randomColor(),
-                                    value: 100 +
-                                        Random.secure().nextDouble() * 1000,
-                                    name: 'Lorem Ipsum $index',
-                                    description:
-                                        'Lorem Ipsum $index không phải chỉ là một đoạn văn bản ngẫu nhiên.',
-                                  ),
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
-                      )),
+                  // Column(
+                  //   children: List.generate(
+                  //     controller.loading
+                  //         ? 10
+                  //         : controller.userModel.catagories.length,
+                  //     (index) => Skeletonizer(
+                  //       enabled: controller.loading,
+                  //       child: ExpenceTile(
+                  //         loading: controller.loading,
+                  //         budgetPercent: 0.5,
+                  //         width: width,
+                  //         color: Colors.green,
+                  //         title: 'food',
+                  //         subtitle: '3 transactions',
+                  //         amount: '1500',
+                  //         ave: '${'ave'.tr} 10',
+                  //         budget: true,
+                  //         icon: FontAwesomeIcons.drumstickBite,
+                  //         padding: const EdgeInsets.only(
+                  //           right: 12,
+                  //           left: 12,
+                  //           bottom: 16,
+                  //         ),
+                  //         budgetKeeping: '50/100',
+                  //       ),
+                  //     ),
+                  //   ),
+                  // )
                 ],
               ),
             );
@@ -192,12 +267,5 @@ class HomeBody extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Color randomColor() {
-    var g = math.Random.secure().nextInt(255);
-    var b = math.Random.secure().nextInt(255);
-    var r = math.Random.secure().nextInt(255);
-    return Color.fromARGB(255, r, g, b);
   }
 }

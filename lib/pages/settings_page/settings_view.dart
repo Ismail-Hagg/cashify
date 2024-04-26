@@ -9,11 +9,17 @@ class SettingsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    SettingsController controller = Get.put(SettingsController());
+    Get.put(SettingsController());
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: const Center(
-        child: CustomText(text: 'Settings Page'),
+      body: GetBuilder<SettingsController>(
+        init: Get.find<SettingsController>(),
+        builder: (controller) => Center(
+          child: GestureDetector(
+              onTap: () => controller.logout(),
+              child: CustomText(
+                  text: 'Settings Page ${controller.userModel.email}')),
+        ),
       ),
     );
   }
