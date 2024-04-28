@@ -16,6 +16,7 @@ class ButtonWidget extends StatelessWidget {
   final String text;
   final Color? borderColor;
   final Widget? loading;
+  final ButtonStyle? buttonStyle;
   const ButtonWidget({
     super.key,
     required this.isIos,
@@ -29,6 +30,7 @@ class ButtonWidget extends StatelessWidget {
     this.textColor,
     this.borderColor,
     this.loading,
+    this.buttonStyle,
   });
 
   @override
@@ -83,6 +85,7 @@ class ButtonWidget extends StatelessWidget {
                   )
         : type == ButtonType.text
             ? TextButton(
+                style: buttonStyle,
                 onPressed: onClick,
                 child: loading ??
                     CustomText(

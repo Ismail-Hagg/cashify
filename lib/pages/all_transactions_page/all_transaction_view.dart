@@ -9,7 +9,7 @@ class AllTransactionsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    AllTransactionsController controller = Get.put(AllTransactionsController());
+    Get.put(AllTransactionsController());
     return Scaffold(
       backgroundColor: backgroundColor,
       body: const Center(

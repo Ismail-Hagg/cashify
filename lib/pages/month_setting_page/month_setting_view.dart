@@ -9,7 +9,7 @@ class MonthSettingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    MonthSettingController controller = Get.put(MonthSettingController());
+    Get.put(MonthSettingController());
     return Scaffold(
       backgroundColor: backgroundColor,
       body: const Center(

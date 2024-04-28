@@ -10,7 +10,7 @@ class ExpenceTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final String amount;
-  final String ave;
+  final String? ave;
   final bool budget;
   final IconData icon;
   final EdgeInsets padding;
@@ -24,7 +24,7 @@ class ExpenceTile extends StatelessWidget {
       required this.title,
       required this.subtitle,
       required this.amount,
-      required this.ave,
+      this.ave,
       required this.budget,
       required this.icon,
       required this.padding,
@@ -136,13 +136,15 @@ class ExpenceTile extends StatelessWidget {
                     align: TextAlign.left,
                     color: color,
                   ),
-                  CustomText(
-                    maxline: 1,
-                    isFit: true,
-                    text: ave,
-                    size: 12,
-                    color: Colors.grey.shade500,
-                  ),
+                  if (ave != null) ...[
+                    CustomText(
+                      maxline: 1,
+                      isFit: true,
+                      text: ave as String,
+                      size: 12,
+                      color: Colors.grey.shade500,
+                    )
+                  ],
                   if (budget) ...[
                     CustomText(
                       maxline: 1,

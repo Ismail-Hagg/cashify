@@ -1,9 +1,10 @@
-import 'dart:convert';
 import 'dart:math';
+import 'package:cashify/models/transaction_model.dart';
 import 'package:cashify/pages/home_page/home_controller.dart';
 import 'package:cashify/utils/constants.dart';
 import 'package:cashify/utils/enums.dart';
 import 'package:cashify/widgets/animeted_icon_widget.dart';
+import 'package:cashify/widgets/caragory_indicator_widget.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';
 import 'package:cashify/widgets/expense_tile_widget.dart';
 import 'package:cashify/widgets/icon_button.dart';
@@ -13,11 +14,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_animated_icons/icons8.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
-import 'dart:math' as math;
 
 import 'package:mrx_charts/mrx_charts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import 'package:string_2_icon/string_2_icon.dart';
 
 class HomeBody extends StatelessWidget {
   const HomeBody({super.key});
@@ -174,92 +173,139 @@ class HomeBody extends StatelessWidget {
                             ),
                           ),
                           SizedBox(
-                              height: width * 0.45,
-                              width: width * 0.45,
-                              child: controller.loading
-                                  ? IconAnimated(
-                                      name: Icons8.circles_menu_1_iOS,
-                                      controller: controller.loadingController,
-                                      color: mainColor)
-                                  : Stack(
-                                      children: [
-                                        Chart(
-                                          layers: [
-                                            ChartGroupPieLayer(
-                                              items: [
-                                                List.generate(
-                                                  1,
-                                                  (index) =>
-                                                      ChartGroupPieDataItem(
-                                                          amount: Random()
-                                                                  .nextInt(
-                                                                      300) *
-                                                              Random()
-                                                                  .nextDouble(),
-                                                          color: Colors.red,
-                                                          label: [
-                                                            'Life',
-                                                            'Work',
-                                                            'Medicine',
-                                                            'Bills',
-                                                            'Hobby',
-                                                            'Holiday',
-                                                          ][Random()
-                                                              .nextInt(6)]),
-                                                ),
-                                              ],
-                                              settings:
-                                                  const ChartGroupPieSettings(),
-                                            ),
-                                          ],
-                                        ),
-                                        Center(
-                                          child: ButtonWidget(
-                                            isIos: controller.isIos,
-                                            textSize: 16,
-                                            type: ButtonType.text,
-                                            onClick: () {
-                                              print(
-                                                  controller.humanFormat(3540));
-                                            },
-                                            text:
-                                                controller.humanFormat(300.76),
+                            height: width * 0.45,
+                            width: width * 0.45,
+                            child: controller.loading
+                                ? IconAnimated(
+                                    name: Icons8.circles_menu_1_iOS,
+                                    controller: controller.loadingController,
+                                    color: mainColor)
+                                : Stack(
+                                    children: [
+                                      Chart(
+                                        layers: [
+                                          ChartGroupPieLayer(
+                                            items: [
+                                              List.generate(
+                                                4,
+                                                (index) =>
+                                                    ChartGroupPieDataItem(
+                                                        amount: Random()
+                                                                .nextInt(300) *
+                                                            Random()
+                                                                .nextDouble(),
+                                                        color: Colors.red,
+                                                        label: [
+                                                          'Life',
+                                                          'Work',
+                                                          'Medicine',
+                                                          'Bills',
+                                                          'Hobby',
+                                                          'Holiday',
+                                                        ][Random().nextInt(6)]),
+                                              ),
+                                            ],
+                                            settings:
+                                                const ChartGroupPieSettings(),
                                           ),
-                                        )
-                                      ],
-                                    )),
+                                        ],
+                                      ),
+                                      Center(
+                                        child: ButtonWidget(
+                                          isIos: controller.isIos,
+                                          textSize: 16,
+                                          type: ButtonType.text,
+                                          onClick: () => controller.calculate(),
+                                          text: controller.humanFormat(1010.9),
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                          ),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            child: Row(
+                              children: List.generate(
+                                controller.loading ? 5 : 10,
+                                (index) => CatagoryIndicator(
+                                    scrolable: true,
+                                    loading: controller.loading,
+                                    width: width,
+                                    color: Colors.red,
+                                    catagory: 'catagory'),
+                              ),
+                            ),
+                          ),
+                          Divider(
+                            color: mainColor,
+                            height: 3,
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              CatagoryIndicator(
+                                scrolable: false,
+                                loading: controller.loading,
+                                adjustedWidth: width * 0.25,
+                                width: width,
+                                color: Colors.green.withOpacity(0.75),
+                                catagory:
+                                    '${'income'.tr} : ${controller.humanFormat(234)}',
+                              ),
+                              CatagoryIndicator(
+                                  scrolable: false,
+                                  adjustedWidth: width * 0.25,
+                                  loading: controller.loading,
+                                  width: width,
+                                  color: Colors.red.withOpacity(0.75),
+                                  catagory:
+                                      '${'expence'.tr} : ${controller.humanFormat(3540)}'),
+                              CatagoryIndicator(
+                                  scrolable: false,
+                                  adjustedWidth: width * 0.25,
+                                  loading: controller.loading,
+                                  width: width,
+                                  color: Colors.blue.withOpacity(0.75),
+                                  catagory:
+                                      '${'total'.tr} : ${controller.humanFormat(3540)}')
+                            ],
+                          )
                         ],
                       ),
                     ),
                   ),
-                  // Column(
-                  //   children: List.generate(
-                  //     controller.loading
-                  //         ? 10
-                  //         : controller.userModel.catagories.length,
-                  //     (index) => Skeletonizer(
-                  //       enabled: controller.loading,
-                  //       child: ExpenceTile(
-                  //         loading: controller.loading,
-                  //         budgetPercent: 0.5,
-                  //         width: width,
-                  //         color: Colors.green,
-                  //         title: 'food',
-                  //         subtitle: '3 transactions',
-                  //         amount: '1500',
-                  //         ave: '${'ave'.tr} 10',
-                  //         budget: true,
-                  //         icon: FontAwesomeIcons.drumstickBite,
-                  //         padding: const EdgeInsets.only(
-                  //           right: 12,
-                  //           left: 12,
-                  //           bottom: 16,
-                  //         ),
-                  //         budgetKeeping: '50/100',
-                  //       ),
-                  //     ),
-                  //   ),
-                  // )
+                  Column(
+                    children: List.generate(
+                      controller.loading ? 4 : 4,
+                      (index) => Skeletonizer(
+                        enabled: controller.loading,
+                        child: ExpenceTile(
+                          loading: controller.loading,
+                          budgetPercent: 0.5,
+                          width: width,
+                          color: [
+                            Colors.red,
+                            Colors.green,
+                            Colors.blue,
+                            Colors.orange
+                          ][index],
+                          title: 'food',
+                          subtitle: '3 transactions',
+                          amount: '1500',
+                          //ave: '${'ave'.tr} 10',
+                          budget: false,
+                          icon: FontAwesomeIcons.drumstickBite,
+                          padding: const EdgeInsets.only(
+                            right: 12,
+                            left: 12,
+                            bottom: 16,
+                          ),
+                          budgetKeeping: '50/100',
+                        ),
+                      ),
+                    ),
+                  )
                 ],
               ),
             );

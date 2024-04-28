@@ -1,6 +1,4 @@
 import 'package:cashify/gloable_controllers/auth_controller.dart';
-import 'package:cashify/models/user_model.dart';
-import 'package:cashify/models/wallet_model.dart';
 import 'package:cashify/pages/login_page/login_controller.dart';
 import 'package:cashify/utils/constants.dart';
 import 'package:cashify/utils/enums.dart';

@@ -2,7 +2,6 @@ import 'package:cashify/gloable_controllers/auth_controller.dart';
 import 'package:cashify/models/user_model.dart';
 import 'package:cashify/models/wallet_model.dart';
 import 'package:cashify/services/firebase_service.dart';
-import 'package:cashify/utils/constants.dart';
 import 'package:cashify/utils/enums.dart';
 import 'package:cashify/utils/util_functions.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';

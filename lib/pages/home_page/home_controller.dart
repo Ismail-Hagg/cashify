@@ -1,4 +1,9 @@
+import 'dart:math';
+
 import 'package:cashify/gloable_controllers/auth_controller.dart';
+import 'package:cashify/models/catagory_model.dart';
+import 'package:cashify/models/fake_data.dart';
+import 'package:cashify/models/transaction_model.dart';
 import 'package:cashify/models/user_model.dart';
 import 'package:cashify/pages/all_transactions_page/all_transaction_view.dart';
 import 'package:cashify/pages/all_transactions_page/all_transactoins_controller.dart';
@@ -7,15 +12,12 @@ import 'package:cashify/pages/month_setting_page/month_setting_controller.dart';
 import 'package:cashify/pages/month_setting_page/month_setting_view.dart';
 import 'package:cashify/pages/settings_page/settings_controller.dart';
 import 'package:cashify/pages/settings_page/settings_view.dart';
-import 'package:cashify/services/user_data_service.dart';
-import 'package:cashify/utils/constants.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:math' as math;
+import 'package:cashify/utils/enums.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
+import 'dart:math' as math;
 
 class HomeController extends GetxController with GetTickerProviderStateMixin {
   late UserModel _userModel;
@@ -55,6 +57,15 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   String _chosenTime = 'thismnth'.tr;
   String get chosenTime => _chosenTime;
 
+  List<Catagory> _catList = [];
+  List<Catagory> get catList => _catList;
+
+  double _income = 0.0;
+  double get income => _income;
+
+  double _expense = 0.0;
+  double get expense => _expense;
+
   @override
   void onInit() {
     super.onInit();
@@ -63,8 +74,6 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     );
-
-    loadinganimation();
   }
 
   @override
@@ -82,6 +91,53 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
       _loadingController.stop();
     }
     update();
+  }
+
+  void calculate() {
+    loadinganimation();
+    _catList = [];
+    for (var i = 0; i < fakeData.length; i++) {
+      Transaction transaction = Transaction.fromMap(fakeData[i]);
+      if (_catList.isEmpty || _catList[i].name == transaction.catagory) {
+        _catList.add(Catagory(
+            name: transaction.catagory,
+            subCatagories: [transaction.subCatagory],
+            icon: 'car',
+            color: generateRandomColor(),
+            transactions: [transaction]));
+      } else {
+        for (var i = 0; i < _catList.length; i++) {
+          if (_catList[i].name == transaction.catagory) {
+            _catList[i].transactions != null
+                ? print('up and runnung')
+                : print('thie thing is null');
+            //     ? _catList[i].transactions!.add(transaction)
+            //     : _catList[i].transactions = [transaction];
+          } else {
+            print(_catList[i].name);
+            print(transaction.catagory);
+            // _catList.add(Catagory(
+            //     name: transaction.catagory,
+            //     subCatagories: [transaction.subCatagory],
+            //     icon: 'car',
+            //     color: generateRandomColor(),
+            //     transactions: [transaction]));
+          }
+        }
+      }
+    }
+    print(_catList.length);
+    loadinganimation();
+  }
+
+  // generate random color
+  Color generateRandomColor() {
+    final random = math.Random();
+    final r = random.nextInt(256);
+    final g = random.nextInt(256);
+    final b = random.nextInt(256);
+    final a = 255.0; // Set alpha to fully opaque
+    return Color.fromRGBO(r, g, b, a);
   }
 
   // format the amount

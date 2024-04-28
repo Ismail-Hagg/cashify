@@ -36,7 +36,10 @@ class Translation extends Translations {
           'lastmnth': 'Last Month',
           'thisyear': 'This Year',
           'custom': 'Custom',
-          'ave': 'Average'
+          'ave': 'Average',
+          'income': 'In',
+          'expence': 'Out',
+          'total': 'Total',
         },
         'ar_SA': {
           'email': 'البريد الالكتروني',
@@ -71,7 +74,10 @@ class Translation extends Translations {
           'lastmnth': 'الشهر الفائت',
           'thisyear': 'هذه السنه',
           'custom': 'اختيار',
-          'ave': 'متوسط'
+          'ave': 'متوسط',
+          'income': 'دخل',
+          'expence': 'صرف',
+          'total': 'مجموع',
         },
       };
 }

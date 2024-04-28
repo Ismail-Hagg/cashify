@@ -23,4 +23,35 @@ class Transaction {
     required this.toWallet,
     required this.type,
   });
+
+  toMap() {
+    return <String, dynamic>{
+      'catagory': catagory,
+      'subCatagory': subCatagory,
+      'currency': currency,
+      'amount': amount,
+      'note': note,
+      'type': type.toString(),
+      'wallet': wallet,
+      'fromWallet': fromWallet,
+      'toWallet': toWallet,
+      'date': date.toString(),
+    };
+  }
+
+  factory Transaction.fromMap(Map<String, dynamic> map) {
+    return Transaction(
+      catagory: map['catagory'],
+      subCatagory: map['subCatagory'],
+      currency: map['currency'],
+      amount: map['amount'],
+      note: map['note'],
+      date: DateTime.parse(map['date']),
+      wallet: map['wallet'],
+      fromWallet: map['fromWallet'],
+      toWallet: map['toWallet'],
+      type:
+          TransactionType.values.firstWhere((e) => e.toString() == map['type']),
+    );
+  }
 }
