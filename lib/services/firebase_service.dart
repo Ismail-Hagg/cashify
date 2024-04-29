@@ -8,7 +8,20 @@ class FirebaseService {
 
   // add user data to firebase
   Future<void> addUsers({required UserModel model}) async {
-    return await _ref.doc(model.userId).set(model.toMap());
+    await _ref.doc(model.userId).set(model.toMap());
+  }
+
+  // update user data to firebase
+  Future<void> updateUsers({required UserModel model}) async {
+    await _ref.doc(model.userId).update(model.toMap());
+  }
+
+  // add records
+  Future<void> addRecord(
+      {required String path,
+      required String userId,
+      required Map<String, dynamic> map}) async {
+    await _ref.doc(userId).collection(path).doc().set(map);
   }
 
   // get the current user's data

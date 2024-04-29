@@ -9,7 +9,7 @@ List<Map<String, dynamic>> fakeData = [
     'wallet': 'wallet',
     'fromWallet': 'fromWallet',
     'toWallet': 'None',
-    'date': '2024-04-28 21:09:49.382752'
+    'date': '2024-03-28 21:09:49.382752'
   },
   {
     "catagory": "food",
@@ -21,7 +21,7 @@ List<Map<String, dynamic>> fakeData = [
     "wallet": "Checking Account",
     "fromWallet": "Checking Account",
     "toWallet": "None",
-    "date": "2024-04-28T08:30:00.000Z"
+    "date": "2024-03-28T08:30:00.000Z"
   },
   {
     'catagory': 'hygene',
@@ -33,7 +33,7 @@ List<Map<String, dynamic>> fakeData = [
     'wallet': 'wallet',
     'fromWallet': 'fromWallet',
     'toWallet': 'None',
-    'date': '2024-04-28 21:09:49.382752'
+    'date': '2024-03-28 21:09:49.382752'
   },
   {
     "catagory": "random",
@@ -45,7 +45,7 @@ List<Map<String, dynamic>> fakeData = [
     "wallet": "Checking Account",
     "fromWallet": "Checking Account",
     "toWallet": "None",
-    "date": "2024-04-28T08:30:00.000Z"
+    "date": "2024-03-28T08:30:00.000Z"
   },
   {
     'catagory': 'food',
@@ -57,7 +57,7 @@ List<Map<String, dynamic>> fakeData = [
     'wallet': 'wallet',
     'fromWallet': 'fromWallet',
     'toWallet': 'None',
-    'date': '2024-04-28 21:09:49.382752'
+    'date': '2024-03-28 21:09:49.382752'
   },
   {
     "catagory": "gas",
@@ -69,7 +69,7 @@ List<Map<String, dynamic>> fakeData = [
     "wallet": "Checking Account",
     "fromWallet": "Checking Account",
     "toWallet": "None",
-    "date": "2024-04-28T08:30:00.000Z"
+    "date": "2024-03-28T08:30:00.000Z"
   },
   {
     'catagory': 'loan',
@@ -81,7 +81,7 @@ List<Map<String, dynamic>> fakeData = [
     'wallet': 'wallet',
     'fromWallet': 'fromWallet',
     'toWallet': 'None',
-    'date': '2024-04-28 21:09:49.382752'
+    'date': '2024-03-13 21:09:49.382752'
   },
   {
     "catagory": "food",
@@ -93,7 +93,7 @@ List<Map<String, dynamic>> fakeData = [
     "wallet": "Checking Account",
     "fromWallet": "Checking Account",
     "toWallet": "None",
-    "date": "2024-04-28T08:30:00.000Z"
+    "date": "2024-03-28T08:30:00.000Z"
   },
   {
     'catagory': 'random',
@@ -105,7 +105,7 @@ List<Map<String, dynamic>> fakeData = [
     'wallet': 'wallet',
     'fromWallet': 'fromWallet',
     'toWallet': 'None',
-    'date': '2024-04-28 21:09:49.382752'
+    'date': '2024-03-28 21:09:49.382752'
   },
   {
     "catagory": "gas",
@@ -117,7 +117,7 @@ List<Map<String, dynamic>> fakeData = [
     "wallet": "Checking Account",
     "fromWallet": "Checking Account",
     "toWallet": "None",
-    "date": "2024-04-28T08:30:00.000Z"
+    "date": "2024-03-28T08:30:00.000Z"
   },
   {
     'catagory': 'car',
@@ -129,7 +129,7 @@ List<Map<String, dynamic>> fakeData = [
     'wallet': 'wallet',
     'fromWallet': 'fromWallet',
     'toWallet': 'None',
-    'date': '2024-04-28 21:09:49.382752'
+    'date': '2024-03-28 21:09:49.382752'
   },
   {
     "catagory": "food",
@@ -142,5 +142,17 @@ List<Map<String, dynamic>> fakeData = [
     "fromWallet": "Checking Account",
     "toWallet": "None",
     "date": "2024-04-28T08:30:00.000Z"
+  },
+  {
+    "catagory": "loan",
+    "subCatagory": "food",
+    "currency": "SAR",
+    "amount": 400.00,
+    "note": "Weekly fruit shopping",
+    "type": "TransactionType.moneyIn",
+    "wallet": "Checking Account",
+    "fromWallet": "Checking Account",
+    "toWallet": "None",
+    "date": "2024-03-28T08:30:00.000Z"
   },
 ];

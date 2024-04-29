@@ -1,5 +1,3 @@
-import 'dart:math';
-import 'package:cashify/models/transaction_model.dart';
 import 'package:cashify/pages/home_page/home_controller.dart';
 import 'package:cashify/utils/constants.dart';
 import 'package:cashify/utils/enums.dart';
@@ -10,13 +8,13 @@ import 'package:cashify/widgets/expense_tile_widget.dart';
 import 'package:cashify/widgets/icon_button.dart';
 import 'package:cashify/widgets/text_button_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_animated_icons/icons8.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
-
 import 'package:mrx_charts/mrx_charts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:string_2_icon/string_2_icon.dart';
 
 class HomeBody extends StatelessWidget {
   const HomeBody({super.key});
@@ -134,7 +132,8 @@ class HomeBody extends StatelessWidget {
                                     color: mainColor,
                                   ),
                                   onSelected: (val) =>
-                                      controller.changeTimePeriod(time: val),
+                                      controller.changeTimePeriod(
+                                          context: context, time: val),
                                   itemBuilder: (BuildContext context) {
                                     return [
                                       'thismnth'.tr,
@@ -172,68 +171,170 @@ class HomeBody extends StatelessWidget {
                               ],
                             ),
                           ),
-                          SizedBox(
-                            height: width * 0.45,
-                            width: width * 0.45,
-                            child: controller.loading
-                                ? IconAnimated(
-                                    name: Icons8.circles_menu_1_iOS,
-                                    controller: controller.loadingController,
-                                    color: mainColor)
-                                : Stack(
-                                    children: [
-                                      Chart(
-                                        layers: [
-                                          ChartGroupPieLayer(
-                                            items: [
-                                              List.generate(
-                                                4,
-                                                (index) =>
-                                                    ChartGroupPieDataItem(
-                                                        amount: Random()
-                                                                .nextInt(300) *
-                                                            Random()
-                                                                .nextDouble(),
-                                                        color: Colors.red,
-                                                        label: [
-                                                          'Life',
-                                                          'Work',
-                                                          'Medicine',
-                                                          'Bills',
-                                                          'Hobby',
-                                                          'Holiday',
-                                                        ][Random().nextInt(6)]),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                height: width * 0.45,
+                                width: width * 0.45,
+                                child: controller.loading
+                                    ? IconAnimated(
+                                        name: Icons8.circles_menu_1_iOS,
+                                        controller:
+                                            controller.loadingController,
+                                        color: mainColor)
+                                    : Stack(
+                                        children: [
+                                          Chart(
+                                            layers: [
+                                              ChartGroupPieLayer(
+                                                items: [
+                                                  List.generate(
+                                                    controller.loading
+                                                        ? 10
+                                                        : controller.showIncome
+                                                            ? controller
+                                                                .valsUp.length
+                                                            : controller
+                                                                .valsDown
+                                                                .length,
+                                                    (index) =>
+                                                        ChartGroupPieDataItem(
+                                                            amount: controller
+                                                                    .loading
+                                                                ? 0
+                                                                : controller
+                                                                        .showIncome
+                                                                    ? controller
+                                                                        .valsUp
+                                                                        .values
+                                                                        .elementAt(
+                                                                            index)
+                                                                    : controller
+                                                                        .valsDown
+                                                                        .values
+                                                                        .elementAt(
+                                                                            index),
+                                                            color: controller
+                                                                .catList
+                                                                .firstWhere((catagory) => controller
+                                                                        .showIncome
+                                                                    ? catagory.name ==
+                                                                        controller.valsUp.keys.elementAt(
+                                                                            index)
+                                                                    : catagory.name ==
+                                                                        controller
+                                                                            .valsDown
+                                                                            .keys
+                                                                            .elementAt(index))
+                                                                .color as Color,
+                                                            label: 'thing'),
+                                                  ),
+                                                ],
+                                                settings:
+                                                    const ChartGroupPieSettings(),
                                               ),
                                             ],
-                                            settings:
-                                                const ChartGroupPieSettings(),
+                                          ),
+                                          Center(
+                                            child: ButtonWidget(
+                                              isIos: controller.isIos,
+                                              textSize: 16,
+                                              type: ButtonType.text,
+                                              onClick: () =>
+                                                  controller.calculate(),
+                                              text: controller
+                                                  .humanFormat(1010.9),
+                                            ),
                                           ),
                                         ],
                                       ),
-                                      Center(
-                                        child: ButtonWidget(
-                                          isIos: controller.isIos,
-                                          textSize: 16,
-                                          type: ButtonType.text,
-                                          onClick: () => controller.calculate(),
-                                          text: controller.humanFormat(1010.9),
+                              ),
+                              Column(
+                                children: [
+                                  GestureDetector(
+                                    onTap: () => controller.chartFlip(),
+                                    child: Container(
+                                      height: width * 0.1,
+                                      width: width * 0.1,
+                                      decoration: BoxDecoration(
+                                          border:
+                                              Border.all(color: Colors.green),
+                                          borderRadius: const BorderRadius.all(
+                                            Radius.circular(5),
+                                          ),
+                                          color: controller.showIncome
+                                              ? Colors.green
+                                              : forgroundColor),
+                                      child: Center(
+                                        child: FaIcon(
+                                          FontAwesomeIcons.arrowUp,
+                                          color: controller.showIncome
+                                              ? forgroundColor
+                                              : Colors.green,
                                         ),
-                                      )
-                                    ],
+                                      ),
+                                    ),
                                   ),
+                                  SizedBox(
+                                    height: width * 0.05,
+                                  ),
+                                  GestureDetector(
+                                    onTap: () => controller.chartFlip(),
+                                    child: Container(
+                                      height: width * 0.1,
+                                      width: width * 0.1,
+                                      decoration: BoxDecoration(
+                                          border: Border.all(color: Colors.red),
+                                          borderRadius: const BorderRadius.all(
+                                            Radius.circular(5),
+                                          ),
+                                          color: !controller.showIncome
+                                              ? Colors.red
+                                              : forgroundColor),
+                                      child: Center(
+                                        child: FaIcon(
+                                          FontAwesomeIcons.arrowDown,
+                                          color: !controller.showIncome
+                                              ? forgroundColor
+                                              : Colors.red,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            ],
                           ),
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             physics: const BouncingScrollPhysics(),
                             child: Row(
                               children: List.generate(
-                                controller.loading ? 5 : 10,
+                                controller.loading
+                                    ? 5
+                                    : controller.showIncome
+                                        ? controller.valsUp.length
+                                        : controller.valsDown.length,
                                 (index) => CatagoryIndicator(
                                     scrolable: true,
                                     loading: controller.loading,
                                     width: width,
-                                    color: Colors.red,
-                                    catagory: 'catagory'),
+                                    color: controller.catList
+                                        .firstWhere((catagory) =>
+                                            controller.showIncome
+                                                ? catagory.name ==
+                                                    controller.valsUp.keys
+                                                        .elementAt(index)
+                                                : catagory.name ==
+                                                    controller.valsDown.keys
+                                                        .elementAt(index))
+                                        .color as Color,
+                                    catagory: controller.showIncome
+                                        ? controller.valsUp.keys
+                                            .elementAt(index)
+                                        : controller.valsDown.keys
+                                            .elementAt(index)),
                               ),
                             ),
                           ),
@@ -251,7 +352,7 @@ class HomeBody extends StatelessWidget {
                                 width: width,
                                 color: Colors.green.withOpacity(0.75),
                                 catagory:
-                                    '${'income'.tr} : ${controller.humanFormat(234)}',
+                                    '${'income'.tr} : ${controller.humanFormat(controller.income)}',
                               ),
                               CatagoryIndicator(
                                   scrolable: false,
@@ -260,7 +361,7 @@ class HomeBody extends StatelessWidget {
                                   width: width,
                                   color: Colors.red.withOpacity(0.75),
                                   catagory:
-                                      '${'expence'.tr} : ${controller.humanFormat(3540)}'),
+                                      '${'expence'.tr} : ${controller.humanFormat(controller.expense)}'),
                               CatagoryIndicator(
                                   scrolable: false,
                                   adjustedWidth: width * 0.25,
@@ -268,7 +369,7 @@ class HomeBody extends StatelessWidget {
                                   width: width,
                                   color: Colors.blue.withOpacity(0.75),
                                   catagory:
-                                      '${'total'.tr} : ${controller.humanFormat(3540)}')
+                                      '${'total'.tr} : ${controller.humanFormat(controller.income - controller.expense)}')
                             ],
                           )
                         ],
@@ -277,25 +378,25 @@ class HomeBody extends StatelessWidget {
                   ),
                   Column(
                     children: List.generate(
-                      controller.loading ? 4 : 4,
+                      controller.loading ? 10 : controller.catList.length,
                       (index) => Skeletonizer(
                         enabled: controller.loading,
                         child: ExpenceTile(
                           loading: controller.loading,
                           budgetPercent: 0.5,
                           width: width,
-                          color: [
-                            Colors.red,
-                            Colors.green,
-                            Colors.blue,
-                            Colors.orange
-                          ][index],
-                          title: 'food',
-                          subtitle: '3 transactions',
-                          amount: '1500',
-                          //ave: '${'ave'.tr} 10',
+                          color: controller.catList[index].color as Color,
+                          title: controller.catList[index].name,
+                          subtitle:
+                              '${controller.catList[index].transactions!.length} transactions',
+                          amount: controller.humanFormat(controller
+                              .vals[controller.catList[index].name] as double),
+                          ave:
+                              '${'ave'.tr} ${controller.aveCalc(amount: controller.vals[controller.catList[index].name] as double, dates: controller.dates[controller.catList[index].name] as List<DateTime>).toStringAsFixed(2)}',
                           budget: false,
-                          icon: FontAwesomeIcons.drumstickBite,
+                          icon: String2Icon.getIconDataFromString(
+                                  controller.catList[index].icon) ??
+                              FontAwesomeIcons.exclamation,
                           padding: const EdgeInsets.only(
                             right: 12,
                             left: 12,
@@ -304,7 +405,10 @@ class HomeBody extends StatelessWidget {
                           budgetKeeping: '50/100',
                         ),
                       ),
-                    ),
+                    )
+                        .animate(interval: 250.ms)
+                        .moveX(duration: 250.ms)
+                        .fadeIn(duration: 250.ms),
                   )
                 ],
               ),

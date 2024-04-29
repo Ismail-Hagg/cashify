@@ -1,5 +1,4 @@
-import 'dart:math';
-
+import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:cashify/gloable_controllers/auth_controller.dart';
 import 'package:cashify/models/catagory_model.dart';
 import 'package:cashify/models/fake_data.dart';
@@ -12,9 +11,13 @@ import 'package:cashify/pages/month_setting_page/month_setting_controller.dart';
 import 'package:cashify/pages/month_setting_page/month_setting_view.dart';
 import 'package:cashify/pages/settings_page/settings_controller.dart';
 import 'package:cashify/pages/settings_page/settings_view.dart';
+import 'package:cashify/services/firebase_service.dart';
+import 'package:cashify/utils/constants.dart';
 import 'package:cashify/utils/enums.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'dart:math' as math;
@@ -22,6 +25,8 @@ import 'dart:math' as math;
 class HomeController extends GetxController with GetTickerProviderStateMixin {
   late UserModel _userModel;
   UserModel get userModel => _userModel;
+
+  FirebaseService firebaseService = FirebaseService();
 
   int _pageIndex = 0;
   int get pageIndex => _pageIndex;
@@ -31,6 +36,14 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
 
   bool _loading = false;
   bool get loading => _loading;
+
+  bool _showIncome = true;
+  bool get showIncome => _showIncome;
+
+  late DateTime _startTime;
+  DateTime get startTime => _startTime;
+  late DateTime _endTime;
+  DateTime get endTime => _endTime;
 
   late AnimationController _loadingController;
   AnimationController get loadingController => _loadingController;
@@ -66,6 +79,18 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   double _expense = 0.0;
   double get expense => _expense;
 
+  Map<String, double> _vals = {};
+  Map<String, double> get vals => _vals;
+
+  Map<String, double> _valsUp = {};
+  Map<String, double> get valsUp => _valsUp;
+
+  Map<String, double> _valsDown = {};
+  Map<String, double> get valsDown => _valsDown;
+
+  Map<String, List<DateTime>> _dates = {};
+  Map<String, List<DateTime>> get dates => _dates;
+
   @override
   void onInit() {
     super.onInit();
@@ -74,12 +99,77 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     );
+    setTime();
   }
 
   @override
   void onClose() {
     super.onClose();
     _loadingController.dispose();
+  }
+
+  // set start and end times
+  void setTime({Times? time, BuildContext? context}) async {
+    bool go = true;
+    switch (time) {
+      case null:
+      case Times.thisMonth:
+        var controll = DateTime.now();
+        _startTime = DateTime(controll.year, controll.month, 1);
+        _endTime = DateTime.now();
+        break;
+
+      case Times.lastMonth:
+        var controll = DateTime.now();
+
+        _startTime = DateTime(
+            controll.month == 1 ? controll.year - 1 : controll.year,
+            controll.month == 1 ? 12 : controll.month - 1,
+            1);
+        _endTime = controll.month < 12
+            ? DateTime(controll.year, controll.month, 0)
+            : DateTime(controll.year + 1, 1, 0);
+        break;
+
+      case Times.thisYear:
+        var controll = DateTime.now();
+
+        _startTime = DateTime(controll.year, 1, 1);
+        _endTime = DateTime.now();
+        break;
+
+      case Times.custom:
+        await showCalendarDatePicker2Dialog(
+          context: context as BuildContext,
+          config: CalendarDatePicker2WithActionButtonsConfig(
+              calendarType: CalendarDatePicker2Type.range),
+          dialogSize: const Size(325, 400),
+          value: [],
+          borderRadius: BorderRadius.circular(15),
+        ).then(
+          (value) {
+            if (value != null && value.isNotEmpty) {
+              _startTime = value[0] as DateTime;
+              _endTime = value[1] as DateTime;
+              _chosenTime =
+                  '${_startTime.year}/${_startTime.month}/${_startTime.day}  -  ${_endTime.year}/${_endTime.month}/${_endTime.day}';
+              go = true;
+              update();
+            } else {
+              go = false;
+            }
+          },
+        );
+
+        break;
+    }
+    go ? calculate() : null;
+  }
+
+  // show income or expence in chart
+  void chartFlip() {
+    _showIncome = !showIncome;
+    update();
   }
 
   // loading animation
@@ -93,51 +183,123 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     update();
   }
 
+  // calculate and gather the catagories
   void calculate() {
+    print('calc started');
     loadinganimation();
+    int tracker = 0;
     _catList = [];
+    _income = 0;
+    _expense = 0;
+    _vals = {};
+    _valsUp = {};
+    _valsDown = {};
+    _dates = {};
     for (var i = 0; i < fakeData.length; i++) {
       Transaction transaction = Transaction.fromMap(fakeData[i]);
-      if (_catList.isEmpty || _catList[i].name == transaction.catagory) {
-        _catList.add(Catagory(
+      _dates[transaction.catagory] != null
+          ? _dates[transaction.catagory]!.add(transaction.date)
+          : _dates[transaction.catagory] = [transaction.date];
+      // calculate money in vs out
+      if (transaction.type == TransactionType.moneyIn) {
+        _income = _income + transaction.amount;
+        if (_valsUp.containsKey(transaction.catagory)) {
+          _valsUp[transaction.catagory] =
+              _valsUp[transaction.catagory]! + transaction.amount;
+        } else {
+          _valsUp[transaction.catagory] = transaction.amount;
+        }
+      } else if (transaction.type == TransactionType.moneyOut) {
+        _expense = _expense + transaction.amount;
+        if (_valsDown.containsKey(transaction.catagory)) {
+          _valsDown[transaction.catagory] =
+              _valsDown[transaction.catagory]! + transaction.amount;
+        } else {
+          _valsDown[transaction.catagory] = transaction.amount;
+        }
+      }
+
+      if (_catList.isEmpty) {
+        _catList.add(
+          Catagory(
             name: transaction.catagory,
             subCatagories: [transaction.subCatagory],
             icon: 'car',
-            color: generateRandomColor(),
-            transactions: [transaction]));
+            color: generateRandomColor(prev: Colors.red),
+            transactions: [transaction],
+          ),
+        );
       } else {
+        tracker = 0;
         for (var i = 0; i < _catList.length; i++) {
           if (_catList[i].name == transaction.catagory) {
             _catList[i].transactions != null
-                ? print('up and runnung')
-                : print('thie thing is null');
-            //     ? _catList[i].transactions!.add(transaction)
-            //     : _catList[i].transactions = [transaction];
-          } else {
-            print(_catList[i].name);
-            print(transaction.catagory);
-            // _catList.add(Catagory(
-            //     name: transaction.catagory,
-            //     subCatagories: [transaction.subCatagory],
-            //     icon: 'car',
-            //     color: generateRandomColor(),
-            //     transactions: [transaction]));
+                ? _catList[i].transactions!.add(transaction)
+                : _catList[i].transactions = [transaction];
+            tracker = 1;
           }
         }
+        if (tracker == 0) {
+          _catList.add(Catagory(
+              name: transaction.catagory,
+              subCatagories: [transaction.subCatagory],
+              icon: 'car',
+              color: generateRandomColor(prev: Colors.blue),
+              transactions: [transaction]));
+        }
+      }
+
+      // add to the map to display from
+      if (_vals.containsKey(transaction.catagory)) {
+        transaction.type == TransactionType.moneyIn
+            ? _vals[transaction.catagory] =
+                (_vals[transaction.catagory]! + transaction.amount)
+            : _vals[transaction.catagory] =
+                _vals[transaction.catagory]! - transaction.amount;
+      } else {
+        _vals[transaction.catagory] =
+            transaction.type == TransactionType.moneyIn
+                ? transaction.amount
+                : 0 - transaction.amount;
       }
     }
-    print(_catList.length);
+
     loadinganimation();
   }
 
+  // calculate average of spending per day
+  double aveCalc({required double amount, required List<DateTime> dates}) {
+    double ave = 0.0;
+    if (dates.isNotEmpty) {
+      dates.sort();
+      int days = dates.last.difference(dates.first).inDays;
+      ave = days == 0 ? 0.0 : amount / days;
+    }
+    return ave;
+  }
+
   // generate random color
-  Color generateRandomColor() {
+  Color generateRandomColor({required Color prev}) {
+    var lst = [
+      Colors.red,
+      Colors.blue,
+      Colors.green,
+      Colors.blueAccent,
+      Colors.greenAccent,
+      Colors.purple,
+      Colors.purpleAccent,
+      Colors.deepOrange,
+      Colors.orange,
+      Colors.deepPurple,
+      Colors.pink,
+      Colors.pinkAccent,
+      Colors.indigo,
+      Colors.brown,
+      Colors.teal,
+    ];
     final random = math.Random();
-    final r = random.nextInt(256);
-    final g = random.nextInt(256);
-    final b = random.nextInt(256);
-    final a = 255.0; // Set alpha to fully opaque
-    return Color.fromRGBO(r, g, b, a);
+    final r = random.nextInt(lst.length);
+    return lst[r] == prev ? mainColor : lst[r];
   }
 
   // format the amount
@@ -163,9 +325,18 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   }
 
   // change the tracking of the chosen time period
-  void changeTimePeriod({required String time}) {
+  void changeTimePeriod({required String time, required BuildContext context}) {
     if (_trackNum != _track[time] as int) {
       _trackNum = _track[time] as int;
+      setTime(
+          time: _trackNum == 0
+              ? Times.thisMonth
+              : _trackNum == 1
+                  ? Times.lastMonth
+                  : _trackNum == 2
+                      ? Times.thisYear
+                      : Times.custom,
+          context: context);
       _chosenTime = time;
       update();
     }
@@ -211,6 +382,16 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
       SystemNavigator.pop();
     } else {
       setPageIndex(pageIndex: 0);
+    }
+  }
+
+  void recordSend(
+      {required String path, required Map<String, dynamic> map}) async {
+    try {
+      await firebaseService.addRecord(
+          userId: _userModel.userId, path: path, map: map);
+    } catch (e) {
+      print('== $e');
     }
   }
 }
