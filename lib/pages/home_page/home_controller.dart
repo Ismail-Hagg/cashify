@@ -14,10 +14,8 @@ import 'package:cashify/pages/settings_page/settings_view.dart';
 import 'package:cashify/services/firebase_service.dart';
 import 'package:cashify/utils/constants.dart';
 import 'package:cashify/utils/enums.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'dart:math' as math;
@@ -36,6 +34,9 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
 
   bool _loading = false;
   bool get loading => _loading;
+
+  bool _pieChart = true;
+  bool get pieChart => _pieChart;
 
   bool _showIncome = true;
   bool get showIncome => _showIncome;
@@ -76,6 +77,12 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   double _income = 0.0;
   double get income => _income;
 
+  double _chartHigh = 0.0;
+  double get chartHigh => _chartHigh;
+
+  double _chartLow = 0.0;
+  double get chartLow => _chartLow;
+
   double _expense = 0.0;
   double get expense => _expense;
 
@@ -90,6 +97,12 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
 
   Map<String, List<DateTime>> _dates = {};
   Map<String, List<DateTime>> get dates => _dates;
+
+  final ValueNotifier<int> _modalIndex = ValueNotifier<int>(0);
+  ValueNotifier<int> get modalIndex => _modalIndex;
+
+  DateTime _transactionChosenTime = DateTime.now();
+  DateTime get transactionChosenTime => _transactionChosenTime;
 
   @override
   void onInit() {
@@ -106,6 +119,27 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   void onClose() {
     super.onClose();
     _loadingController.dispose();
+  }
+
+  //modal leadig button
+  void modalLeadingButtonAction({required BuildContext context}) {
+    if (_modalIndex.value == 0) {
+      Navigator.of(context).pop();
+    } else {
+      modalPageChange(page: 0);
+    }
+  }
+
+  void modalPageChange({required int page}) {
+    if (_modalIndex.value != page) {
+      _modalIndex.value = page;
+    }
+  }
+
+  // switch charts
+  void chartSwitch() {
+    _pieChart = !_pieChart;
+    update();
   }
 
   // set start and end times
@@ -185,9 +219,10 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
 
   // calculate and gather the catagories
   void calculate() {
-    print('calc started');
     loadinganimation();
     int tracker = 0;
+    _chartHigh = 0;
+    _chartLow = 0;
     _catList = [];
     _income = 0;
     _expense = 0;
@@ -197,11 +232,15 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     _dates = {};
     for (var i = 0; i < fakeData.length; i++) {
       Transaction transaction = Transaction.fromMap(fakeData[i]);
+
       _dates[transaction.catagory] != null
           ? _dates[transaction.catagory]!.add(transaction.date)
           : _dates[transaction.catagory] = [transaction.date];
       // calculate money in vs out
       if (transaction.type == TransactionType.moneyIn) {
+        if (transaction.amount > _chartHigh) {
+          _chartHigh = transaction.amount;
+        }
         _income = _income + transaction.amount;
         if (_valsUp.containsKey(transaction.catagory)) {
           _valsUp[transaction.catagory] =
@@ -210,6 +249,9 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
           _valsUp[transaction.catagory] = transaction.amount;
         }
       } else if (transaction.type == TransactionType.moneyOut) {
+        if ((transaction.amount * -1) < _chartLow) {
+          _chartLow = (transaction.amount * -1);
+        }
         _expense = _expense + transaction.amount;
         if (_valsDown.containsKey(transaction.catagory)) {
           _valsDown[transaction.catagory] =

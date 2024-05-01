@@ -1,10 +1,17 @@
 import 'package:cashify/pages/home_page/home_controller.dart';
 import 'package:cashify/utils/constants.dart';
+import 'package:cashify/utils/enums.dart';
+import 'package:cashify/widgets/add_transaction_widget.dart';
+import 'package:cashify/widgets/modal_widget.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';
+import 'package:cashify/widgets/text_button_widget.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:stylish_bottom_bar/stylish_bottom_bar.dart';
+import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
 class HomeView extends StatelessWidget {
   const HomeView({super.key});
@@ -97,7 +104,67 @@ class HomeView extends StatelessWidget {
           width: MediaQuery.of(context).size.width * 0.159,
           child: FloatingActionButton(
             backgroundColor: forgroundColor,
-            onPressed: () {},
+            onPressed: () {
+              WoltModalSheet.show(
+                context: context,
+                pageIndexNotifier: controller.modalIndex,
+                modalTypeBuilder: (context) => WoltModalType.bottomSheet,
+                pageListBuilder: (modalSheetContext) {
+                  return [
+                    modalPage(
+                      icon: const FaIcon(FontAwesomeIcons.xmark),
+                      leadingButtonFunction: () => controller
+                          .modalLeadingButtonAction(context: modalSheetContext),
+                      context: modalSheetContext,
+                      title: 'transadd'.tr,
+                      child: AddTransaction(
+                        width: MediaQuery.of(modalSheetContext).size.width,
+                      ),
+                      button: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: ButtonWidget(
+                            isIos: controller.isIos,
+                            textSize: 16,
+                            type: ButtonType.raised,
+                            onClick: () => controller.modalPageChange(page: 1),
+                            color: mainColor,
+                            height:
+                                MediaQuery.of(modalSheetContext).size.width *
+                                    0.125,
+                            width: MediaQuery.of(modalSheetContext).size.width,
+                            text: 'text'),
+                      ),
+                    ),
+                    modalPage(
+                      icon: const FaIcon(FontAwesomeIcons.arrowLeft),
+                      leadingButtonFunction: () => controller
+                          .modalLeadingButtonAction(context: modalSheetContext),
+                      context: modalSheetContext,
+                      title: ';lakjdf',
+                      child: const Center(
+                        child: CustomText(
+                          text: 'love is not love',
+                        ),
+                      ),
+                      button: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: ButtonWidget(
+                            isIos: controller.isIos,
+                            textSize: 16,
+                            type: ButtonType.raised,
+                            onClick: () => controller.modalPageChange(page: 0),
+                            color: mainColor,
+                            height:
+                                MediaQuery.of(modalSheetContext).size.width *
+                                    0.125,
+                            width: MediaQuery.of(modalSheetContext).size.width,
+                            text: 'another one'),
+                      ),
+                    ),
+                  ];
+                },
+              );
+            },
             child: FaIcon(
               FontAwesomeIcons.plus,
               color: mainColor,

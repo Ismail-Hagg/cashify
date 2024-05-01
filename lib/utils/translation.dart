@@ -29,7 +29,7 @@ class Translation extends Translations {
           'test': 'Test',
           'invalidpgone': 'Invalid Phone Number',
           'home': 'Home',
-          'trans': 'All Transactions',
+          'trans': 'Transactions',
           'mnthset': 'Month Set',
           'settings': 'Settings',
           'thismnth': 'This Month',
@@ -40,6 +40,7 @@ class Translation extends Translations {
           'income': 'In',
           'expence': 'Out',
           'total': 'Total',
+          'transadd': 'Add a Transaction'
         },
         'ar_SA': {
           'email': 'البريد الالكتروني',
@@ -78,6 +79,7 @@ class Translation extends Translations {
           'income': 'دخل',
           'expence': 'صرف',
           'total': 'مجموع',
+          'transadd': 'اضافة عملية'
         },
       };
 }
