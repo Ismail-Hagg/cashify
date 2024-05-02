@@ -1,5 +1,6 @@
 import 'package:cashify/utils/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class InputWidget extends StatelessWidget {
@@ -17,6 +18,12 @@ class InputWidget extends StatelessWidget {
   final TextInputAction? action;
   final Function()? obscureFunc;
   final TextInputType? type;
+  final String? hint;
+  final Widget? suff;
+  final List<TextInputFormatter>? formatter;
+  final int? maxLines;
+  final bool? autoFocus;
+  final Function(String str)? onSub;
 
   const InputWidget({
     super.key,
@@ -34,6 +41,12 @@ class InputWidget extends StatelessWidget {
     this.action,
     this.obscureFunc,
     this.type,
+    this.hint,
+    this.suff,
+    this.formatter,
+    this.maxLines,
+    this.autoFocus,
+    this.onSub,
   });
 
   @override
@@ -50,6 +63,10 @@ class InputWidget extends StatelessWidget {
         padding: EdgeInsets.symmetric(vertical: password == true ? 8.0 : 0),
         child: otherInput ??
             TextField(
+              onSubmitted: onSub,
+              autofocus: autoFocus ?? false,
+              maxLines: maxLines,
+              inputFormatters: formatter,
               keyboardType: type,
               textInputAction: action,
               controller: controller,
@@ -58,6 +75,7 @@ class InputWidget extends StatelessWidget {
               style: TextStyle(color: textColor),
               showCursor: false,
               decoration: InputDecoration(
+                  hintText: hint,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                   suffixIcon: password != null
                       ? GestureDetector(
@@ -69,7 +87,7 @@ class InputWidget extends StatelessWidget {
                             size: width * 0.06,
                           ),
                         )
-                      : null,
+                      : suff,
                   border: InputBorder.none,
                   enabled: enable ?? true),
             ),

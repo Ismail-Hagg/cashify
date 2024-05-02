@@ -1,6 +1,5 @@
 import 'package:cashify/widgets/custom_text_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
 WoltModalSheetPage modalPage(

@@ -1,6 +1,7 @@
 import 'package:cashify/pages/home_page/home_controller.dart';
 import 'package:cashify/utils/constants.dart';
 import 'package:cashify/utils/enums.dart';
+import 'package:cashify/widgets/add_category_widget.dart';
 import 'package:cashify/widgets/add_transaction_widget.dart';
 import 'package:cashify/widgets/modal_widget.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';
@@ -106,6 +107,8 @@ class HomeView extends StatelessWidget {
             backgroundColor: forgroundColor,
             onPressed: () {
               WoltModalSheet.show(
+                onModalDismissedWithBarrierTap: () => controller.modalClosed(),
+                onModalDismissedWithDrag: () => controller.modalClosed(),
                 context: context,
                 pageIndexNotifier: controller.modalIndex,
                 modalTypeBuilder: (context) => WoltModalType.bottomSheet,
@@ -117,22 +120,27 @@ class HomeView extends StatelessWidget {
                           .modalLeadingButtonAction(context: modalSheetContext),
                       context: modalSheetContext,
                       title: 'transadd'.tr,
-                      child: AddTransaction(
-                        width: MediaQuery.of(modalSheetContext).size.width,
+                      child: GestureDetector(
+                        onTap: () =>
+                            controller.dismissKeyboard(modalSheetContext),
+                        child: AddTransaction(
+                          width: MediaQuery.of(modalSheetContext).size.width,
+                        ),
                       ),
                       button: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: ButtonWidget(
-                            isIos: controller.isIos,
-                            textSize: 16,
-                            type: ButtonType.raised,
-                            onClick: () => controller.modalPageChange(page: 1),
-                            color: mainColor,
-                            height:
-                                MediaQuery.of(modalSheetContext).size.width *
-                                    0.125,
-                            width: MediaQuery.of(modalSheetContext).size.width,
-                            text: 'text'),
+                          isIos: controller.isIos,
+                          textSize: 16,
+                          type: ButtonType.raised,
+                          onClick: () => controller.modalPageChange(
+                              page: 1, context: modalSheetContext),
+                          color: mainColor,
+                          height: MediaQuery.of(modalSheetContext).size.width *
+                              0.125,
+                          width: MediaQuery.of(modalSheetContext).size.width,
+                          text: 'add'.tr,
+                        ),
                       ),
                     ),
                     modalPage(
@@ -140,25 +148,24 @@ class HomeView extends StatelessWidget {
                       leadingButtonFunction: () => controller
                           .modalLeadingButtonAction(context: modalSheetContext),
                       context: modalSheetContext,
-                      title: ';lakjdf',
-                      child: const Center(
-                        child: CustomText(
-                          text: 'love is not love',
-                        ),
+                      title: 'addcat'.tr,
+                      child: AddCategory(
+                        width: MediaQuery.of(modalSheetContext).size.width,
                       ),
                       button: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: ButtonWidget(
-                            isIos: controller.isIos,
-                            textSize: 16,
-                            type: ButtonType.raised,
-                            onClick: () => controller.modalPageChange(page: 0),
-                            color: mainColor,
-                            height:
-                                MediaQuery.of(modalSheetContext).size.width *
-                                    0.125,
-                            width: MediaQuery.of(modalSheetContext).size.width,
-                            text: 'another one'),
+                          isIos: controller.isIos,
+                          textSize: 16,
+                          type: ButtonType.raised,
+                          onClick: () => controller.modalPageChange(
+                              page: 0, context: modalSheetContext),
+                          color: mainColor,
+                          height: MediaQuery.of(modalSheetContext).size.width *
+                              0.125,
+                          width: MediaQuery.of(modalSheetContext).size.width,
+                          text: 'another one',
+                        ),
                       ),
                     ),
                   ];

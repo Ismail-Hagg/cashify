@@ -68,6 +68,14 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   };
   Map<String, int> get track => _track;
 
+  final Map<String, String> _operations = {
+    TransactionType.moneyIn.name: 'inc'.tr,
+    TransactionType.moneyOut.name: 'exx'.tr,
+    TransactionType.transfer.name: 'transfer'.tr
+  };
+
+  Map<String, String> get operators => _operations;
+
   String _chosenTime = 'thismnth'.tr;
   String get chosenTime => _chosenTime;
 
@@ -101,8 +109,58 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   final ValueNotifier<int> _modalIndex = ValueNotifier<int>(0);
   ValueNotifier<int> get modalIndex => _modalIndex;
 
-  DateTime _transactionChosenTime = DateTime.now();
-  DateTime get transactionChosenTime => _transactionChosenTime;
+  DateTime _transactionAddTime = DateTime.now();
+  DateTime get transactionAddTime => _transactionAddTime;
+
+  final TextEditingController _transactionAddController =
+      TextEditingController();
+  TextEditingController get transactionAddController =>
+      _transactionAddController;
+
+  final TextEditingController _commentController = TextEditingController();
+  TextEditingController get commentController => _commentController;
+
+  final TextEditingController _catAddController = TextEditingController();
+  TextEditingController get catAddController => _catAddController;
+
+  final FocusNode _catAddNode = FocusNode();
+  FocusNode get catAddNode => _catAddNode;
+
+  final TextEditingController _subCatAddController = TextEditingController();
+  TextEditingController get subCatAddController => _subCatAddController;
+
+  final FocusNode _subCatNode = FocusNode();
+  FocusNode get subCatNode => _subCatNode;
+
+  final FocusNode _transactionAddNode = FocusNode();
+  FocusNode get transactionAddNode => _transactionAddNode;
+
+  final FocusNode _commentNodee = FocusNode();
+  FocusNode get commentNodee => _commentNodee;
+
+  bool _isActive = false;
+  bool get isActive => _isActive;
+
+  bool _commentActive = false;
+  bool get commentActive => _commentActive;
+
+  bool _catNameActive = false;
+  bool get catNameActive => _catNameActive;
+
+  bool _subCatActive = false;
+  bool get subCatActive => _subCatActive;
+
+  TransactionType _transactionType = TransactionType.moneyOut;
+  TransactionType get transactionType => _transactionType;
+
+  String _transactionCurrency = '';
+  String get transactionCurrency => _transactionCurrency;
+
+  String _chosenCategory = '';
+  String get chosenCategory => _chosenCategory;
+
+  List<String> _subcats = [];
+  List<String> get subcats => _subcats;
 
   @override
   void onInit() {
@@ -112,26 +170,108 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     );
+    _transactionCurrency = _userModel.defaultCurrency;
     setTime();
+    setListeners();
   }
 
   @override
   void onClose() {
     super.onClose();
     _loadingController.dispose();
+    _transactionAddController.dispose();
+    _transactionAddNode.dispose();
+    _commentController.dispose();
+    _commentNodee.dispose();
+    _catAddController.dispose();
+    _catAddNode.dispose();
+    _subCatAddController.dispose();
+    _subCatNode.dispose();
+  }
+
+  // set chosen category
+  void setChosenCategory({required String category}) {
+    _chosenCategory = category;
+    update();
+  }
+
+  // set listeners
+  void setListeners() {
+    _transactionAddNode.addListener(() {
+      if (_transactionAddNode.hasFocus) {
+        _isActive = true;
+        update();
+      } else {
+        _isActive = false;
+        update();
+      }
+    });
+
+    _commentNodee.addListener(() {
+      if (_commentNodee.hasFocus) {
+        _commentActive = true;
+        update();
+      } else {
+        _commentActive = false;
+        update();
+      }
+    });
+
+    _catAddNode.addListener(() {
+      if (_catAddNode.hasFocus) {
+        _catNameActive = true;
+        update();
+      } else {
+        _catNameActive = false;
+        update();
+      }
+    });
+    _subCatNode.addListener(() {
+      if (_subCatNode.hasFocus) {
+        _subCatActive = true;
+        update();
+      } else {
+        _subCatActive = false;
+        update();
+      }
+    });
+  }
+
+  // set transaction type
+  void setTransactionType({required TransactionType type}) {
+    if (type != _transactionType) {
+      _transactionType = type;
+      update();
+    }
+  }
+
+  // set transaction currencey
+  void setTransactionCurrencey({required String currencey}) {
+    if (currencey != '') {
+      _transactionCurrency = currencey;
+    }
   }
 
   //modal leadig button
   void modalLeadingButtonAction({required BuildContext context}) {
     if (_modalIndex.value == 0) {
       Navigator.of(context).pop();
+      modalClosed();
     } else {
-      modalPageChange(page: 0);
+      modalPageChange(page: 0, context: context);
     }
   }
 
-  void modalPageChange({required int page}) {
+  // dismiss keyboard
+  void dismissKeyboard(context) {
+    FocusScope.of(context).unfocus();
+    _transactionAddNode.unfocus();
+    _commentNodee.unfocus();
+  }
+
+  void modalPageChange({required int page, required BuildContext context}) {
     if (_modalIndex.value != page) {
+      dismissKeyboard(context);
       _modalIndex.value = page;
     }
   }
@@ -140,6 +280,25 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   void chartSwitch() {
     _pieChart = !_pieChart;
     update();
+  }
+
+  // pick time for transaction
+  void transactionTime({required BuildContext context}) async {
+    await showCalendarDatePicker2Dialog(
+      context: context,
+      config: CalendarDatePicker2WithActionButtonsConfig(
+          calendarType: CalendarDatePicker2Type.single),
+      dialogSize: const Size(325, 400),
+      value: [],
+      borderRadius: BorderRadius.circular(15),
+    ).then(
+      (value) {
+        if (value != null && value.isNotEmpty) {
+          _transactionAddTime = value[0] as DateTime;
+          update();
+        }
+      },
+    );
   }
 
   // set start and end times
@@ -425,6 +584,17 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     } else {
       setPageIndex(pageIndex: 0);
     }
+  }
+
+  // modal dissmessed
+  void modalClosed() {
+    Get.back();
+    _transactionAddTime = DateTime.now();
+    _transactionType = TransactionType.moneyOut;
+    _transactionAddController.clear();
+    _chosenCategory = '';
+    _commentController.clear();
+    _modalIndex.value != 0 ? _modalIndex.value = 0 : null;
   }
 
   void recordSend(

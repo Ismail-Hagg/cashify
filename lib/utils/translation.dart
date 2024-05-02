@@ -40,7 +40,20 @@ class Translation extends Translations {
           'income': 'In',
           'expence': 'Out',
           'total': 'Total',
-          'transadd': 'Add a Transaction'
+          'transadd': 'Add a Transaction',
+          'amount': 'Amount',
+          'inc': 'Income',
+          'exx': 'Expense',
+          'transfer': 'Transfeer',
+          'category': 'Category',
+          'subcat': 'Sub Category',
+          'wallet': 'Wallet',
+          'fromwallet': 'From Wallet',
+          'towallet': 'To Wallet',
+          'note': 'Note',
+          'add': 'Add',
+          'addcat': 'Add a Category',
+          'catname': 'Category Name',
         },
         'ar_SA': {
           'email': 'البريد الالكتروني',
@@ -79,7 +92,20 @@ class Translation extends Translations {
           'income': 'دخل',
           'expence': 'صرف',
           'total': 'مجموع',
-          'transadd': 'اضافة عملية'
+          'transadd': 'اضافة عملية',
+          'amount': 'التكلفة',
+          'inc': 'دخل',
+          'exx': 'صرف',
+          'transfer': 'تحويل',
+          'category': 'الفئة',
+          'subcat': 'الفئة الفرعية',
+          'wallet': 'المحفظة',
+          'fromwallet': 'من محفظة',
+          'towallet': 'الى محفظة',
+          'note': 'ملاحظة',
+          'add': 'اضافة',
+          'addcat': 'اضافة فئه',
+          'catname': 'اسم الفئة'
         },
       };
 }
