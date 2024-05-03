@@ -41,7 +41,6 @@ class GloableAuthController extends GetxController {
 
   // update and save the user locally
   Future<bool> userChange({required UserModel model}) async {
-    print(model.email);
     try {
       _userModel = model;
       await userData.saveUser(model: model);

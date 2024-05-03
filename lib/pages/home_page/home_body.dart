@@ -535,7 +535,7 @@ class HomeBody extends StatelessWidget {
                           loading: controller.loading,
                           budgetPercent: 0.5,
                           width: width,
-                          color: controller.catList[index].color as Color,
+                          color: controller.catList[index].color,
                           title: controller.catList[index].name,
                           subtitle:
                               '${controller.catList[index].transactions!.length} transactions',
@@ -544,9 +544,7 @@ class HomeBody extends StatelessWidget {
                           ave:
                               '${'ave'.tr} ${controller.aveCalc(amount: controller.vals[controller.catList[index].name] as double, dates: controller.dates[controller.catList[index].name] as List<DateTime>).toStringAsFixed(2)}',
                           budget: true,
-                          icon: String2Icon.getIconDataFromString(
-                                  controller.catList[index].icon) ??
-                              FontAwesomeIcons.exclamation,
+                          icon: controller.catList[index].icon,
                           padding: const EdgeInsets.only(
                             right: 12,
                             left: 12,

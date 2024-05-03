@@ -54,6 +54,12 @@ class Translation extends Translations {
           'add': 'Add',
           'addcat': 'Add a Category',
           'catname': 'Category Name',
+          'icon': 'Icon',
+          'color': 'Color',
+          'ok': 'ok',
+          'catcolor': 'Category Color',
+          'editcat': 'Edit a Category',
+          'infoadd': 'Add Info'
         },
         'ar_SA': {
           'email': 'البريد الالكتروني',
@@ -105,7 +111,13 @@ class Translation extends Translations {
           'note': 'ملاحظة',
           'add': 'اضافة',
           'addcat': 'اضافة فئه',
-          'catname': 'اسم الفئة'
+          'catname': 'اسم الفئة',
+          'icon': 'الايقونه',
+          'color': 'اللون',
+          'ok': 'نعم',
+          'catcolor': 'لون الفئة',
+          'editcat': 'تعديل الفئة',
+          'infoadd': 'ادخل بيانات'
         },
       };
 }

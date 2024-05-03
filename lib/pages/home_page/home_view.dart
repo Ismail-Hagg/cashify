@@ -1,18 +1,11 @@
+import 'package:cashify/pages/add_transaction_page/add_transaction_view.dart';
 import 'package:cashify/pages/home_page/home_controller.dart';
 import 'package:cashify/utils/constants.dart';
-import 'package:cashify/utils/enums.dart';
-import 'package:cashify/widgets/add_category_widget.dart';
-import 'package:cashify/widgets/add_transaction_widget.dart';
-import 'package:cashify/widgets/modal_widget.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';
-import 'package:cashify/widgets/text_button_widget.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:stylish_bottom_bar/stylish_bottom_bar.dart';
-import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
 class HomeView extends StatelessWidget {
   const HomeView({super.key});
@@ -106,71 +99,7 @@ class HomeView extends StatelessWidget {
           child: FloatingActionButton(
             backgroundColor: forgroundColor,
             onPressed: () {
-              WoltModalSheet.show(
-                onModalDismissedWithBarrierTap: () => controller.modalClosed(),
-                onModalDismissedWithDrag: () => controller.modalClosed(),
-                context: context,
-                pageIndexNotifier: controller.modalIndex,
-                modalTypeBuilder: (context) => WoltModalType.bottomSheet,
-                pageListBuilder: (modalSheetContext) {
-                  return [
-                    modalPage(
-                      icon: const FaIcon(FontAwesomeIcons.xmark),
-                      leadingButtonFunction: () => controller
-                          .modalLeadingButtonAction(context: modalSheetContext),
-                      context: modalSheetContext,
-                      title: 'transadd'.tr,
-                      child: GestureDetector(
-                        onTap: () =>
-                            controller.dismissKeyboard(modalSheetContext),
-                        child: AddTransaction(
-                          width: MediaQuery.of(modalSheetContext).size.width,
-                        ),
-                      ),
-                      button: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: ButtonWidget(
-                          isIos: controller.isIos,
-                          textSize: 16,
-                          type: ButtonType.raised,
-                          onClick: () => controller.modalPageChange(
-                              page: 1, context: modalSheetContext),
-                          color: mainColor,
-                          height: MediaQuery.of(modalSheetContext).size.width *
-                              0.125,
-                          width: MediaQuery.of(modalSheetContext).size.width,
-                          text: 'add'.tr,
-                        ),
-                      ),
-                    ),
-                    modalPage(
-                      icon: const FaIcon(FontAwesomeIcons.arrowLeft),
-                      leadingButtonFunction: () => controller
-                          .modalLeadingButtonAction(context: modalSheetContext),
-                      context: modalSheetContext,
-                      title: 'addcat'.tr,
-                      child: AddCategory(
-                        width: MediaQuery.of(modalSheetContext).size.width,
-                      ),
-                      button: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: ButtonWidget(
-                          isIos: controller.isIos,
-                          textSize: 16,
-                          type: ButtonType.raised,
-                          onClick: () => controller.modalPageChange(
-                              page: 0, context: modalSheetContext),
-                          color: mainColor,
-                          height: MediaQuery.of(modalSheetContext).size.width *
-                              0.125,
-                          width: MediaQuery.of(modalSheetContext).size.width,
-                          text: 'another one',
-                        ),
-                      ),
-                    ),
-                  ];
-                },
-              );
+              Get.to(() => const AddTRansactionView());
             },
             child: FaIcon(
               FontAwesomeIcons.plus,

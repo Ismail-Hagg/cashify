@@ -68,14 +68,6 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   };
   Map<String, int> get track => _track;
 
-  final Map<String, String> _operations = {
-    TransactionType.moneyIn.name: 'inc'.tr,
-    TransactionType.moneyOut.name: 'exx'.tr,
-    TransactionType.transfer.name: 'transfer'.tr
-  };
-
-  Map<String, String> get operators => _operations;
-
   String _chosenTime = 'thismnth'.tr;
   String get chosenTime => _chosenTime;
 
@@ -138,18 +130,6 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   final FocusNode _commentNodee = FocusNode();
   FocusNode get commentNodee => _commentNodee;
 
-  bool _isActive = false;
-  bool get isActive => _isActive;
-
-  bool _commentActive = false;
-  bool get commentActive => _commentActive;
-
-  bool _catNameActive = false;
-  bool get catNameActive => _catNameActive;
-
-  bool _subCatActive = false;
-  bool get subCatActive => _subCatActive;
-
   TransactionType _transactionType = TransactionType.moneyOut;
   TransactionType get transactionType => _transactionType;
 
@@ -158,9 +138,6 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
 
   String _chosenCategory = '';
   String get chosenCategory => _chosenCategory;
-
-  List<String> _subcats = [];
-  List<String> get subcats => _subcats;
 
   @override
   void onInit() {
@@ -172,7 +149,6 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     );
     _transactionCurrency = _userModel.defaultCurrency;
     setTime();
-    setListeners();
   }
 
   @override
@@ -187,69 +163,6 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     _catAddNode.dispose();
     _subCatAddController.dispose();
     _subCatNode.dispose();
-  }
-
-  // set chosen category
-  void setChosenCategory({required String category}) {
-    _chosenCategory = category;
-    update();
-  }
-
-  // set listeners
-  void setListeners() {
-    _transactionAddNode.addListener(() {
-      if (_transactionAddNode.hasFocus) {
-        _isActive = true;
-        update();
-      } else {
-        _isActive = false;
-        update();
-      }
-    });
-
-    _commentNodee.addListener(() {
-      if (_commentNodee.hasFocus) {
-        _commentActive = true;
-        update();
-      } else {
-        _commentActive = false;
-        update();
-      }
-    });
-
-    _catAddNode.addListener(() {
-      if (_catAddNode.hasFocus) {
-        _catNameActive = true;
-        update();
-      } else {
-        _catNameActive = false;
-        update();
-      }
-    });
-    _subCatNode.addListener(() {
-      if (_subCatNode.hasFocus) {
-        _subCatActive = true;
-        update();
-      } else {
-        _subCatActive = false;
-        update();
-      }
-    });
-  }
-
-  // set transaction type
-  void setTransactionType({required TransactionType type}) {
-    if (type != _transactionType) {
-      _transactionType = type;
-      update();
-    }
-  }
-
-  // set transaction currencey
-  void setTransactionCurrencey({required String currencey}) {
-    if (currencey != '') {
-      _transactionCurrency = currencey;
-    }
   }
 
   //modal leadig button
@@ -273,6 +186,7 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     if (_modalIndex.value != page) {
       dismissKeyboard(context);
       _modalIndex.value = page;
+      update();
     }
   }
 
@@ -280,25 +194,6 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   void chartSwitch() {
     _pieChart = !_pieChart;
     update();
-  }
-
-  // pick time for transaction
-  void transactionTime({required BuildContext context}) async {
-    await showCalendarDatePicker2Dialog(
-      context: context,
-      config: CalendarDatePicker2WithActionButtonsConfig(
-          calendarType: CalendarDatePicker2Type.single),
-      dialogSize: const Size(325, 400),
-      value: [],
-      borderRadius: BorderRadius.circular(15),
-    ).then(
-      (value) {
-        if (value != null && value.isNotEmpty) {
-          _transactionAddTime = value[0] as DateTime;
-          update();
-        }
-      },
-    );
   }
 
   // set start and end times
@@ -425,7 +320,7 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
           Catagory(
             name: transaction.catagory,
             subCatagories: [transaction.subCatagory],
-            icon: 'car',
+            icon: Icons.drive_eta_outlined,
             color: generateRandomColor(prev: Colors.red),
             transactions: [transaction],
           ),
@@ -441,12 +336,15 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
           }
         }
         if (tracker == 0) {
-          _catList.add(Catagory(
+          _catList.add(
+            Catagory(
               name: transaction.catagory,
               subCatagories: [transaction.subCatagory],
-              icon: 'car',
+              icon: Icons.drive_eta_outlined,
               color: generateRandomColor(prev: Colors.blue),
-              transactions: [transaction]));
+              transactions: [transaction],
+            ),
+          );
         }
       }
 

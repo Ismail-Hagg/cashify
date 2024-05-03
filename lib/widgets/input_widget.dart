@@ -64,8 +64,8 @@ class InputWidget extends StatelessWidget {
         child: otherInput ??
             TextField(
               onSubmitted: onSub,
-              autofocus: autoFocus ?? false,
-              maxLines: maxLines,
+              //autofocus: autoFocus ?? false,
+              maxLines: obscurepass != null ? 1 : maxLines,
               inputFormatters: formatter,
               keyboardType: type,
               textInputAction: action,
