@@ -59,7 +59,8 @@ class Translation extends Translations {
           'ok': 'ok',
           'catcolor': 'Category Color',
           'editcat': 'Edit a Category',
-          'infoadd': 'Add Info'
+          'infoadd': 'Add Info',
+          'catdel': 'Delete Category',
         },
         'ar_SA': {
           'email': 'البريد الالكتروني',
@@ -117,7 +118,8 @@ class Translation extends Translations {
           'ok': 'نعم',
           'catcolor': 'لون الفئة',
           'editcat': 'تعديل الفئة',
-          'infoadd': 'ادخل بيانات'
+          'infoadd': 'ادخل بيانات',
+          'catdel': 'حذف الفئة'
         },
       };
 }

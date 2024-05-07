@@ -8,9 +8,8 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:get/get.dart';
 
 class AddCategory extends StatelessWidget {
-  final bool isNew;
   final double width;
-  const AddCategory({super.key, required this.isNew, required this.width});
+  const AddCategory({super.key, required this.width});
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +41,6 @@ class AddCategory extends StatelessWidget {
               maxLines: 1,
               onSub: (str) => controller.subCategorySubmit(
                 sub: str,
-                isNew: isNew,
               ),
             ),
           ),
@@ -52,21 +50,14 @@ class AddCategory extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: List.generate(
-                isNew
-                    ? controller.subcats.length
-                    : controller.catagory!.subCatagories.length,
+                controller.subcats.length,
                 (index) => Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12.0),
                   child: Chip(
                     onDeleted: () => controller.subDelete(
                       index: index,
-                      isNew: isNew,
                     ),
-                    label: CustomText(
-                      text: isNew
-                          ? controller.subcats[index]
-                          : controller.catagory!.subCatagories[index],
-                    ),
+                    label: CustomText(text: controller.subcats[index]),
                   ),
                 ),
               ),
@@ -80,18 +71,12 @@ class AddCategory extends StatelessWidget {
                   isIos: controller.isIos,
                   textSize: 16,
                   type: ButtonType.text,
-                  onClick: () =>
-                      controller.pickIcon(context: context, isNew: isNew),
+                  onClick: () => controller.pickIcon(context: context),
                   text: '${'icon'.tr} : ',
                 ),
-                isNew
-                    ? controller.catIcon != null
-                        ? Icon(controller.catIcon, size: 30)
-                        : Container()
-                    : Icon(
-                        controller.catagory!.icon,
-                        size: 30,
-                      )
+                controller.catIcon != null
+                    ? Icon(controller.catIcon, size: 30)
+                    : Container()
               ],
             ),
           ),
@@ -110,7 +95,7 @@ class AddCategory extends StatelessWidget {
                         child: ColorPicker(
                           pickerColor: Colors.red,
                           onColorChanged: (col) =>
-                              controller.changeColor(color: col, isNew: isNew),
+                              controller.changeColor(color: col),
                         ),
                       ),
                       actions: <Widget>[
@@ -130,9 +115,7 @@ class AddCategory extends StatelessWidget {
                   height: width * 0.1,
                   width: width * 0.1,
                   decoration: BoxDecoration(
-                    color: isNew
-                        ? controller.catColor
-                        : controller.catagory!.color,
+                    color: controller.catColor,
                     shape: BoxShape.circle,
                   ),
                 )

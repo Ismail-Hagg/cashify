@@ -20,9 +20,6 @@ class AddTransactionController extends GetxController {
   final bool _isIos = Get.find<GloableAuthController>().isIos;
   bool get isIos => _isIos;
 
-  Catagory? _catagory;
-  Catagory? get catagory => _catagory;
-
   DateTime _transactionAddTime = DateTime.now();
   DateTime get transactionAddTime => _transactionAddTime;
 
@@ -81,30 +78,17 @@ class AddTransactionController extends GetxController {
   String _transactionCurrency = '';
   String get transactionCurrency => _transactionCurrency;
 
-  final List<Catagory> _catList = [
-    Catagory(
-      name: 'thing',
-      subCatagories: ['subCatagories'],
-      icon: Icons.add,
-      color: Colors.red,
-    ),
-    Catagory(
-      name: 'other thing',
-      subCatagories: ['kool', 'dj lhalid'],
-      icon: Icons.golf_course,
-      color: Colors.green,
-    )
-  ];
-  List<Catagory> get catList => _catList;
-
-  List<String> _subcats = [];
-  List<String> get subcats => _subcats;
+  List<dynamic> _subcats = [];
+  List<dynamic> get subcats => _subcats;
 
   IconData? _catIcon;
   IconData? get catIcon => _catIcon;
 
   Color _catColor = backgroundColor;
   Color get catColor => _catColor;
+
+  bool _catDelete = false;
+  bool get catDelete => _catDelete;
 
   @override
   void onInit() {
@@ -121,21 +105,21 @@ class AddTransactionController extends GetxController {
 
   // set catagory
   void setCatagory({required Catagory cat}) {
-    Catagory newCat = Catagory(
-        name: cat.name,
-        subCatagories: cat.subCatagories,
-        icon: cat.icon,
-        color: cat.color);
-    _catagory = newCat;
+    for (var i = 0; i < cat.subCatagories.length; i++) {
+      _subcats.add(cat.subCatagories[i]);
+    }
+    _catIcon = cat.icon;
+    _catColor = cat.color;
     _catAddController.text = cat.name;
+    update();
   }
 
   // pick icon
-  void pickIcon({required BuildContext context, required bool isNew}) async {
+  void pickIcon({required BuildContext context}) async {
     showIconPicker(context).then(
       (value) {
         if (value != null) {
-          isNew ? _catIcon = value : _catagory!.icon = value;
+          _catIcon = value;
           update();
         }
       },
@@ -143,7 +127,9 @@ class AddTransactionController extends GetxController {
   }
 
   // add catagory button
-  void addCatagoryButton({required BuildContext context}) async {
+  void addCatagoryButton({
+    required BuildContext context,
+  }) async {
     if (_catAddController.text.trim() == '' ||
         _catIcon == null ||
         _catColor == backgroundColor) {
@@ -177,14 +163,65 @@ class AddTransactionController extends GetxController {
   }
 
   // update catagory
-  void updateCategory({required int index}) async {
-    print(_catagory!.toMap());
-    print(_userModel.catagories[index].toMap());
-    // if (_catagory!.toMap() == _userModel.catagories[index].toMap()) {
-    //   print('samseeeees');
-    // } else {
-    //   print('boooooooo');
-    // }
+  // apply dry principle later
+  void updateCategory(
+      {required BuildContext context, required int index}) async {
+    if (_catDelete) {
+      deleteCategory(index: index);
+    } else {
+      if (_catAddController.text.trim() == '' ||
+          _catIcon == null ||
+          _catColor == backgroundColor) {
+        showToast(
+            title: CustomText(text: 'infoadd'.tr),
+            context: context,
+            type: ToastificationType.error,
+            isEng: _userModel.language == 'en_US');
+      } else {
+        Catagory newCat = Catagory(
+            name: _catAddController.text.trim(),
+            subCatagories: _subcats,
+            icon: _catIcon as IconData,
+            color: _catColor);
+        _userModel.catagories[index] = newCat;
+
+        resetModal(back: true);
+        update();
+
+        // update user data locally
+        await updateUser(model: _userModel).then(
+          (value) async {
+            if (value) {
+              // update user data in backend
+              await updateUserFire(model: _userModel);
+            }
+          },
+        );
+      }
+    }
+  }
+
+  // delete category
+  void deleteCategory({required int index}) async {
+    Get.back();
+    _userModel.catagories.removeAt(index);
+    resetModal(back: true);
+    update();
+
+    // update user data locally
+    await updateUser(model: _userModel).then(
+      (value) async {
+        if (value) {
+          // update user data in backend
+          await updateUserFire(model: _userModel);
+        }
+      },
+    );
+  }
+
+  // catagory delete check
+  void catagoryDeleteCheck({required Widget widget}) {
+    Get.dialog(widget);
   }
 
   // update user locally
@@ -200,17 +237,18 @@ class AddTransactionController extends GetxController {
   // reset modal
   void resetModal({bool? back}) {
     back != null ? Get.back() : null;
-    _catagory = null;
+
     _catAddController.clear();
     _subCatAddController.clear();
     _subcats = [];
     _catIcon = null;
     _catColor = backgroundColor;
+    _catDelete = false;
   }
 
   // delete subcategories
-  void subDelete({required int index, required bool isNew}) {
-    isNew ? _subcats.removeAt(index) : _catagory!.subCatagories.removeAt(index);
+  void subDelete({required int index}) {
+    _subcats.removeAt(index);
     update();
   }
 
@@ -220,19 +258,20 @@ class AddTransactionController extends GetxController {
   }
 
   // sub catagory submitt
-  void subCategorySubmit({required String sub, required bool isNew}) {
+  void subCategorySubmit({required String sub}) {
     if (sub.trim() != '') {
-      isNew ? _subcats.add(sub.trim()) : _catagory!.subCatagories.add(sub);
+      _subcats.add(sub.trim());
       _subCatAddController.clear();
       _subCatNode.requestFocus();
+
       update();
     }
   }
 
   // change color
-  void changeColor({required Color color, required bool isNew}) {
+  void changeColor({required Color color}) {
     if (color != _catColor) {
-      isNew ? _catColor = color : _catagory!.color = color;
+      _catColor = color;
     }
   }
 

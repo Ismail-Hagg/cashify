@@ -202,7 +202,6 @@ class AddTRansactionView extends StatelessWidget {
                                         title: 'addcat'.tr,
                                         child: AddCategory(
                                           width: width,
-                                          isNew: true,
                                         ),
                                         button: Padding(
                                           padding: const EdgeInsets.all(16.0),
@@ -262,6 +261,29 @@ class AddTRansactionView extends StatelessWidget {
                                         pageListBuilder: (modalSheetContext) {
                                           return [
                                             modalPage(
+                                              trailing: true,
+                                              trailDel: () => controller
+                                                  .catagoryDeleteCheck(
+                                                      widget: AlertDialog(
+                                                actions: [
+                                                  ButtonWidget(
+                                                    isIos: controller.isIos,
+                                                    textSize: 12,
+                                                    type: ButtonType.text,
+                                                    onClick: () => controller
+                                                        .deleteCategory(
+                                                            index: index),
+                                                    text: 'ok'.tr,
+                                                  )
+                                                ],
+                                                title: CustomText(
+                                                  size: 14,
+                                                  text:
+                                                      '${'catdel'.tr} ${controller.userModel.catagories[index].name}',
+                                                ),
+                                              )),
+                                              delIcon: const FaIcon(
+                                                  FontAwesomeIcons.trash),
                                               icon: const FaIcon(
                                                   FontAwesomeIcons.xmark),
                                               leadingButtonFunction: () =>
@@ -271,7 +293,6 @@ class AddTRansactionView extends StatelessWidget {
                                               title: 'editcat'.tr,
                                               child: AddCategory(
                                                 width: width,
-                                                isNew: false,
                                               ),
                                               button: Padding(
                                                 padding:
@@ -282,6 +303,7 @@ class AddTRansactionView extends StatelessWidget {
                                                   type: ButtonType.raised,
                                                   onClick: () =>
                                                       controller.updateCategory(
+                                                          context: context,
                                                           index: index),
                                                   color: mainColor,
                                                   height: MediaQuery.of(
@@ -321,9 +343,6 @@ class AddTRansactionView extends StatelessWidget {
                           dropdownMenuEntries: List.generate(
                             controller.chosenCategory != ''
                                 ? controller.userModel.catagories
-                                    .where((element) =>
-                                        element.name ==
-                                        controller.chosenCategory)
                                     .firstWhere((element) =>
                                         element.name ==
                                         controller.chosenCategory)
@@ -331,16 +350,14 @@ class AddTRansactionView extends StatelessWidget {
                                     .length
                                 : 0,
                             (index) {
-                              Catagory? catagory =
-                                  controller.chosenCategory == ''
-                                      ? null
-                                      : controller.userModel.catagories
-                                          .where((element) =>
-                                              element.name ==
-                                              controller.chosenCategory)
-                                          .firstWhere((element) =>
-                                              element.name ==
-                                              controller.chosenCategory);
+                              Catagory? catagory = controller.chosenCategory ==
+                                      ''
+                                  ? null
+                                  : controller.userModel.catagories.firstWhere(
+                                      (element) =>
+                                          element.name ==
+                                          controller.chosenCategory,
+                                    );
                               return DropdownMenuEntry(
                                 label: catagory!.subCatagories[index],
                                 value: catagory.subCatagories[index],
