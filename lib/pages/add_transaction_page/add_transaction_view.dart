@@ -3,6 +3,7 @@ import 'package:cashify/pages/add_transaction_page/add_transaction_controller.da
 import 'package:cashify/utils/constants.dart';
 import 'package:cashify/utils/enums.dart';
 import 'package:cashify/widgets/add_category_widget.dart';
+import 'package:cashify/widgets/add_wallet_widget.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';
 import 'package:cashify/widgets/icon_button.dart';
 import 'package:cashify/widgets/input_widget.dart';
@@ -30,7 +31,9 @@ class AddTRansactionView extends StatelessWidget {
         elevation: 0.5,
         centerTitle: true,
         title: CustomText(
-          text: 'transadd'.tr,
+          text: Get.find<AddTransactionController>().newTransaction
+              ? 'transadd'.tr
+              : 'edittransaction'.tr,
           color: mainColor,
         ),
         iconTheme: IconThemeData(color: mainColor),
@@ -63,25 +66,27 @@ class AddTRansactionView extends StatelessWidget {
                             controller.transactionAddTime,
                           ),
                         ),
-                        Row(
-                          children: [
-                            IconButtonPlatform(
-                              isIos: controller.isIos,
-                              icon: FontAwesomeIcons.camera,
-                              color: mainColor,
-                              click: () {},
-                            ),
-                            SizedBox(
-                              width: width * 0.025,
-                            ),
-                            IconButtonPlatform(
-                              isIos: controller.isIos,
-                              icon: FontAwesomeIcons.commentSms,
-                              color: mainColor,
-                              click: () {},
-                            ),
-                          ],
-                        ),
+                        if (controller.newTransaction) ...[
+                          Row(
+                            children: [
+                              IconButtonPlatform(
+                                isIos: controller.isIos,
+                                icon: FontAwesomeIcons.camera,
+                                color: mainColor,
+                                click: () {},
+                              ),
+                              SizedBox(
+                                width: width * 0.025,
+                              ),
+                              IconButtonPlatform(
+                                isIos: controller.isIos,
+                                icon: FontAwesomeIcons.commentSms,
+                                color: mainColor,
+                                click: () {},
+                              ),
+                            ],
+                          ),
+                        ]
                       ],
                     ),
                     Row(
@@ -145,7 +150,7 @@ class AddTRansactionView extends StatelessWidget {
                           CountryPickerDropdown(
                             initialValue:
                                 CountryPickerUtils.getCountryByCurrencyCode(
-                                        controller.userModel.defaultCurrency)
+                                        controller.transactionCurrency)
                                     .isoCode,
                             itemBuilder: (Country country) => SizedBox(
                               height: width * 0.14,
@@ -177,6 +182,7 @@ class AddTRansactionView extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6.0),
                         child: DropdownMenu(
+                          onSelected: (val) => controller.reload(),
                           trailingIcon: FittedBox(
                             child: IconButtonPlatform(
                               isIos: controller.isIos,
@@ -234,8 +240,7 @@ class AddTRansactionView extends StatelessWidget {
                           ),
                           hintText: 'category'.tr,
                           expandedInsets: const EdgeInsets.all(0),
-                          onSelected: (cat) =>
-                              controller.setChosenCategory(category: cat ?? ''),
+                          controller: controller.catController,
                           dropdownMenuEntries: List.generate(
                             controller.userModel.catagories.length,
                             (index) {
@@ -264,24 +269,30 @@ class AddTRansactionView extends StatelessWidget {
                                               trailing: true,
                                               trailDel: () => controller
                                                   .catagoryDeleteCheck(
-                                                      widget: AlertDialog(
-                                                actions: [
-                                                  ButtonWidget(
-                                                    isIos: controller.isIos,
-                                                    textSize: 12,
-                                                    type: ButtonType.text,
-                                                    onClick: () => controller
-                                                        .deleteCategory(
-                                                            index: index),
-                                                    text: 'ok'.tr,
-                                                  )
-                                                ],
-                                                title: CustomText(
-                                                  size: 14,
-                                                  text:
-                                                      '${'catdel'.tr} ${controller.userModel.catagories[index].name}',
+                                                widget: AlertDialog(
+                                                  actions: [
+                                                    ButtonWidget(
+                                                      isIos: controller.isIos,
+                                                      textSize: 12,
+                                                      type: ButtonType.text,
+                                                      onClick: () => controller
+                                                          .deleteCategory(
+                                                        catNAme: controller
+                                                            .userModel
+                                                            .catagories[index]
+                                                            .name,
+                                                        index: index,
+                                                      ),
+                                                      text: 'ok'.tr,
+                                                    )
+                                                  ],
+                                                  title: CustomText(
+                                                    size: 14,
+                                                    text:
+                                                        '${'catdel'.tr} ${controller.userModel.catagories[index].name}',
+                                                  ),
                                                 ),
-                                              )),
+                                              ),
                                               delIcon: const FaIcon(
                                                   FontAwesomeIcons.trash),
                                               icon: const FaIcon(
@@ -337,27 +348,42 @@ class AddTRansactionView extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6.0),
                         child: DropdownMenu(
-                          enabled: controller.chosenCategory != '',
+                          enabled: controller.catController.text != '',
+                          controller: controller.subcatController,
                           hintText: 'subcat'.tr,
                           expandedInsets: const EdgeInsets.all(0),
                           dropdownMenuEntries: List.generate(
-                            controller.chosenCategory != ''
+                            controller.catController.text != ''
                                 ? controller.userModel.catagories
-                                    .firstWhere((element) =>
-                                        element.name ==
-                                        controller.chosenCategory)
+                                    .firstWhere(
+                                      (element) =>
+                                          element.name ==
+                                          controller.catController.text,
+                                      orElse: () => Catagory(
+                                          name:
+                                              '${controller.catController.text} - ${'notsaved'.tr}',
+                                          subCatagories: [],
+                                          icon: Icons.add,
+                                          color: Colors.transparent),
+                                    )
                                     .subCatagories
                                     .length
                                 : 0,
                             (index) {
-                              Catagory? catagory = controller.chosenCategory ==
+                              Catagory? catagory = controller
+                                          .catController.text ==
                                       ''
                                   ? null
                                   : controller.userModel.catagories.firstWhere(
                                       (element) =>
                                           element.name ==
-                                          controller.chosenCategory,
-                                    );
+                                          controller.catController.text,
+                                      orElse: () => Catagory(
+                                          name:
+                                              '${controller.catController.text} - ${'notsaved'.tr}',
+                                          subCatagories: [],
+                                          icon: Icons.add,
+                                          color: Colors.transparent));
                               return DropdownMenuEntry(
                                 label: catagory!.subCatagories[index],
                                 value: catagory.subCatagories[index],
@@ -369,12 +395,59 @@ class AddTRansactionView extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6.0),
                         child: DropdownMenu(
+                          controller: controller.chosenWallet,
                           trailingIcon: FittedBox(
                             child: IconButtonPlatform(
                               isIos: controller.isIos,
                               icon: FontAwesomeIcons.plus,
                               color: Colors.grey.shade600,
-                              click: () {},
+                              click: () {
+                                WoltModalSheet.show(
+                                  onModalDismissedWithBarrierTap: () =>
+                                      controller.resetWalletModel(back: true),
+                                  onModalDismissedWithDrag: () =>
+                                      controller.resetWalletModel(),
+                                  context: context,
+                                  modalTypeBuilder: (context) =>
+                                      WoltModalType.bottomSheet,
+                                  pageListBuilder: (modalSheetContext) {
+                                    return [
+                                      modalPage(
+                                        icon: const FaIcon(
+                                            FontAwesomeIcons.xmark),
+                                        leadingButtonFunction: () => controller
+                                            .resetWalletModel(back: true),
+                                        context: modalSheetContext,
+                                        title: 'addwallet'.tr,
+                                        child: AddWallet(
+                                          width: width,
+                                        ),
+                                        button: Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: ButtonWidget(
+                                            isIos: controller.isIos,
+                                            textSize: 16,
+                                            type: ButtonType.raised,
+                                            onClick: () => controller.addWallet(
+                                                context: modalSheetContext),
+                                            color: mainColor,
+                                            height:
+                                                MediaQuery.of(modalSheetContext)
+                                                        .size
+                                                        .width *
+                                                    0.125,
+                                            width:
+                                                MediaQuery.of(modalSheetContext)
+                                                    .size
+                                                    .width,
+                                            text: 'addwallet'.tr,
+                                          ),
+                                        ),
+                                      ),
+                                    ];
+                                  },
+                                );
+                              },
                             ),
                           ),
                           hintText: 'wallet'.tr,
@@ -383,14 +456,6 @@ class AddTRansactionView extends StatelessWidget {
                             controller.userModel.wallets.length,
                             (index) {
                               return DropdownMenuEntry(
-                                trailingIcon: FittedBox(
-                                  child: IconButtonPlatform(
-                                    isIos: controller.isIos,
-                                    icon: FontAwesomeIcons.penToSquare,
-                                    color: Colors.grey.shade400,
-                                    click: () {},
-                                  ),
-                                ),
                                 label: controller.userModel.wallets[index].name,
                                 value: controller.userModel.wallets[index].name,
                               );
@@ -404,14 +469,7 @@ class AddTRansactionView extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6.0),
                         child: DropdownMenu(
-                          trailingIcon: FittedBox(
-                            child: IconButtonPlatform(
-                              isIos: controller.isIos,
-                              icon: FontAwesomeIcons.plus,
-                              color: Colors.grey.shade600,
-                              click: () {},
-                            ),
-                          ),
+                          controller: controller.fromWalletTransaction,
                           hintText: 'fromwallet'.tr,
                           expandedInsets: const EdgeInsets.all(0),
                           dropdownMenuEntries: List.generate(
@@ -428,14 +486,7 @@ class AddTRansactionView extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6.0),
                         child: DropdownMenu(
-                          trailingIcon: FittedBox(
-                            child: IconButtonPlatform(
-                              isIos: controller.isIos,
-                              icon: FontAwesomeIcons.plus,
-                              color: Colors.grey.shade600,
-                              click: () {},
-                            ),
-                          ),
+                          controller: controller.toWalletTransaction,
                           hintText: 'towallet'.tr,
                           expandedInsets: const EdgeInsets.all(0),
                           dropdownMenuEntries: List.generate(
@@ -468,10 +519,14 @@ class AddTRansactionView extends StatelessWidget {
                         width: width,
                         height: width * 0.125,
                         isIos: false,
-                        text: 'thing',
+                        text: controller.newTransaction
+                            ? 'transadd'.tr
+                            : 'edittransaction'.tr,
                         textSize: 16,
                         type: ButtonType.raised,
-                        onClick: () {},
+                        onClick: () => controller.transactionOperation(
+                            update: !controller.newTransaction,
+                            context: context),
                       ),
                     )
                   ],

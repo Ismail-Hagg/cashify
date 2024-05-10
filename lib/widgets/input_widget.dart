@@ -24,6 +24,7 @@ class InputWidget extends StatelessWidget {
   final int? maxLines;
   final bool? autoFocus;
   final Function(String str)? onSub;
+  final List<BoxShadow>? shadowList;
 
   const InputWidget({
     super.key,
@@ -47,6 +48,7 @@ class InputWidget extends StatelessWidget {
     this.maxLines,
     this.autoFocus,
     this.onSub,
+    this.shadowList,
   });
 
   @override
@@ -55,6 +57,7 @@ class InputWidget extends StatelessWidget {
       height: height,
       width: width,
       decoration: BoxDecoration(
+        boxShadow: shadowList,
         color: color ?? Colors.grey[200],
         borderRadius: BorderRadius.circular(7),
         border: Border.all(color: active ? mainColor : Colors.transparent),

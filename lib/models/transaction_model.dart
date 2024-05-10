@@ -1,6 +1,6 @@
 import 'package:cashify/utils/enums.dart';
 
-class Transaction {
+class TransactionModel {
   String catagory;
   String subCatagory;
   String currency;
@@ -11,7 +11,7 @@ class Transaction {
   String wallet;
   String fromWallet;
   String toWallet;
-  Transaction({
+  TransactionModel({
     required this.catagory,
     required this.subCatagory,
     required this.currency,
@@ -39,8 +39,8 @@ class Transaction {
     };
   }
 
-  factory Transaction.fromMap(Map<String, dynamic> map) {
-    return Transaction(
+  factory TransactionModel.fromMap(Map<String, dynamic> map) {
+    return TransactionModel(
       catagory: map['catagory'],
       subCatagory: map['subCatagory'],
       currency: map['currency'],

@@ -7,7 +7,7 @@ class Catagory {
   List<dynamic> subCatagories;
   IconData icon;
   Color color;
-  List<Transaction>? transactions;
+  List<TransactionModel>? transactions;
 
   Catagory(
       {required this.name,

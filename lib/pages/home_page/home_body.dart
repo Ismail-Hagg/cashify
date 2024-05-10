@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:cashify/pages/home_page/home_controller.dart';
 import 'package:cashify/utils/constants.dart';
 import 'package:cashify/utils/enums.dart';
@@ -9,7 +7,6 @@ import 'package:cashify/widgets/custom_text_widget.dart';
 import 'package:cashify/widgets/expense_tile_widget.dart';
 import 'package:cashify/widgets/icon_button.dart';
 import 'package:cashify/widgets/text_button_widget.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_animated_icons/icons8.dart';
@@ -18,8 +15,6 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:mrx_charts/mrx_charts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import 'package:string_2_icon/string_2_icon.dart';
-import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
 class HomeBody extends StatelessWidget {
   const HomeBody({super.key});
@@ -81,18 +76,6 @@ class HomeBody extends StatelessWidget {
                                   );
                                 },
                               ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: width * 0.12,
-                          height: width * 0.12,
-                          child: Center(
-                            child: IconButtonPlatform(
-                              isIos: controller.isIos,
-                              icon: FontAwesomeIcons.plus,
-                              color: mainColor,
-                              click: () {},
                             ),
                           ),
                         ),
@@ -285,7 +268,7 @@ class HomeBody extends StatelessWidget {
                                                                               .valsDown
                                                                               .keys
                                                                               .elementAt(index))
-                                                                  .color as Color,
+                                                                  .color,
                                                               label: 'thing'),
                                                     ),
                                                   ],
@@ -392,7 +375,7 @@ class HomeBody extends StatelessWidget {
                                                     : catagory.name ==
                                                         controller.valsDown.keys
                                                             .elementAt(index))
-                                            .color as Color,
+                                            .color,
                                         catagory: controller.showIncome
                                             ? controller.valsUp.keys
                                                 .elementAt(index)

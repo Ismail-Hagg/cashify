@@ -24,6 +24,24 @@ class FirebaseService {
     await _ref.doc(userId).collection(path).doc().set(map);
   }
 
+  // update records
+  Future<void> updateRecord(
+      {required String path,
+      required String recId,
+      required String userId,
+      required Map<String, dynamic> map}) async {
+    await _ref.doc(userId).collection(path).doc(recId).update(map);
+  }
+
+  // update records
+  Future<void> deleteRecord({
+    required String path,
+    required String recId,
+    required String userId,
+  }) async {
+    await _ref.doc(userId).collection(path).doc(recId).delete();
+  }
+
   // get the current user's data
   Future<DocumentSnapshot> getCurrentUser({required String userId}) async {
     return await _ref.doc(userId).get();

@@ -285,7 +285,7 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     _valsDown = {};
     _dates = {};
     for (var i = 0; i < fakeData.length; i++) {
-      Transaction transaction = Transaction.fromMap(fakeData[i]);
+      TransactionModel transaction = TransactionModel.fromMap(fakeData[i]);
 
       _dates[transaction.catagory] != null
           ? _dates[transaction.catagory]!.add(transaction.date)

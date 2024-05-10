@@ -1,6 +1,8 @@
+import 'package:cashify/models/transaction_model.dart';
 import 'package:cashify/pages/add_transaction_page/add_transaction_view.dart';
 import 'package:cashify/pages/home_page/home_controller.dart';
 import 'package:cashify/utils/constants.dart';
+import 'package:cashify/utils/enums.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -99,7 +101,24 @@ class HomeView extends StatelessWidget {
           child: FloatingActionButton(
             backgroundColor: forgroundColor,
             onPressed: () {
-              Get.to(() => const AddTRansactionView());
+              Get.to(
+                () => const AddTRansactionView(),
+                // arguments: {
+                //   'model': TransactionModel(
+                //     catagory: 'foods',
+                //     subCatagory: 'thinini',
+                //     currency: "ars",
+                //     amount: 900.3,
+                //     note: 'hello from the under workd',
+                //     date: DateTime(2021, 12, 9),
+                //     wallet: 'fish',
+                //     fromWallet: 'fromWallet',
+                //     toWallet: '',
+                //     type: TransactionType.moneyIn,
+                //   ),
+                //   'id': 'id ma man'
+                // },
+              );
             },
             child: FaIcon(
               FontAwesomeIcons.plus,

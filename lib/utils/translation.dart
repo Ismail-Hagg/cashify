@@ -61,6 +61,10 @@ class Translation extends Translations {
           'editcat': 'Edit a Category',
           'infoadd': 'Add Info',
           'catdel': 'Delete Category',
+          'addwallet': 'Add a Wallet',
+          'walletname': 'Wallet Name',
+          'edittransaction': 'Edit Transaction',
+          'notsaved': 'Not Saved',
         },
         'ar_SA': {
           'email': 'البريد الالكتروني',
@@ -119,7 +123,11 @@ class Translation extends Translations {
           'catcolor': 'لون الفئة',
           'editcat': 'تعديل الفئة',
           'infoadd': 'ادخل بيانات',
-          'catdel': 'حذف الفئة'
+          'catdel': 'حذف الفئة',
+          'addwallet': 'اضافة محفظة',
+          'walletname': 'اسم المحفظة',
+          'edittransaction': 'تعديل عملية',
+          'notsaved': 'غير محفوظ'
         },
       };
 }

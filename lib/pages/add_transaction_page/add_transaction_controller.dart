@@ -1,13 +1,18 @@
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:cashify/gloable_controllers/auth_controller.dart';
 import 'package:cashify/models/catagory_model.dart';
+import 'package:cashify/models/transaction_model.dart';
 import 'package:cashify/models/user_model.dart';
+import 'package:cashify/models/wallet_model.dart';
+import 'package:cashify/pages/home_page/home_controller.dart';
 import 'package:cashify/services/firebase_service.dart';
 import 'package:cashify/utils/constants.dart';
 import 'package:cashify/utils/enums.dart';
 import 'package:cashify/utils/util_functions.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_iconpicker/flutter_iconpicker.dart';
 import 'package:get/get.dart';
 import 'package:toastification/toastification.dart';
@@ -17,13 +22,19 @@ class AddTransactionController extends GetxController {
   late UserModel _userModel;
   UserModel get userModel => _userModel;
 
+  late TransactionModel? _transaction;
+  TransactionModel? get transaction => _transaction;
+
+  late String? _transactionId;
+  String? get transactionId => _transactionId;
+
   final bool _isIos = Get.find<GloableAuthController>().isIos;
   bool get isIos => _isIos;
 
-  DateTime _transactionAddTime = DateTime.now();
+  late DateTime _transactionAddTime;
   DateTime get transactionAddTime => _transactionAddTime;
 
-  TransactionType _transactionType = TransactionType.moneyOut;
+  late TransactionType _transactionType;
   TransactionType get transactionType => _transactionType;
 
   final Map<String, String> _operations = {
@@ -36,9 +47,6 @@ class AddTransactionController extends GetxController {
 
   bool _isActive = false;
   bool get isActive => _isActive;
-
-  String _chosenCategory = '';
-  String get chosenCategory => _chosenCategory;
 
   final TextEditingController _transactionAddController =
       TextEditingController();
@@ -57,6 +65,12 @@ class AddTransactionController extends GetxController {
   final TextEditingController _subCatAddController = TextEditingController();
   TextEditingController get subCatAddController => _subCatAddController;
 
+  final TextEditingController _walletNameController = TextEditingController();
+  TextEditingController get walletNameController => _walletNameController;
+
+  final TextEditingController _walletAmountController = TextEditingController();
+  TextEditingController get walletAmountController => _walletAmountController;
+
   final FocusNode _subCatNode = FocusNode();
   FocusNode get subCatNode => _subCatNode;
 
@@ -65,6 +79,12 @@ class AddTransactionController extends GetxController {
 
   final FocusNode _commentNodee = FocusNode();
   FocusNode get commentNodee => _commentNodee;
+
+  final FocusNode _walletNameNode = FocusNode();
+  FocusNode get walletNameNode => _walletNameNode;
+
+  final FocusNode _walletAmountNode = FocusNode();
+  FocusNode get walletAmountNode => _walletAmountNode;
 
   bool _commentActive = false;
   bool get commentActive => _commentActive;
@@ -75,7 +95,13 @@ class AddTransactionController extends GetxController {
   bool _subCatActive = false;
   bool get subCatActive => _subCatActive;
 
-  String _transactionCurrency = '';
+  bool _walletNameActive = false;
+  bool get walletNameActive => _walletNameActive;
+
+  bool _walletAmountActive = false;
+  bool get walletAmountActive => _walletAmountActive;
+
+  late String _transactionCurrency;
   String get transactionCurrency => _transactionCurrency;
 
   List<dynamic> _subcats = [];
@@ -87,13 +113,36 @@ class AddTransactionController extends GetxController {
   Color _catColor = backgroundColor;
   Color get catColor => _catColor;
 
-  bool _catDelete = false;
-  bool get catDelete => _catDelete;
+  String _walletCurrency = '';
+  String get walletCurrency => _walletCurrency;
+
+  final TextEditingController _chosenWallet = TextEditingController();
+  TextEditingController get chosenWallet => _chosenWallet;
+
+  final TextEditingController _fromWalletTransaction = TextEditingController();
+  TextEditingController get fromWalletTransaction => _fromWalletTransaction;
+
+  final TextEditingController _toWalletTransaction = TextEditingController();
+  TextEditingController get toWalletTransaction => _toWalletTransaction;
+
+  final TextEditingController _catController = TextEditingController();
+  TextEditingController get catController => _catController;
+
+  final TextEditingController _subcatController = TextEditingController();
+  TextEditingController get subcatController => _subcatController;
+
+  late bool _newTransaction;
+  bool get newTransaction => _newTransaction;
 
   @override
   void onInit() {
     super.onInit();
+    _transaction = Get.arguments == null ? null : Get.arguments['model'];
+    _transactionId = Get.arguments == null ? null : Get.arguments['id'];
     _userModel = Get.find<GloableAuthController>().userModel;
+    _walletCurrency = _userModel.defaultCurrency;
+
+    initTransaction();
     setListeners();
   }
 
@@ -101,6 +150,126 @@ class AddTransactionController extends GetxController {
   void onClose() {
     super.onClose();
     dosposeResource();
+  }
+
+  // before adding or updating transaction
+  void transactionOperation({
+    required bool update,
+    required BuildContext context,
+  }) {
+    if (_transactionAddController.text.trim() == '' ||
+        _catController.text.trim() == '' ||
+        _chosenWallet.text.trim() == '') {
+      showToast(
+        title: CustomText(text: 'infoadd'.tr),
+        context: context,
+        type: ToastificationType.error,
+        isEng: _userModel.language == 'en_US',
+      );
+    } else {
+      TransactionModel model = TransactionModel(
+          catagory: _catController.text.trim(),
+          subCatagory: _subcatController.text.trim(),
+          currency: _transactionCurrency,
+          amount: double.parse(_transactionAddController.text.trim()),
+          note: _commentController.text.trim(),
+          date: _transactionAddTime,
+          wallet: _chosenWallet.text.trim(),
+          fromWallet: _fromWalletTransaction.text.trim(),
+          toWallet: _toWalletTransaction.text.trim(),
+          type: _transactionType);
+      update
+          ? updateTransactioin(transaction: model, recId: _transactionId ?? '')
+          : addTransactioin(transaction: model);
+      Get.back();
+    }
+  }
+
+  // adding transaction
+  void addTransactioin({required TransactionModel transaction}) async {
+    await _firebaseService.addRecord(
+      path: FirebasePaths.transactions.name,
+      userId: _userModel.userId,
+      map: transaction.toMap(),
+    );
+  }
+
+  // update transaction
+  void updateTransactioin(
+      {required TransactionModel transaction, required String recId}) async {
+    await _firebaseService.updateRecord(
+      path: FirebasePaths.transactions.name,
+      recId: recId,
+      userId: _userModel.userId,
+      map: transaction.toMap(),
+    );
+  }
+
+  // decide if new transaction or editing existing transaction
+  void initTransaction() {
+    _newTransaction = _transaction == null;
+    _walletAmountController.text = '0';
+    if (_newTransaction) {
+      _transactionAddTime = DateTime.now();
+      _transactionType = TransactionType.moneyOut;
+      _transactionCurrency = _userModel.defaultCurrency;
+    } else {
+      _transactionAddTime = _transaction!.date;
+      _transactionType = _transaction!.type;
+      _transactionAddController.text = _transaction!.amount.toString();
+      _transactionCurrency = _transaction!.currency;
+      _chosenWallet.text = _transaction!.wallet;
+      _fromWalletTransaction.text = _transaction!.fromWallet;
+      _toWalletTransaction.text = _transaction!.toWallet;
+      _commentController.text = _transaction!.note;
+      _catController.text = _transaction!.catagory;
+      _subcatController.text = _transaction!.subCatagory;
+    }
+  }
+
+  // add a wallet
+  void addWallet({required BuildContext context}) async {
+    if (_walletNameController.text.trim() == '' ||
+        _walletAmountController.text.trim() == '') {
+      showToast(
+        title: CustomText(text: 'infoadd'.tr),
+        context: context,
+        type: ToastificationType.error,
+        isEng: _userModel.language == 'en_US',
+      );
+    } else {
+      Wallet wallet = Wallet(
+          name: _walletNameController.text.trim(),
+          amount: double.parse(_walletAmountController.text.trim()),
+          currency: _walletCurrency);
+      _userModel.wallets.add(wallet);
+      resetWalletModel(back: true);
+      Get.find<HomeController>().update();
+      // update user data locally
+      await updateUser(model: _userModel).then(
+        (value) async {
+          if (value) {
+            // update user data in backend
+            await updateUserFire(model: _userModel);
+          }
+        },
+      );
+    }
+  }
+
+  // set wallet ccurrency
+  void setWalletCurrency({required String currency}) {
+    if (currency.trim() != '') {
+      _walletCurrency = currency.trim();
+    }
+  }
+
+  // wallet modal reset
+  void resetWalletModel({bool? back}) {
+    back != null ? Get.back() : null;
+    _walletNameController.clear();
+    _walletAmountController.text = '0';
+    _walletCurrency = _userModel.defaultCurrency;
   }
 
   // set catagory
@@ -166,44 +335,43 @@ class AddTransactionController extends GetxController {
   // apply dry principle later
   void updateCategory(
       {required BuildContext context, required int index}) async {
-    if (_catDelete) {
-      deleteCategory(index: index);
+    if (_catAddController.text.trim() == '' ||
+        _catIcon == null ||
+        _catColor == backgroundColor) {
+      showToast(
+          title: CustomText(text: 'infoadd'.tr),
+          context: context,
+          type: ToastificationType.error,
+          isEng: _userModel.language == 'en_US');
     } else {
-      if (_catAddController.text.trim() == '' ||
-          _catIcon == null ||
-          _catColor == backgroundColor) {
-        showToast(
-            title: CustomText(text: 'infoadd'.tr),
-            context: context,
-            type: ToastificationType.error,
-            isEng: _userModel.language == 'en_US');
-      } else {
-        Catagory newCat = Catagory(
-            name: _catAddController.text.trim(),
-            subCatagories: _subcats,
-            icon: _catIcon as IconData,
-            color: _catColor);
-        _userModel.catagories[index] = newCat;
+      Catagory newCat = Catagory(
+          name: _catAddController.text.trim(),
+          subCatagories: _subcats,
+          icon: _catIcon as IconData,
+          color: _catColor);
+      _userModel.catagories[index] = newCat;
 
-        resetModal(back: true);
-        update();
+      resetModal(back: true);
+      update();
 
-        // update user data locally
-        await updateUser(model: _userModel).then(
-          (value) async {
-            if (value) {
-              // update user data in backend
-              await updateUserFire(model: _userModel);
-            }
-          },
-        );
-      }
+      // update user data locally
+      await updateUser(model: _userModel).then(
+        (value) async {
+          if (value) {
+            // update user data in backend
+            await updateUserFire(model: _userModel);
+          }
+        },
+      );
     }
   }
 
   // delete category
-  void deleteCategory({required int index}) async {
+  void deleteCategory({required int index, required String catNAme}) async {
     Get.back();
+    if (_catController.text.trim() == catNAme) {
+      _catController.text = '';
+    }
     _userModel.catagories.removeAt(index);
     resetModal(back: true);
     update();
@@ -243,7 +411,6 @@ class AddTransactionController extends GetxController {
     _subcats = [];
     _catIcon = null;
     _catColor = backgroundColor;
-    _catDelete = false;
   }
 
   // delete subcategories
@@ -291,6 +458,15 @@ class AddTransactionController extends GetxController {
     _catAddNode.dispose();
     _subCatAddController.dispose();
     _subCatNode.dispose();
+    _walletNameNode.dispose();
+    _walletNameController.dispose();
+    _walletAmountController.dispose();
+    _walletAmountNode.dispose();
+    _chosenWallet.dispose();
+    _toWalletTransaction.dispose();
+    _fromWalletTransaction.dispose();
+    _catController.dispose();
+    _subcatController.dispose();
   }
 
   // pick time for transaction
@@ -298,9 +474,10 @@ class AddTransactionController extends GetxController {
     await showCalendarDatePicker2Dialog(
       context: context,
       config: CalendarDatePicker2WithActionButtonsConfig(
+          currentDate: _transactionAddTime,
           calendarType: CalendarDatePicker2Type.single),
       dialogSize: const Size(325, 400),
-      value: [],
+      value: [_transactionAddTime],
       borderRadius: BorderRadius.circular(15),
     ).then(
       (value) {
@@ -320,9 +497,8 @@ class AddTransactionController extends GetxController {
     }
   }
 
-  // set chosen category
-  void setChosenCategory({required String category}) {
-    _chosenCategory = category;
+  // update
+  void reload() {
     update();
   }
 
@@ -344,6 +520,16 @@ class AddTransactionController extends GetxController {
     });
     _subCatNode.addListener(() {
       _subCatActive = _subCatNode.hasFocus;
+      update();
+    });
+
+    _walletAmountNode.addListener(() {
+      _walletAmountActive = _walletAmountNode.hasFocus;
+      update();
+    });
+
+    _walletNameNode.addListener(() {
+      _walletNameActive = _walletNameNode.hasFocus;
       update();
     });
   }
