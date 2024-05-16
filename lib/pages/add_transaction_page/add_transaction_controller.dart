@@ -157,51 +157,138 @@ class AddTransactionController extends GetxController {
     required bool update,
     required BuildContext context,
   }) {
-    if (_transactionAddController.text.trim() == '' ||
-        _catController.text.trim() == '' ||
-        _chosenWallet.text.trim() == '') {
-      showToast(
-        title: CustomText(text: 'infoadd'.tr),
-        context: context,
-        type: ToastificationType.error,
-        isEng: _userModel.language == 'en_US',
-      );
+    if (_transactionType != TransactionType.transfer) {
+      if (_transactionAddController.text.trim() == '' ||
+          _catController.text.trim() == '' ||
+          _chosenWallet.text.trim() == '') {
+        showToast(
+          title: CustomText(text: 'infoadd'.tr),
+          context: context,
+          type: ToastificationType.error,
+          isEng: _userModel.language == 'en_US',
+        );
+      } else {
+        TransactionModel model = TransactionModel(
+            catagory: _catController.text.trim(),
+            subCatagory: _subcatController.text.trim(),
+            currency: _transactionCurrency,
+            amount: double.parse(_transactionAddController.text.trim()),
+            note: _commentController.text.trim(),
+            date: _transactionAddTime,
+            wallet: _chosenWallet.text.trim(),
+            fromWallet: _fromWalletTransaction.text.trim(),
+            toWallet: _toWalletTransaction.text.trim(),
+            type: _transactionType);
+        update
+            ? updateTransactioin(
+                transaction: model, recId: _transactionId ?? '')
+            : addTransactioin(transaction: model);
+        Get.back();
+      }
     } else {
-      TransactionModel model = TransactionModel(
-          catagory: _catController.text.trim(),
-          subCatagory: _subcatController.text.trim(),
-          currency: _transactionCurrency,
-          amount: double.parse(_transactionAddController.text.trim()),
-          note: _commentController.text.trim(),
-          date: _transactionAddTime,
-          wallet: _chosenWallet.text.trim(),
-          fromWallet: _fromWalletTransaction.text.trim(),
-          toWallet: _toWalletTransaction.text.trim(),
-          type: _transactionType);
-      update
-          ? updateTransactioin(transaction: model, recId: _transactionId ?? '')
-          : addTransactioin(transaction: model);
-      Get.back();
+      if (_transactionAddController.text.trim() == '' ||
+          _fromWalletTransaction.text.trim() == '' ||
+          _toWalletTransaction.text.trim() == '') {
+        showToast(
+          title: CustomText(text: 'infoadd'.tr),
+          context: context,
+          type: ToastificationType.error,
+          isEng: _userModel.language == 'en_US',
+        );
+      } else if (_fromWalletTransaction.text.trim() ==
+          _toWalletTransaction.text.trim()) {
+        showToast(
+          title: CustomText(text: 'otherwallet'.tr),
+          context: context,
+          type: ToastificationType.error,
+          isEng: _userModel.language == 'en_US',
+        );
+      } else {
+        TransactionModel model = TransactionModel(
+            catagory: _catController.text.trim(),
+            subCatagory: _subcatController.text.trim(),
+            currency: _transactionCurrency,
+            amount: double.parse(_transactionAddController.text.trim()),
+            note: _commentController.text.trim(),
+            date: _transactionAddTime,
+            wallet: _chosenWallet.text.trim(),
+            fromWallet: _fromWalletTransaction.text.trim(),
+            toWallet: _toWalletTransaction.text.trim(),
+            type: _transactionType);
+        update
+            ? updateTransactioin(
+                transaction: model, recId: _transactionId ?? '')
+            : addTransactioin(transaction: model);
+        Get.back();
+      }
     }
+  }
+
+  // wallet operations
+  void walletOperations(
+      {required bool transfer,
+      required String wallet,
+      String? toWallet,
+      required BuildContext context,
+      required double amuont}) async {
+    int walletMain =
+        _userModel.wallets.indexWhere((element) => element.name == wallet);
+    int? walletTo = toWallet != null
+        ? _userModel.wallets.indexWhere((element) => element.name == toWallet)
+        : null;
+    if (transfer) {
+      double newAmountFrom = _userModel.wallets[walletMain].amount - amuont;
+      double newAmountTo = _userModel.wallets[walletTo as int].amount + amuont;
+      _userModel.wallets[walletMain].amount = newAmountFrom;
+      _userModel.wallets[walletTo].amount = newAmountTo;
+    } else {
+      _userModel.wallets[walletMain].amount =
+          _userModel.wallets[walletMain].amount + amuont;
+    }
+    await updateUser(model: _userModel).then(
+      (value) async {
+        await updateUserFire(model: _userModel);
+      },
+    );
   }
 
   // adding transaction
   void addTransactioin({required TransactionModel transaction}) async {
+    if (transaction.type == TransactionType.moneyOut &&
+        transaction.amount > 0) {
+      transaction.amount = transaction.amount * -1;
+    }
+    if (transaction.type == TransactionType.moneyIn && transaction.amount < 0) {
+      transaction.amount = transaction.amount * -1;
+    }
+
+    // break the note into a list of words to help with searching
+    Map<String, dynamic> map = transaction.toMap();
+    map['notes'] = transaction.note.split(' ');
     await _firebaseService.addRecord(
       path: FirebasePaths.transactions.name,
       userId: _userModel.userId,
-      map: transaction.toMap(),
+      map: map,
     );
   }
 
   // update transaction
   void updateTransactioin(
       {required TransactionModel transaction, required String recId}) async {
+    if (transaction.type == TransactionType.moneyOut &&
+        transaction.amount > 0) {
+      transaction.amount = transaction.amount * -1;
+    }
+    if (transaction.type == TransactionType.moneyIn && transaction.amount < 0) {
+      transaction.amount = transaction.amount * -1;
+    }
+    Map<String, dynamic> map = transaction.toMap();
+    map['notes'] = transaction.note.split(' ');
     await _firebaseService.updateRecord(
       path: FirebasePaths.transactions.name,
       recId: recId,
       userId: _userModel.userId,
-      map: transaction.toMap(),
+      map: map,
     );
   }
 

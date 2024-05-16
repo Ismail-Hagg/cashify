@@ -16,6 +16,8 @@ class ExpenceTile extends StatelessWidget {
   final EdgeInsets padding;
   final String? budgetKeeping;
   final double? budgetPercent;
+  final bool? aveFit;
+  final Widget? transferInfo;
 
   const ExpenceTile(
       {super.key,
@@ -30,7 +32,9 @@ class ExpenceTile extends StatelessWidget {
       required this.padding,
       this.budgetKeeping,
       this.budgetPercent,
-      required this.loading});
+      required this.loading,
+      this.aveFit,
+      this.transferInfo});
 
   @override
   Widget build(BuildContext context) {
@@ -87,36 +91,37 @@ class ExpenceTile extends StatelessWidget {
                     color: Colors.grey.shade500,
                   ),
                   if (budget) ...[
-                    Stack(
-                      children: [
-                        Container(
-                          width: ((width * 0.85) - 40) * 0.7,
-                          height: 7,
-                          decoration: BoxDecoration(
-                            color: loading ? null : color.withOpacity(0.15),
-                            borderRadius: const BorderRadius.all(
-                              Radius.circular(5),
+                    transferInfo ??
+                        Stack(
+                          children: [
+                            Container(
+                              width: ((width * 0.85) - 40) * 0.7,
+                              height: 7,
+                              decoration: BoxDecoration(
+                                color: loading ? null : color.withOpacity(0.15),
+                                borderRadius: const BorderRadius.all(
+                                  Radius.circular(5),
+                                ),
+                              ),
+                              child: loading
+                                  ? CustomText(
+                                      text: subtitle,
+                                    )
+                                  : null,
                             ),
-                          ),
-                          child: loading
-                              ? CustomText(
-                                  text: subtitle,
-                                )
-                              : null,
-                        ),
-                        Container(
-                          width: (((width * 0.85) - 40) * 0.7) *
-                              (budgetPercent as double),
-                          height: 7,
-                          decoration: BoxDecoration(
-                            color: loading ? null : color,
-                            borderRadius: const BorderRadius.all(
-                              Radius.circular(5),
+                            Container(
+                              width: (((width * 0.85) - 40) * 0.7) *
+                                  (budgetPercent as double),
+                              height: 7,
+                              decoration: BoxDecoration(
+                                color: loading ? null : color,
+                                borderRadius: const BorderRadius.all(
+                                  Radius.circular(5),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      ],
-                    )
+                          ],
+                        )
                   ]
                 ],
               ),
@@ -139,20 +144,23 @@ class ExpenceTile extends StatelessWidget {
                   if (ave != null) ...[
                     CustomText(
                       maxline: 1,
-                      isFit: true,
+                      isFit: aveFit ?? true,
+                      flow: TextOverflow.ellipsis,
                       text: ave as String,
                       size: 12,
                       color: Colors.grey.shade500,
                     )
                   ],
                   if (budget) ...[
-                    CustomText(
-                      maxline: 1,
-                      isFit: true,
-                      text: budgetKeeping as String,
-                      size: 12,
-                      color: Colors.grey.shade500,
-                    ),
+                    transferInfo == null
+                        ? CustomText(
+                            maxline: 1,
+                            isFit: true,
+                            text: budgetKeeping as String,
+                            size: 12,
+                            color: Colors.grey.shade500,
+                          )
+                        : Container(),
                   ]
                 ],
               ),

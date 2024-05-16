@@ -33,7 +33,7 @@ class FirebaseService {
     await _ref.doc(userId).collection(path).doc(recId).update(map);
   }
 
-  // update records
+  // delete records
   Future<void> deleteRecord({
     required String path,
     required String recId,
@@ -45,5 +45,49 @@ class FirebaseService {
   // get the current user's data
   Future<DocumentSnapshot> getCurrentUser({required String userId}) async {
     return await _ref.doc(userId).get();
+  }
+
+  // get records for manin page
+  Future<QuerySnapshot> getRecords(
+      {required String userId, required String path}) async {
+    return await _ref.doc(userId).collection(path).get();
+  }
+
+  // get transactions for all transactions page
+  Future<QuerySnapshot> getTransactions(
+      {required String userId,
+      required String order,
+      required bool descending,
+      DocumentSnapshot? lastDocu}) async {
+    QuerySnapshot snap = lastDocu != null
+        ? await _ref
+            .doc(userId)
+            .collection(FirebasePaths.transactions.name)
+            .orderBy(order, descending: descending)
+            .startAfterDocument(lastDocu)
+            .limit(10)
+            .get()
+        : await _ref
+            .doc(userId)
+            .collection(FirebasePaths.transactions.name)
+            .orderBy(order, descending: descending)
+            .limit(10)
+            .get();
+    return snap;
+  }
+
+  // search through records
+  Future<QuerySnapshot> searchTransactions(
+      {required List<String> query,
+      required String userId,
+      required String path,
+      required bool descending,
+      required String order,
+      required String field}) async {
+    return await _ref
+        .doc(userId)
+        .collection(path)
+        .where(field, arrayContainsAny: query)
+        .get();
   }
 }

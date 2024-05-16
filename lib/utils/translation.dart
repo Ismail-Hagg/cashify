@@ -65,6 +65,15 @@ class Translation extends Translations {
           'walletname': 'Wallet Name',
           'edittransaction': 'Edit Transaction',
           'notsaved': 'Not Saved',
+          'otherwallet': 'Chose Another Wallet',
+          'search': 'Search In Notes',
+          'nores': 'No Results Found',
+          'order': 'Order By',
+          'date': 'Date',
+          'count': 'Amount',
+          'noavailable': 'Blank',
+          'deletetrans': 'Delete This Transaction ?',
+          'yes': 'Yes',
         },
         'ar_SA': {
           'email': 'البريد الالكتروني',
@@ -127,7 +136,16 @@ class Translation extends Translations {
           'addwallet': 'اضافة محفظة',
           'walletname': 'اسم المحفظة',
           'edittransaction': 'تعديل عملية',
-          'notsaved': 'غير محفوظ'
+          'notsaved': 'غير محفوظ',
+          'otherwallet': 'اختر محفظة اخرى',
+          'search': 'ابحث في الملاحظات',
+          'nores': 'لاتوجد نتائج',
+          'order': 'الترتيب بحسب',
+          'date': 'التاريخ',
+          'count': 'الكمية',
+          'noavailable': 'لا يوجد',
+          'deletetrans': 'حذف هذه العملية ؟',
+          'yes': 'نعم'
         },
       };
 }

@@ -1,4 +1,5 @@
 import 'package:cashify/utils/enums.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TransactionModel {
   String catagory;
@@ -35,7 +36,7 @@ class TransactionModel {
       'wallet': wallet,
       'fromWallet': fromWallet,
       'toWallet': toWallet,
-      'date': date.toString(),
+      'date': Timestamp.fromDate(date),
     };
   }
 
@@ -46,7 +47,9 @@ class TransactionModel {
       currency: map['currency'],
       amount: map['amount'],
       note: map['note'],
-      date: DateTime.parse(map['date']),
+      date: map['date'].runtimeType == String
+          ? DateTime.parse(map['date'])
+          : (map['date'] as Timestamp).toDate(),
       wallet: map['wallet'],
       fromWallet: map['fromWallet'],
       toWallet: map['toWallet'],

@@ -248,7 +248,6 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
             }
           },
         );
-
         break;
     }
     go ? calculate() : null;

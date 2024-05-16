@@ -5,7 +5,6 @@ import 'package:cashify/widgets/animeted_icon_widget.dart';
 import 'package:cashify/widgets/caragory_indicator_widget.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';
 import 'package:cashify/widgets/expense_tile_widget.dart';
-import 'package:cashify/widgets/icon_button.dart';
 import 'package:cashify/widgets/text_button_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -32,27 +31,27 @@ class HomeBody extends StatelessWidget {
               physics: const BouncingScrollPhysics(),
               child: Column(
                 children: [
-                  const SizedBox(
-                    height: 14,
+                  SizedBox(
+                    height: width * 0.06,
                   ),
                   SafeArea(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         SizedBox(
-                          width: width * 0.88,
+                          width: width,
                           child: SingleChildScrollView(
                             physics: const BouncingScrollPhysics(),
                             scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: List.generate(
-                                controller.userModel.wallets.length,
-                                (index) {
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 6.0, horizontal: 12),
-                                    child: GestureDetector(
-                                      onTap: () {},
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 8.0),
+                              child: Row(
+                                children: List.generate(
+                                  controller.userModel.wallets.length,
+                                  (index) {
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 0.0, horizontal: 4),
                                       child: Container(
                                         decoration: BoxDecoration(
                                           border: Border.all(
@@ -72,9 +71,9 @@ class HomeBody extends StatelessWidget {
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  );
-                                },
+                                    );
+                                  },
+                                ),
                               ),
                             ),
                           ),
@@ -85,7 +84,7 @@ class HomeBody extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       vertical: 24,
-                      horizontal: 16,
+                      horizontal: 12,
                     ),
                     child: Container(
                       width: width,
