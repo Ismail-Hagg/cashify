@@ -1,14 +1,20 @@
+import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:cashify/gloable_controllers/auth_controller.dart';
+import 'package:cashify/models/filter_model.dart';
 import 'package:cashify/models/transaction_model.dart';
 import 'package:cashify/models/user_model.dart';
 import 'package:cashify/pages/add_transaction_page/add_transaction_view.dart';
 import 'package:cashify/pages/home_page/home_controller.dart';
 import 'package:cashify/services/firebase_service.dart';
 import 'package:cashify/utils/enums.dart';
+import 'package:cashify/utils/util_functions.dart';
+import 'package:cashify/widgets/custom_text_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
+import 'package:toastification/toastification.dart';
 
 class AllTransactionsController extends GetxController {
   final FirebaseService _firebaseService = FirebaseService();
@@ -43,8 +49,26 @@ class AllTransactionsController extends GetxController {
   final FocusNode _searchNode = FocusNode();
   FocusNode get searchNode => _searchNode;
 
+  final TextEditingController _rangeStartController = TextEditingController();
+  TextEditingController get rangeStartController => _rangeStartController;
+
+  final FocusNode _rangeStartNode = FocusNode();
+  FocusNode get rangeStartNode => _rangeStartNode;
+
+  final TextEditingController _rangeEndController = TextEditingController();
+  TextEditingController get rangeEndController => _rangeEndController;
+
+  final FocusNode _rangeEndNode = FocusNode();
+  FocusNode get rangeEndNode => _rangeEndNode;
+
   bool _searchActive = false;
   bool get searchActive => _searchActive;
+
+  bool _rangeStartActive = false;
+  bool get rangeStartActive => _rangeStartActive;
+
+  bool _rangeEndActive = false;
+  bool get rangeEndActive => _rangeEndActive;
 
   final ScrollController _scrollController = ScrollController();
   ScrollController get scrollController => _scrollController;
@@ -73,12 +97,17 @@ class AllTransactionsController extends GetxController {
 
   DocumentSnapshot? _lastDocument;
 
+  late FilterModel _filterModel;
+  FilterModel get filterModel => _filterModel;
+
   @override
   void onInit() {
     super.onInit();
     setListener();
 
     _userModel = Get.find<GloableAuthController>().userModel;
+    _filterModel = FilterModel(
+        path: FirebasePaths.transactions.name, userId: _userModel.userId);
     getAllTransactions();
   }
 
@@ -90,6 +119,22 @@ class AllTransactionsController extends GetxController {
     _searchController.dispose();
     _scrollController.removeListener(_loadMore);
     _scrollController.dispose();
+    _rangeStartController.dispose();
+    _rangeEndController.dispose();
+    _rangeStartNode.dispose();
+    _rangeEndNode.dispose();
+    _rangeStartNode.removeListener(_rangeStartNodes);
+    _rangeEndNode.removeListener(_rangeEndNodes);
+  }
+
+  void _rangeStartNodes() {
+    _rangeStartActive = _rangeStartNode.hasFocus;
+    update();
+  }
+
+  void _rangeEndNodes() {
+    _rangeEndActive = _rangeEndNode.hasFocus;
+    update();
   }
 
   // change the ordering method of the firstore query
@@ -117,6 +162,8 @@ class AllTransactionsController extends GetxController {
   void setListener() {
     _searchNode.addListener(_setNode);
     _scrollController.addListener(_loadMore);
+    _rangeStartNode.addListener(_rangeStartNodes);
+    _rangeEndNode.addListener(_rangeEndNodes);
   }
 
   // search node set
@@ -244,41 +291,146 @@ class AllTransactionsController extends GetxController {
     }
   }
 
-  // delete a transaction
-  void deleteTransaction(
-      {required TransactionModel model, required String id}) async {
-    String transId = id;
+  // add a transaction
+  void transactionAdd({required TransactionModel model, required String id}) {
+    (_container[1]!['ids'] as List<String>).insert(0, id);
+    (_container[1]!['transactions'] as List<TransactionModel>).insert(0, model);
+    update();
+  }
+
+  // update or delete transaction locally
+  void updateTransaction(
+      {required TransactionModel model,
+      required String id,
+      required bool change}) {
     Get.back();
     for (var i = 1; i < 4; i++) {
-      print(
-          '$i index is => ${(_container[i]!['transactions'] as List<TransactionModel>).indexOf(model)}');
-      print('$i ids ${(_container[i]!['ids'] as List<String>).length}');
-      print(
-          '$i transactions ${(_container[i]!['transactions'] as List<TransactionModel>).length}');
-      // if (_pointer == i) {
-      //   (_container[_pointer]!['transactions'] as List<TransactionModel>)
-      //       .remove(model);
-
-      //   (_container[_pointer]!['ids'] as List<String>).remove(transId);
-      // } else {
-      //   if ((_container[i]!['ids'] as List<String>).contains(transId)) {
-      //     (_container[i]!['transactions'] as List<TransactionModel>)
-      //         .remove(model);
-
-      //     (_container[i]!['ids'] as List<String>).remove(transId);
-      //     // print('removed from $i');
-      //   }
-      //}
-      print('$i ids ${(_container[i]!['ids'] as List<String>).length}');
-      print(
-          '$i transactions ${(_container[i]!['transactions'] as List<TransactionModel>).length}');
+      if ((_container[i]!['ids'] as List<String>).contains(id)) {
+        int index = (_container[i]!['ids'] as List<String>).indexOf(id);
+        if (change) {
+          (_container[i]!['transactions'] as List<TransactionModel>)[index] =
+              model;
+          update();
+        } else {
+          (_container[i]!['transactions'] as List<TransactionModel>)
+              .removeAt(index);
+          (_container[i]!['ids'] as List<String>).removeAt(index);
+          update();
+          _firebaseService.deleteRecord(
+            path: FirebasePaths.transactions.name,
+            recId: id,
+            userId: _userModel.userId,
+          );
+        }
+      }
     }
+  }
 
-    // update();
-    // _firebaseService.deleteRecord(
-    //   path: FirebasePaths.transactions.name,
-    //   recId: transId,
-    //   userId: _userModel.userId,
-    // );
+  // filter
+  void filterRes({required BuildContext context}) async {
+    if (_container[_pointer]!['loading'] == false) {
+      Get.back();
+      try {
+        _filterModel.eqbig = rangeStartController.text.trim() != ''
+            ? double.parse(_rangeStartController.text.trim())
+            : null;
+        _filterModel.small = _rangeEndController.text.trim() != ''
+            ? double.parse(_rangeEndController.text.trim())
+            : null;
+        _pointer = 3;
+        _container[_pointer]!['loading'] = true;
+        (_container[_pointer]!['transactions'] as List<TransactionModel>)
+            .clear();
+        (_container[_pointer]!['ids'] as List<String>).clear();
+        update();
+        _firebaseService
+            .filteredTransactions(
+          filter: _filterModel,
+        )
+            .then(
+          (value) {
+            print(value.docs.length);
+            for (var i = 0; i < value.docs.length; i++) {
+              TransactionModel model = TransactionModel.fromMap(
+                  value.docs[i].data() as Map<String, dynamic>);
+              (_container[_pointer]!['transactions'] as List<TransactionModel>)
+                  .add(model);
+              (_container[_pointer]!['ids'] as List<String>)
+                  .add(value.docs[i].id);
+            }
+            _container[_pointer]!['loading'] = false;
+            update();
+          },
+        );
+      } catch (e) {
+        showToast(
+            title: CustomText(text: e.toString()),
+            context: context,
+            type: ToastificationType.error,
+            isEng: _userModel.language == 'en_US');
+      }
+    }
+  }
+
+  // reset filters
+  void resetFilter({required bool cancel}) {
+    cancel ? _pointer = 1 : null;
+    Get.back();
+    _filterModel = FilterModel(
+        userId: _userModel.userId, path: FirebasePaths.transactions.name);
+    _rangeStartController.clear();
+    _rangeEndController.clear();
+    update();
+  }
+
+  // chose times for the filter
+  void filterTime({required bool start, required BuildContext context}) async {
+    await showCalendarDatePicker2Dialog(
+      context: context,
+      config: CalendarDatePicker2WithActionButtonsConfig(
+          calendarType: CalendarDatePicker2Type.single),
+      dialogSize: const Size(325, 400),
+      value: [],
+      borderRadius: BorderRadius.circular(15),
+    ).then(
+      (value) {
+        if (value != null) {
+          start
+              ? _filterModel.timeStart =
+                  Timestamp.fromDate(value[0] as DateTime)
+              : _filterModel.timeEnd = Timestamp.fromDate(value[0] as DateTime);
+          update();
+        }
+      },
+    );
+  }
+
+  (List<String> cats, List<String> subCats) lsts() {
+    List<String> one = [];
+    List<String> two = [];
+    for (var i = 0; i < _userModel.catagories.length; i++) {
+      one.add(_userModel.catagories[i].name);
+      for (var x = 0; x < userModel.catagories[i].subCatagories.length; x++) {
+        two.add(userModel.catagories[i].subCatagories[x]);
+      }
+    }
+    return (one, two);
+  }
+
+  // chose catagory or subcatagory for filter
+  void catsFilter({required String cat, required String val}) {
+    switch (cat) {
+      case 'cat':
+        _filterModel.category = val;
+        break;
+
+      case 'sub':
+        _filterModel.subCat = val;
+        break;
+      case 'curr':
+        _filterModel.cuurency = val;
+        break;
+    }
+    update();
   }
 }

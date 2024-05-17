@@ -6,15 +6,20 @@ import 'package:cashify/widgets/custom_text_widget.dart';
 import 'package:cashify/widgets/expense_tile_widget.dart';
 import 'package:cashify/widgets/icon_button.dart';
 import 'package:cashify/widgets/input_widget.dart';
+import 'package:cashify/widgets/modal_widget.dart';
 import 'package:cashify/widgets/text_button_widget.dart';
+import 'package:country_currency_pickers/country.dart';
+import 'package:country_currency_pickers/country_picker_dropdown.dart';
+import 'package:country_currency_pickers/utils/utils.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
 class AllTransactionsView extends StatelessWidget {
   const AllTransactionsView({super.key});
@@ -144,7 +149,286 @@ class AllTransactionsView extends StatelessWidget {
                               isIos: controller.isIos,
                               icon: FontAwesomeIcons.filter,
                               color: mainColor,
-                              click: () {},
+                              click: () => WoltModalSheet.show(
+                                onModalDismissedWithBarrierTap: () =>
+                                    controller.resetFilter(cancel: false),
+                                onModalDismissedWithDrag: () =>
+                                    controller.resetFilter(cancel: false),
+                                context: context,
+                                modalTypeBuilder: (context) =>
+                                    WoltModalType.bottomSheet,
+                                pageListBuilder: (modalSheetContext) {
+                                  return [
+                                    modalPage(
+                                      icon:
+                                          const FaIcon(FontAwesomeIcons.xmark),
+                                      leadingButtonFunction: () =>
+                                          controller.resetFilter(cancel: true),
+                                      context: modalSheetContext,
+                                      title: 'filter'.tr,
+                                      child:
+                                          GetBuilder<AllTransactionsController>(
+                                        init: Get.find<
+                                            AllTransactionsController>(),
+                                        builder: (controller) => Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: Column(
+                                            children: [
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  CustomText(
+                                                      text: 'timefilter'.tr),
+                                                  Row(
+                                                    children: [
+                                                      ButtonWidget(
+                                                        isIos: controller.isIos,
+                                                        textSize: 14,
+                                                        type: ButtonType.text,
+                                                        onClick: () =>
+                                                            controller
+                                                                .filterTime(
+                                                                    context:
+                                                                        context,
+                                                                    start:
+                                                                        true),
+                                                        text: controller
+                                                                    .filterModel
+                                                                    .timeStart !=
+                                                                null
+                                                            ? DateFormat.yMd()
+                                                                .format(controller
+                                                                    .filterModel
+                                                                    .timeStart!
+                                                                    .toDate())
+                                                            : 'timestart'.tr,
+                                                      ),
+                                                      const CustomText(
+                                                          text: '  -  '),
+                                                      ButtonWidget(
+                                                        isIos: controller.isIos,
+                                                        textSize: 14,
+                                                        type: ButtonType.text,
+                                                        onClick: () =>
+                                                            controller
+                                                                .filterTime(
+                                                                    context:
+                                                                        context,
+                                                                    start:
+                                                                        false),
+                                                        text: controller
+                                                                    .filterModel
+                                                                    .timeEnd !=
+                                                                null
+                                                            ? DateFormat.yMd()
+                                                                .format(controller
+                                                                    .filterModel
+                                                                    .timeEnd!
+                                                                    .toDate())
+                                                            : 'timeend'.tr,
+                                                      )
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 12.0),
+                                                child: SizedBox(
+                                                  width: width,
+                                                  height: width * 0.125,
+                                                  child: DropdownMenu(
+                                                    onSelected: (val) =>
+                                                        controller.catsFilter(
+                                                            cat: 'cat',
+                                                            val: val as String),
+                                                    hintText: 'catfilter'.tr,
+                                                    expandedInsets:
+                                                        const EdgeInsets.all(0),
+                                                    dropdownMenuEntries:
+                                                        List.generate(
+                                                      controller
+                                                          .lsts()
+                                                          .$1
+                                                          .length,
+                                                      (index) =>
+                                                          DropdownMenuEntry(
+                                                        label: controller
+                                                            .lsts()
+                                                            .$1[index],
+                                                        value: controller
+                                                            .lsts()
+                                                            .$1[index],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 12.0),
+                                                child: SizedBox(
+                                                  width: width,
+                                                  height: width * 0.125,
+                                                  child: DropdownMenu(
+                                                    onSelected: (val) =>
+                                                        controller.catsFilter(
+                                                            cat: 'sub',
+                                                            val: val as String),
+                                                    hintText: 'subcatfilter'.tr,
+                                                    expandedInsets:
+                                                        const EdgeInsets.all(0),
+                                                    dropdownMenuEntries:
+                                                        List.generate(
+                                                      controller
+                                                          .lsts()
+                                                          .$2
+                                                          .length,
+                                                      (index) =>
+                                                          DropdownMenuEntry(
+                                                        label: controller
+                                                            .lsts()
+                                                            .$2[index],
+                                                        value: controller
+                                                            .lsts()
+                                                            .$2[index],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 8.0),
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Row(
+                                                      children: [
+                                                        InputWidget(
+                                                          hint: 'more'.tr,
+                                                          height: width * 0.125,
+                                                          width: width * 0.28,
+                                                          active: controller
+                                                              .rangeStartActive,
+                                                          controller: controller
+                                                              .rangeStartController,
+                                                          node: controller
+                                                              .rangeStartNode,
+                                                          formatter: [
+                                                            // Allow Decimal Number With Precision of 2 Only
+                                                            FilteringTextInputFormatter
+                                                                .allow(RegExp(
+                                                                    r'^\d*\.?\d{0,2}')),
+                                                          ],
+                                                          type: const TextInputType
+                                                              .numberWithOptions(
+                                                              signed: true,
+                                                              decimal: true),
+                                                        ),
+                                                        SizedBox(
+                                                          width: width * 0.02,
+                                                        ),
+                                                        InputWidget(
+                                                          hint: 'less'.tr,
+                                                          height: width * 0.125,
+                                                          width: width * 0.28,
+                                                          active: controller
+                                                              .rangeEndActive,
+                                                          controller: controller
+                                                              .rangeEndController,
+                                                          node: controller
+                                                              .rangeEndNode,
+                                                          formatter: [
+                                                            // Allow Decimal Number With Precision of 2 Only
+                                                            FilteringTextInputFormatter
+                                                                .allow(RegExp(
+                                                                    r'^\d*\.?\d{0,2}')),
+                                                          ],
+                                                          type: const TextInputType
+                                                              .numberWithOptions(
+                                                              decimal: true),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    CountryPickerDropdown(
+                                                      initialValue: CountryPickerUtils
+                                                              .getCountryByCurrencyCode(
+                                                                  controller
+                                                                      .userModel
+                                                                      .defaultCurrency)
+                                                          .isoCode,
+                                                      itemBuilder:
+                                                          (Country country) =>
+                                                              SizedBox(
+                                                        height: width * 0.14,
+                                                        width:
+                                                            (width - 24) * 0.2,
+                                                        child: FittedBox(
+                                                          child: Row(
+                                                            children: <Widget>[
+                                                              CountryPickerUtils
+                                                                  .getDefaultFlagImage(
+                                                                      country),
+                                                              const SizedBox(
+                                                                width: 8.0,
+                                                              ),
+                                                              Text(country
+                                                                  .currencyCode
+                                                                  .toString()),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      onValuePicked: (Country?
+                                                              country) =>
+                                                          country != null
+                                                              ? controller.catsFilter(
+                                                                  cat: 'curr',
+                                                                  val: country
+                                                                          .currencyCode ??
+                                                                      '')
+                                                              : null,
+                                                    ),
+                                                  ],
+                                                ),
+                                              )
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      button: Padding(
+                                        padding: const EdgeInsets.all(16.0),
+                                        child: ButtonWidget(
+                                          isIos: controller.isIos,
+                                          textSize: 16,
+                                          type: ButtonType.raised,
+                                          onClick: () => controller.filterRes(
+                                              context: context),
+                                          color: mainColor,
+                                          height:
+                                              MediaQuery.of(modalSheetContext)
+                                                      .size
+                                                      .width *
+                                                  0.125,
+                                          width:
+                                              MediaQuery.of(modalSheetContext)
+                                                  .size
+                                                  .width,
+                                          text: 'filter'.tr,
+                                        ),
+                                      ),
+                                    ),
+                                  ];
+                                },
+                              ),
                             ),
                           )
                         ],
@@ -211,32 +495,41 @@ class AllTransactionsView extends StatelessWidget {
                                   IconButtonPlatform(
                                     isIos: controller.isIos,
                                     icon: FontAwesomeIcons.trash,
-                                    color: mainColor,
-                                    click: () => controller.deleteDialog(
-                                      dilog: AlertDialog(
-                                        title: CustomText(
-                                          text: 'deletetrans'.tr,
-                                        ),
-                                        actions: [
-                                          ButtonWidget(
-                                              isIos: controller.isIos,
-                                              textSize: 12,
-                                              type: ButtonType.text,
-                                              onClick: () =>
-                                                  controller.deleteTransaction(
-                                                      id: tranId,
-                                                      model: transaction),
-                                              text: 'yes'.tr)
-                                        ],
-                                      ),
-                                    ),
+                                    color:
+                                        tranId == '' ? Colors.grey : mainColor,
+                                    click: () => tranId == ''
+                                        ? null
+                                        : controller.deleteDialog(
+                                            dilog: AlertDialog(
+                                              title: CustomText(
+                                                text: 'deletetrans'.tr,
+                                              ),
+                                              actions: [
+                                                ButtonWidget(
+                                                  isIos: controller.isIos,
+                                                  textSize: 12,
+                                                  type: ButtonType.text,
+                                                  onClick: () => controller
+                                                      .updateTransaction(
+                                                    change: false,
+                                                    id: tranId,
+                                                    model: transaction,
+                                                  ),
+                                                  text: 'yes'.tr,
+                                                )
+                                              ],
+                                            ),
+                                          ),
                                   ),
                                   IconButtonPlatform(
                                     isIos: controller.isIos,
                                     icon: FontAwesomeIcons.penToSquare,
-                                    color: mainColor,
-                                    click: () => controller.queryTransaction(
-                                        id: tranId, model: transaction),
+                                    color:
+                                        tranId == '' ? Colors.grey : mainColor,
+                                    click: () => tranId == ''
+                                        ? null
+                                        : controller.queryTransaction(
+                                            id: tranId, model: transaction),
                                   ),
                                   IconButtonPlatform(
                                     isIos: controller.isIos,

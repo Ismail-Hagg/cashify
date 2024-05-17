@@ -4,6 +4,7 @@ import 'package:cashify/models/catagory_model.dart';
 import 'package:cashify/models/transaction_model.dart';
 import 'package:cashify/models/user_model.dart';
 import 'package:cashify/models/wallet_model.dart';
+import 'package:cashify/pages/all_transactions_page/all_transactoins_controller.dart';
 import 'package:cashify/pages/home_page/home_controller.dart';
 import 'package:cashify/services/firebase_service.dart';
 import 'package:cashify/utils/constants.dart';
@@ -265,6 +266,11 @@ class AddTransactionController extends GetxController {
     // break the note into a list of words to help with searching
     Map<String, dynamic> map = transaction.toMap();
     map['notes'] = transaction.note.split(' ');
+
+    if (Get.isRegistered<AllTransactionsController>()) {
+      Get.find<AllTransactionsController>()
+          .transactionAdd(model: TransactionModel.fromMap(map), id: '');
+    }
     await _firebaseService.addRecord(
       path: FirebasePaths.transactions.name,
       userId: _userModel.userId,
@@ -284,6 +290,10 @@ class AddTransactionController extends GetxController {
     }
     Map<String, dynamic> map = transaction.toMap();
     map['notes'] = transaction.note.split(' ');
+    if (Get.isRegistered<AllTransactionsController>()) {
+      Get.find<AllTransactionsController>().updateTransaction(
+          model: TransactionModel.fromMap(map), id: recId, change: true);
+    }
     await _firebaseService.updateRecord(
       path: FirebasePaths.transactions.name,
       recId: recId,
