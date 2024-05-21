@@ -4,7 +4,7 @@ enum AvatarType { online, local, loading, none }
 
 enum FieldType { email, password, username, phone, otp }
 
-enum FirebasePaths { users, transactions }
+enum FirebasePaths { users, transactions, monthSetting }
 
 enum TransactionType { moneyIn, moneyOut, transfer }
 

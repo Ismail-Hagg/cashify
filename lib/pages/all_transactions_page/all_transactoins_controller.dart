@@ -37,6 +37,9 @@ class AllTransactionsController extends GetxController {
   String _order = 'date';
   String get order => _order;
 
+  String _exchangeVal = '';
+  String get exchangeVal => _exchangeVal;
+
   final List<String> _ids = [];
   List<String> get ids => _ids;
 
@@ -63,6 +66,9 @@ class AllTransactionsController extends GetxController {
 
   bool _searchActive = false;
   bool get searchActive => _searchActive;
+
+  bool _exchangeActive = false;
+  bool get exchangeActive => _exchangeActive;
 
   bool _rangeStartActive = false;
   bool get rangeStartActive => _rangeStartActive;
@@ -266,6 +272,40 @@ class AllTransactionsController extends GetxController {
     return real
         ? Get.find<HomeController>().walletAmount(amount: model.amount)
         : Get.find<HomeController>().humanFormat(model.amount);
+  }
+
+  String moneyFormat({required double amount}) {
+    return Get.find<HomeController>().moneyFormat(amount: amount);
+  }
+
+  // show dialog
+  void dialogShow({
+    required Widget widget,
+    required BuildContext context,
+  }) {
+    _exchangeActive = false;
+    _exchangeVal = '';
+    dialogShowing(widget: widget);
+  }
+
+  // currency exchange
+  void currencyExchange(
+      {required String base,
+      required String to,
+      required double amount}) async {
+    if (to != '') {
+      await Get.find<HomeController>()
+          .currencySwapp(base: base, exTo: to, amount: amount)
+          .then(
+        (value) {
+          if (value != '') {
+            _exchangeActive = true;
+            _exchangeVal = value;
+            update();
+          }
+        },
+      );
+    }
   }
 
   // edit a transaction

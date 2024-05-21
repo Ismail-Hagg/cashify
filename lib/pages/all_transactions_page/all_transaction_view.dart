@@ -549,9 +549,67 @@ class AllTransactionsView extends StatelessWidget {
                               ),
                               enabled: true,
                               child: GestureDetector(
-                                onTap: () {
-                                  print(tranId);
-                                },
+                                onLongPress: () => controller.dialogShow(
+                                  context: context,
+                                  widget: GetBuilder<AllTransactionsController>(
+                                    init: Get.find<AllTransactionsController>(),
+                                    builder: (controller) => AlertDialog(
+                                      title: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          CustomText(
+                                            text: controller.moneyFormat(
+                                              amount: controller.exchangeActive
+                                                  ? double.parse(
+                                                      controller.exchangeVal)
+                                                  : double.parse(
+                                                      controller.ammount(
+                                                        model: transaction,
+                                                        real: true,
+                                                      ),
+                                                    ),
+                                            ),
+                                          ),
+                                          CountryPickerDropdown(
+                                            initialValue: CountryPickerUtils
+                                                    .getCountryByCurrencyCode(
+                                                        transaction.currency)
+                                                .isoCode,
+                                            itemBuilder: (Country country) =>
+                                                SizedBox(
+                                              height: width * 0.14,
+                                              width: (width - 24) * 0.2,
+                                              child: FittedBox(
+                                                child: Row(
+                                                  children: <Widget>[
+                                                    CountryPickerUtils
+                                                        .getDefaultFlagImage(
+                                                            country),
+                                                    const SizedBox(
+                                                      width: 8.0,
+                                                    ),
+                                                    Text(country.currencyCode
+                                                        .toString()),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                            onValuePicked: (Country? country) =>
+                                                controller.currencyExchange(
+                                                    base: transaction.currency,
+                                                    to: country != null
+                                                        ? country
+                                                                .currencyCode ??
+                                                            ''
+                                                        : '',
+                                                    amount: transaction.amount),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
                                 child: ExpenceTile(
                                   aveFit: false,
                                   ave: isTransfer

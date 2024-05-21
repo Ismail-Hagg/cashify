@@ -84,6 +84,9 @@ class Translation extends Translations {
           'timeend': 'To',
           'less': 'Less than',
           'more': 'More than',
+          'budget': 'Budget',
+          'start': 'Start',
+          'end': 'End',
         },
         'ar_SA': {
           'email': 'البريد الالكتروني',
@@ -166,6 +169,9 @@ class Translation extends Translations {
           'timeend': 'الى',
           'less': 'اقل من',
           'more': 'اكثر من',
+          'budget': 'ميزانة',
+          'start': 'بداية',
+          'end': 'نهاية',
         },
       };
 }

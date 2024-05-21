@@ -69,3 +69,8 @@ String getMessageFromErrorCode({required String errorMessage}) {
       return "firelogin".tr;
   }
 }
+
+// show dialog
+void dialogShowing({required Widget widget}) {
+  Get.dialog(widget);
+}

@@ -11,6 +11,7 @@ import 'package:cashify/pages/month_setting_page/month_setting_controller.dart';
 import 'package:cashify/pages/month_setting_page/month_setting_view.dart';
 import 'package:cashify/pages/settings_page/settings_controller.dart';
 import 'package:cashify/pages/settings_page/settings_view.dart';
+import 'package:cashify/services/currency_exchange_service.dart';
 import 'package:cashify/services/firebase_service.dart';
 import 'package:cashify/utils/constants.dart';
 import 'package:cashify/utils/enums.dart';
@@ -405,6 +406,25 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     final formatter = NumberFormat.compact(
         locale: _userModel.language); // US locale for common abbreviations
     return formatter.format(number);
+  }
+
+  String moneyFormat({required double amount}) {
+    var formatter = NumberFormat();
+    return formatter.format(amount);
+  }
+
+  // currency exchange
+  Future<String> currencySwapp(
+      {required String base,
+      required String exTo,
+      required double amount}) async {
+    String res = '';
+    await MoneyExchange()
+        .changeCurrency(base: base, exchange: exTo, amount: amount)
+        .then(
+          (value) => res = value.status == 'success' ? value.result : '',
+        );
+    return res;
   }
 
   // remove zeros from double when showing amounts of wallets

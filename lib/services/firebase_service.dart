@@ -21,8 +21,9 @@ class FirebaseService {
   Future<void> addRecord(
       {required String path,
       required String userId,
+      String? docPath,
       required Map<String, dynamic> map}) async {
-    await _ref.doc(userId).collection(path).doc().set(map);
+    await _ref.doc(userId).collection(path).doc(docPath).set(map);
   }
 
   // update records
@@ -52,6 +53,14 @@ class FirebaseService {
   Future<QuerySnapshot> getRecords(
       {required String userId, required String path}) async {
     return await _ref.doc(userId).collection(path).get();
+  }
+
+  // get records for manin page
+  Future<DocumentSnapshot> getRecordDocu(
+      {required String userId,
+      required String path,
+      required String docId}) async {
+    return await _ref.doc(userId).collection(path).doc(docId).get();
   }
 
   // get transactions with filters
