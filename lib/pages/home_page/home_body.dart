@@ -1,11 +1,15 @@
 import 'package:cashify/pages/home_page/home_controller.dart';
 import 'package:cashify/utils/constants.dart';
 import 'package:cashify/utils/enums.dart';
+import 'package:cashify/utils/util_functions.dart';
 import 'package:cashify/widgets/animeted_icon_widget.dart';
 import 'package:cashify/widgets/caragory_indicator_widget.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';
 import 'package:cashify/widgets/expense_tile_widget.dart';
 import 'package:cashify/widgets/text_button_widget.dart';
+import 'package:country_currency_pickers/country.dart';
+import 'package:country_currency_pickers/country_picker_dropdown.dart';
+import 'package:country_currency_pickers/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_animated_icons/icons8.dart';
@@ -43,36 +47,62 @@ class HomeBody extends StatelessWidget {
                           child: SingleChildScrollView(
                             physics: const BouncingScrollPhysics(),
                             scrollDirection: Axis.horizontal,
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 8.0),
-                              child: Row(
-                                children: List.generate(
-                                  controller.userModel.wallets.length,
-                                  (index) {
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 0.0, horizontal: 4),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          border: Border.all(
-                                              color:
-                                                  mainColor.withOpacity(0.5)),
-                                          color: Colors.grey.shade300,
-                                          borderRadius: const BorderRadius.all(
-                                            Radius.circular(10),
+                            child: Skeletonizer(
+                              enabled: controller.loading,
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: 8.0),
+                                child: Row(
+                                  children: List.generate(
+                                    controller.monhtMap[
+                                                controller.currentTime] ==
+                                            null
+                                        ? controller.userModel.wallets.length
+                                        : controller.loading
+                                            ? 10
+                                            : controller
+                                                .monhtMap[
+                                                    controller.currentTime]!
+                                                .walletInfo
+                                                .length,
+                                    (index) {
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 0.0, horizontal: 4),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                              color: controller.loading
+                                                  ? backgroundColor
+                                                  : mainColor.withOpacity(0.5),
+                                            ),
+                                            color: Colors.grey.shade300,
+                                            borderRadius:
+                                                const BorderRadius.all(
+                                              Radius.circular(10),
+                                            ),
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: CustomText(
+                                                // make better
+                                                text:
+                                                    '${controller.monhtMap[controller.currentTime] == null ? controller.userModel.wallets[index].name : controller.loading ? 'walleet name' : controller.monhtMap[controller.currentTime]!.walletInfo[index].wallet} : ${controller.monhtMap[controller.currentTime] == null ? '${controller.walletAmount(amount: controller.userModel.wallets[index].amount)} ${controller.userModel.wallets[index].currency}' : controller.loading ? 'amount' : '${controller.walletAmount(amount: (controller.monhtMap[controller.currentTime]!.walletInfo[index].start + controller.monhtMap[controller.currentTime]!.walletInfo[index].opSum))} ${controller.userModel.wallets.firstWhere((element) => element.name == controller.monhtMap[controller.currentTime]!.walletInfo[index].wallet).currency}'}'
+                                                // controller.monhtMap[
+                                                //             controller
+                                                //                 .currentTime] ==
+                                                //         null
+                                                //     ? ''
+                                                //     : controller.loading
+                                                //         ? ''
+                                                //         : ''
+                                                // '${controller.userModel.wallets[index].name} : ${controller.walletAmount(amount: controller.userModel.wallets[index].amount)}  ${controller.userModel.wallets[index].currency}',
+                                                ),
                                           ),
                                         ),
-                                        alignment: Alignment.center,
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: CustomText(
-                                            text:
-                                                '${controller.userModel.wallets[index].name} : ${controller.walletAmount(amount: controller.userModel.wallets[index].amount)}  ${controller.userModel.wallets[index].currency}',
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
+                                      );
+                                    },
+                                  ),
                                 ),
                               ),
                             ),
@@ -210,223 +240,304 @@ class HomeBody extends StatelessWidget {
                             ),
                           ),
                           if (controller.pieChart) ...[
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  height: width * 0.45,
-                                  width: width * 0.45,
-                                  child: controller.loading
-                                      ? IconAnimated(
-                                          name: Icons8.circles_menu_1_iOS,
-                                          controller:
-                                              controller.loadingController,
-                                          color: mainColor)
-                                      : Stack(
-                                          children: [
-                                            Chart(
-                                              layers: [
-                                                ChartGroupPieLayer(
-                                                  items: [
-                                                    List.generate(
-                                                      controller.loading
-                                                          ? 10
-                                                          : controller
-                                                                  .showIncome
-                                                              ? controller
-                                                                  .valsUp.length
-                                                              : controller
-                                                                  .valsDown
-                                                                  .length,
-                                                      (index) =>
-                                                          ChartGroupPieDataItem(
-                                                              amount: controller
-                                                                      .loading
-                                                                  ? 0
-                                                                  : controller
-                                                                          .showIncome
-                                                                      ? controller
-                                                                          .valsUp
-                                                                          .values
-                                                                          .elementAt(
-                                                                              index)
-                                                                      : controller
-                                                                          .valsDown
-                                                                          .values
-                                                                          .elementAt(
-                                                                              index),
-                                                              color: controller
-                                                                  .catList
-                                                                  .firstWhere((catagory) => controller
-                                                                          .showIncome
-                                                                      ? catagory.name ==
-                                                                          controller.valsUp.keys.elementAt(
-                                                                              index)
-                                                                      : catagory.name ==
-                                                                          controller
-                                                                              .valsDown
-                                                                              .keys
-                                                                              .elementAt(index))
-                                                                  .color,
-                                                              label: 'thing'),
-                                                    ),
-                                                  ],
-                                                  settings:
-                                                      const ChartGroupPieSettings(),
-                                                ),
-                                              ],
-                                            ),
-                                            Center(
-                                              child: ButtonWidget(
-                                                isIos: controller.isIos,
-                                                textSize: 16,
-                                                type: ButtonType.text,
-                                                onClick: () {},
-                                                text: controller
-                                                    .humanFormat(1010.9),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                ),
-                                Column(
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () => controller.chartFlip(),
-                                      child: Container(
-                                        height: width * 0.1,
-                                        width: width * 0.1,
-                                        decoration: BoxDecoration(
-                                            border:
-                                                Border.all(color: Colors.green),
-                                            borderRadius:
-                                                const BorderRadius.all(
-                                              Radius.circular(5),
-                                            ),
-                                            color: controller.showIncome
-                                                ? Colors.green
-                                                : forgroundColor),
-                                        child: Center(
-                                          child: FaIcon(
-                                            FontAwesomeIcons.arrowUp,
-                                            color: controller.showIncome
-                                                ? forgroundColor
-                                                : Colors.green,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      height: width * 0.05,
-                                    ),
-                                    GestureDetector(
-                                      onTap: () => controller.chartFlip(),
-                                      child: Container(
-                                        height: width * 0.1,
-                                        width: width * 0.1,
-                                        decoration: BoxDecoration(
-                                            border:
-                                                Border.all(color: Colors.red),
-                                            borderRadius:
-                                                const BorderRadius.all(
-                                              Radius.circular(5),
-                                            ),
-                                            color: !controller.showIncome
-                                                ? Colors.red
-                                                : forgroundColor),
-                                        child: Center(
-                                          child: FaIcon(
-                                            FontAwesomeIcons.arrowDown,
-                                            color: !controller.showIncome
-                                                ? forgroundColor
-                                                : Colors.red,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              ],
-                            ),
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              physics: const BouncingScrollPhysics(),
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 8.0),
-                                child: Row(
-                                  children: List.generate(
-                                    controller.loading
-                                        ? 5
-                                        : controller.showIncome
-                                            ? controller.valsUp.length
-                                            : controller.valsDown.length,
-                                    (index) => CatagoryIndicator(
-                                        scrolable: true,
-                                        loading: controller.loading,
-                                        width: width,
-                                        color: controller.catList
-                                            .firstWhere((catagory) =>
-                                                controller.showIncome
-                                                    ? catagory.name ==
-                                                        controller.valsUp.keys
-                                                            .elementAt(index)
-                                                    : catagory.name ==
-                                                        controller.valsDown.keys
-                                                            .elementAt(index))
-                                            .color,
-                                        catagory: controller.showIncome
-                                            ? controller.valsUp.keys
-                                                .elementAt(index)
-                                            : controller.valsDown.keys
-                                                .elementAt(index)),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Divider(
-                                color: mainColor,
-                                height: 3,
-                              ),
-                            ),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  CatagoryIndicator(
-                                    scrolable: false,
-                                    loading: controller.loading,
-                                    adjustedWidth: width * 0.25,
-                                    width: width,
-                                    color: Colors.green.withOpacity(0.75),
-                                    catagory:
-                                        '${'income'.tr} : ${controller.humanFormat(controller.income)}',
-                                  ),
-                                  CatagoryIndicator(
-                                      scrolable: false,
-                                      adjustedWidth: width * 0.25,
-                                      loading: controller.loading,
-                                      width: width,
-                                      color: Colors.red.withOpacity(0.75),
-                                      catagory:
-                                          '${'expence'.tr} : ${controller.humanFormat(controller.expense)}'),
-                                  CatagoryIndicator(
-                                      scrolable: false,
-                                      adjustedWidth: width * 0.25,
-                                      loading: controller.loading,
-                                      width: width,
-                                      color: Colors.blue.withOpacity(0.75),
-                                      catagory:
-                                          '${'total'.tr} : ${controller.humanFormat(controller.income - controller.expense)}')
-                                ],
-                              ),
-                            ),
+                            // Row(
+                            //   mainAxisAlignment: MainAxisAlignment.center,
+                            //   children: [
+                            //     SizedBox(
+                            //       height: width * 0.45,
+                            //       width: width * 0.45,
+                            //       child: controller.loading
+                            //           ? IconAnimated(
+                            //               name: Icons8.circles_menu_1_iOS,
+                            //               controller:
+                            //                   controller.loadingController,
+                            //               color: mainColor,
+                            //             )
+                            //           : Stack(
+                            //               children: [
+                            //                 Chart(
+                            //                   layers: [
+                            //                     ChartGroupPieLayer(
+                            //                       items: [
+                            //                         List.generate(
+                            //                           controller.loading
+                            //                               ? 10
+                            //                               : controller
+                            //                                       .showIncome
+                            //                                   ? controller
+                            //                                       .valsUp.length
+                            //                                   : controller
+                            //                                       .valsDown
+                            //                                       .length,
+                            //                           (index) =>
+                            //                               ChartGroupPieDataItem(
+                            //                                   amount: controller
+                            //                                           .loading
+                            //                                       ? 0
+                            //                                       : controller
+                            //                                               .showIncome
+                            //                                           ? controller
+                            //                                               .valsUp
+                            //                                               .values
+                            //                                               .elementAt(
+                            //                                                   index)
+                            //                                           : controller
+                            //                                               .valsDown
+                            //                                               .values
+                            //                                               .elementAt(
+                            //                                                   index),
+                            //                                   color: controller
+                            //                                       .catList
+                            //                                       .firstWhere((catagory) => controller
+                            //                                               .showIncome
+                            //                                           ? catagory.name ==
+                            //                                               controller.valsUp.keys.elementAt(
+                            //                                                   index)
+                            //                                           : catagory.name ==
+                            //                                               controller
+                            //                                                   .valsDown
+                            //                                                   .keys
+                            //                                                   .elementAt(index))
+                            //                                       .color,
+                            //                                   label: 'thing'),
+                            //                         ),
+                            //                       ],
+                            //                       settings:
+                            //                           const ChartGroupPieSettings(),
+                            //                     ),
+                            //                   ],
+                            //                 ),
+                            //                 Center(
+                            //                   child: Skeletonizer(
+                            //                     enabled: controller.loading,
+                            //                     child: ButtonWidget(
+                            //                       isIos: controller.isIos,
+                            //                       textSize: 16,
+                            //                       type: ButtonType.text,
+                            //                       onClick: () => dialogShowing(
+                            //                         widget: AlertDialog(
+                            //                           content: Row(
+                            //                             mainAxisAlignment:
+                            //                                 MainAxisAlignment
+                            //                                     .spaceBetween,
+                            //                             children: [
+                            //                               CustomText(
+                            //                                 text: controller
+                            //                                     .walletAmount(
+                            //                                   amount:
+                            //                                       1200000000,
+                            //                                 ),
+                            //                               ),
+                            //                               CountryPickerDropdown(
+                            //                                 initialValue:
+                            //                                     CountryPickerUtils
+                            //                                         .getCountryByCurrencyCode(
+                            //                                   controller
+                            //                                       .userModel
+                            //                                       .defaultCurrency,
+                            //                                 ).isoCode,
+                            //                                 itemBuilder: (Country
+                            //                                         country) =>
+                            //                                     SizedBox(
+                            //                                   height:
+                            //                                       width * 0.14,
+                            //                                   width:
+                            //                                       (width - 24) *
+                            //                                           0.2,
+                            //                                   child: FittedBox(
+                            //                                     child: Row(
+                            //                                       children: <Widget>[
+                            //                                         CountryPickerUtils
+                            //                                             .getDefaultFlagImage(
+                            //                                                 country),
+                            //                                         const SizedBox(
+                            //                                           width:
+                            //                                               8.0,
+                            //                                         ),
+                            //                                         Text(
+                            //                                           country
+                            //                                               .currencyCode
+                            //                                               .toString(),
+                            //                                         ),
+                            //                                       ],
+                            //                                     ),
+                            //                                   ),
+                            //                                 ),
+                            //                                 onValuePicked: (Country?
+                            //                                         country) =>
+                            //                                     controller.currencyExchange(
+                            //                                         base: controller
+                            //                                             .userModel
+                            //                                             .defaultCurrency,
+                            //                                         to: country !=
+                            //                                                 null
+                            //                                             ? country.currencyCode ??
+                            //                                                 ''
+                            //                                             : '',
+                            //                                         amount:
+                            //                                             1200000000),
+                            //                               ),
+                            //                             ],
+                            //                           ),
+                            //                         ),
+                            //                       ),
+                            //                       text: controller
+                            //                           .humanFormat(1200000000),
+                            //                     ),
+                            //                   ),
+                            //                 ),
+                            //               ],
+                            //             ),
+                            //     ),
+                            //     if (controller.loading == false) ...[
+                            //       Column(
+                            //         children: [
+                            //           GestureDetector(
+                            //             onTap: () => controller.chartFlip(),
+                            //             child: Container(
+                            //               height: width * 0.1,
+                            //               width: width * 0.1,
+                            //               decoration: BoxDecoration(
+                            //                   border: Border.all(
+                            //                       color: Colors.green),
+                            //                   borderRadius:
+                            //                       const BorderRadius.all(
+                            //                     Radius.circular(5),
+                            //                   ),
+                            //                   color: controller.showIncome
+                            //                       ? Colors.green
+                            //                       : forgroundColor),
+                            //               child: Center(
+                            //                 child: FaIcon(
+                            //                   FontAwesomeIcons.arrowUp,
+                            //                   color: controller.showIncome
+                            //                       ? forgroundColor
+                            //                       : Colors.green,
+                            //                 ),
+                            //               ),
+                            //             ),
+                            //           ),
+                            //           SizedBox(
+                            //             height: width * 0.05,
+                            //           ),
+                            //           GestureDetector(
+                            //             onTap: () => controller.chartFlip(),
+                            //             child: Container(
+                            //               height: width * 0.1,
+                            //               width: width * 0.1,
+                            //               decoration: BoxDecoration(
+                            //                   border:
+                            //                       Border.all(color: Colors.red),
+                            //                   borderRadius:
+                            //                       const BorderRadius.all(
+                            //                     Radius.circular(5),
+                            //                   ),
+                            //                   color: !controller.showIncome
+                            //                       ? Colors.red
+                            //                       : forgroundColor),
+                            //               child: Center(
+                            //                 child: FaIcon(
+                            //                   FontAwesomeIcons.arrowDown,
+                            //                   color: !controller.showIncome
+                            //                       ? forgroundColor
+                            //                       : Colors.red,
+                            //                 ),
+                            //               ),
+                            //             ),
+                            //           ),
+                            //         ],
+                            //       )
+                            //     ]
+                            //   ],
+                            // ),
+                            // SingleChildScrollView(
+                            //   scrollDirection: Axis.horizontal,
+                            //   physics: const BouncingScrollPhysics(),
+                            //   child: Padding(
+                            //     padding:
+                            //         const EdgeInsets.symmetric(horizontal: 8.0),
+                            //     child: Row(
+                            //       children: List.generate(
+                            //         controller.loading
+                            //             ? 5
+                            //             : controller.showIncome
+                            //                 ? controller.valsUp.length
+                            //                 : controller.valsDown.length,
+                            //         (index) => CatagoryIndicator(
+                            //             scrolable: true,
+                            //             loading: controller.loading,
+                            //             width: width,
+                            //             color: controller.catList
+                            //                 .firstWhere((catagory) =>
+                            //                     controller.showIncome
+                            //                         ? catagory.name ==
+                            //                             controller.valsUp.keys
+                            //                                 .elementAt(index)
+                            //                         : catagory.name ==
+                            //                             controller.valsDown.keys
+                            //                                 .elementAt(index))
+                            //                 .color,
+                            //             catagory: controller.showIncome
+                            //                 ? controller.valsUp.keys
+                            //                     .elementAt(index)
+                            //                 : controller.valsDown.keys
+                            //                     .elementAt(index)),
+                            //       ),
+                            //     ),
+                            //   ),
+                            // ),
+                            // Padding(
+                            //   padding:
+                            //       const EdgeInsets.symmetric(horizontal: 8.0),
+                            //   child: Divider(
+                            //     color: mainColor,
+                            //     height: 3,
+                            //   ),
+                            // ),
+                            // Padding(
+                            //   padding:
+                            //       const EdgeInsets.symmetric(horizontal: 8.0),
+                            //   child: Row(
+                            //     mainAxisAlignment:
+                            //         MainAxisAlignment.spaceBetween,
+                            //     children: [
+                            //       Skeletonizer(
+                            //         enabled: controller.loading,
+                            //         child: CatagoryIndicator(
+                            //           scrolable: false,
+                            //           loading: controller.loading,
+                            //           adjustedWidth: width * 0.25,
+                            //           width: width,
+                            //           color: Colors.green.withOpacity(0.75),
+                            //           catagory:
+                            //               '${'income'.tr} : ${controller.humanFormat(controller.income)}',
+                            //         ),
+                            //       ),
+                            //       Skeletonizer(
+                            //         enabled: controller.loading,
+                            //         child: CatagoryIndicator(
+                            //             scrolable: false,
+                            //             adjustedWidth: width * 0.25,
+                            //             loading: controller.loading,
+                            //             width: width,
+                            //             color: Colors.red.withOpacity(0.75),
+                            //             catagory:
+                            //                 '${'expence'.tr} : ${controller.humanFormat(controller.expense)}'),
+                            //       ),
+                            //       Skeletonizer(
+                            //         enabled: controller.loading,
+                            //         child: CatagoryIndicator(
+                            //             scrolable: false,
+                            //             adjustedWidth: width * 0.25,
+                            //             loading: controller.loading,
+                            //             width: width,
+                            //             color: Colors.blue.withOpacity(0.75),
+                            //             catagory:
+                            //                 '${'total'.tr} : ${controller.humanFormat(controller.income - controller.expense)}'),
+                            //       )
+                            //     ],
+                            //   ),
+                            // ),
                           ],
                           if (!controller.pieChart) ...[
                             Padding(
@@ -508,38 +619,66 @@ class HomeBody extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Column(
-                    children: List.generate(
-                      controller.loading ? 10 : controller.catList.length,
-                      (index) => Skeletonizer(
-                        enabled: controller.loading,
-                        child: ExpenceTile(
-                          loading: controller.loading,
-                          budgetPercent: 0.5,
-                          width: width,
-                          color: controller.catList[index].color,
-                          title: controller.catList[index].name,
-                          subtitle:
-                              '${controller.catList[index].transactions!.length} transactions',
-                          amount: controller.humanFormat(controller
-                              .vals[controller.catList[index].name] as double),
-                          ave:
-                              '${'ave'.tr} ${controller.aveCalc(amount: controller.vals[controller.catList[index].name] as double, dates: controller.dates[controller.catList[index].name] as List<DateTime>).toStringAsFixed(2)}',
-                          budget: true,
-                          icon: controller.catList[index].icon,
-                          padding: const EdgeInsets.only(
-                            right: 12,
-                            left: 12,
-                            bottom: 16,
-                          ),
-                          budgetKeeping: '50/100',
-                        ),
-                      ),
-                    )
-                        .animate(interval: 250.ms)
-                        .moveX(duration: 250.ms)
-                        .fadeIn(duration: 250.ms),
-                  )
+                  // Column(
+                  //   children: List.generate(
+                  //     20,
+                  //     (index) => Skeletonizer(
+                  //       enabled: true,
+                  //       child: ExpenceTile(
+                  //         width: width,
+                  //         color: Colors.red,
+                  //         title: 'title',
+                  //         subtitle: 'subtitle',
+                  //         amount: '333',
+                  //         budget: false,
+                  //         icon: Icons.add,
+                  //         padding: const EdgeInsets.only(
+                  //           right: 12,
+                  //           left: 12,
+                  //           bottom: 16,
+                  //         ),
+                  //         loading: true,
+                  //       ),
+                  //     ),
+                  //   ),
+                  // )
+                  // Column(
+                  //   children: List.generate(
+                  //     20,
+                  //     // controller.loading ? 10 : controller.catList.length,
+                  //     (index) => Skeletonizer(
+                  //       enabled: true,
+                  //       child: ExpenceTile(
+                  //         loading: false,
+                  //         //budgetPercent: 0.5,
+                  //         width: width,
+                  //         color: Colors.red.shade300,
+                  //         // controller.catList[index].color,
+                  //         title: 'asdfadfasdfadfadf',
+                  //         // controller.catList[index].name,
+                  //         subtitle: 'aldjkfkdfa',
+                  //         // '${controller.catList[index].transactions!.length} transactions',
+                  //         amount: '69.69',
+                  //         //  controller.humanFormat(controller
+                  //         //     .vals[controller.catList[index].name] as double),
+                  //         ave: '',
+                  //         // '${'ave'.tr} ${controller.aveCalc(amount: controller.vals[controller.catList[index].name] as double, dates: controller.dates[controller.catList[index].name] as List<DateTime>).toStringAsFixed(2)}',
+                  //         budget: false,
+                  //         icon: Icons.add,
+                  //         // controller.catList[index].icon,
+                  //         padding: const EdgeInsets.only(
+                  //           right: 12,
+                  //           left: 12,
+                  //           bottom: 16,
+                  //         ),
+                  //         budgetKeeping: '50/100',
+                  //       ),
+                  //     ),
+                  //   )
+                  //       .animate(interval: 250.ms)
+                  //       .moveX(duration: 250.ms)
+                  //       .fadeIn(duration: 250.ms),
+                  // )
                 ],
               ),
             );

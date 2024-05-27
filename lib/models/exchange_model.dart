@@ -9,8 +9,11 @@ class CurrenctExchangeModel {
   });
 
   factory CurrenctExchangeModel.fromMap(Map<String, dynamic> map) {
+    double res = map['conversion_result'].runtimeType != double
+        ? double.parse(map['conversion_result'].toString())
+        : map['conversion_result'];
     return CurrenctExchangeModel(
-      result: (map['conversion_result'] as double).toStringAsFixed(2),
+      result: res.toStringAsFixed(2),
       errorMessage: map['error-type'] ?? '',
       status: map['result'],
     );

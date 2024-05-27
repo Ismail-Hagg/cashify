@@ -2,6 +2,7 @@ import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:cashify/gloable_controllers/auth_controller.dart';
 import 'package:cashify/models/catagory_model.dart';
 import 'package:cashify/models/fake_data.dart';
+import 'package:cashify/models/month_setting_model.dart';
 import 'package:cashify/models/transaction_model.dart';
 import 'package:cashify/models/user_model.dart';
 import 'package:cashify/pages/all_transactions_page/all_transaction_view.dart';
@@ -25,10 +26,13 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   late UserModel _userModel;
   UserModel get userModel => _userModel;
 
-  FirebaseService firebaseService = FirebaseService();
+  final FirebaseService _firebaseService = FirebaseService();
 
   int _pageIndex = 0;
   int get pageIndex => _pageIndex;
+
+  Map<String, MonthSettingModel> _monhtMap = {};
+  Map<String, MonthSettingModel> get monhtMap => _monhtMap;
 
   final bool _isIos = Get.find<GloableAuthController>().isIos;
   bool get isIos => _isIos;
@@ -140,6 +144,9 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   String _chosenCategory = '';
   String get chosenCategory => _chosenCategory;
 
+  final String _currentTime = '${DateTime.now().year}-${DateTime.now().month}';
+  String get currentTime => _currentTime;
+
   @override
   void onInit() {
     super.onInit();
@@ -149,6 +156,7 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
       duration: const Duration(milliseconds: 1400),
     );
     _transactionCurrency = _userModel.defaultCurrency;
+    getMonthSetting(time: _currentTime, load: true);
     setTime();
   }
 
@@ -164,6 +172,24 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     _catAddNode.dispose();
     _subCatAddController.dispose();
     _subCatNode.dispose();
+  }
+
+  // get the month setting data
+  void getMonthSetting({required String time, required bool load}) async {
+    load ? loadinganimation() : null;
+    await _firebaseService
+        .getRecordDocu(
+            userId: _userModel.userId,
+            path: FirebasePaths.monthSetting.name,
+            docId: time)
+        .then((value) {
+      if (value.exists) {
+        MonthSettingModel model =
+            MonthSettingModel.fromMap(value.data() as Map<String, dynamic>);
+        _monhtMap[time] = model;
+      }
+      load ? loadinganimation() : null;
+    });
   }
 
   //modal leadig button
@@ -251,7 +277,7 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
         );
         break;
     }
-    go ? calculate() : null;
+    // go ? calculate() : null;
   }
 
   // show income or expence in chart
@@ -517,10 +543,12 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   void recordSend(
       {required String path, required Map<String, dynamic> map}) async {
     try {
-      await firebaseService.addRecord(
+      await _firebaseService.addRecord(
           userId: _userModel.userId, path: path, map: map);
     } catch (e) {
       print('== $e');
     }
   }
+
+  currencyExchange({required base, required String to, required amount}) {}
 }
