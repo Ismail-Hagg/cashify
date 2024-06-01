@@ -244,10 +244,14 @@ class MonthSettingController extends GetxController {
   void valsChanges({required bool start}) {
     TextEditingController controll = start ? _startController : _endController;
     if (controll.text.trim() != '' && _catController.text.trim() != '') {
+      String curr = _userModel.wallets
+          .firstWhere((element) => element.name == _catController.text.trim())
+          .currency;
       if (_model == null) {
         _model = MonthSettingModel(
           walletInfo: [
             WalletInfo(
+                currency: curr,
                 opSum: 0,
                 wallet: _catController.text.trim(),
                 start: start ? double.parse(controll.text.trim()) : 0,
@@ -265,6 +269,7 @@ class MonthSettingController extends GetxController {
 
         if (index != -1) {
           _model!.walletInfo[index] = WalletInfo(
+            currency: curr,
             opSum: _model!.walletInfo[index].opSum,
             wallet: _catController.text.trim(),
             start: start
@@ -277,6 +282,7 @@ class MonthSettingController extends GetxController {
         } else {
           _model!.walletInfo.add(
             WalletInfo(
+              currency: curr,
               opSum: 0,
               wallet: _catController.text.trim(),
               start: start ? double.parse(controll.text.trim()) : 0,

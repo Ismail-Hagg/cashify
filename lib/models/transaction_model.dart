@@ -45,7 +45,9 @@ class TransactionModel {
       catagory: map['catagory'],
       subCatagory: map['subCatagory'],
       currency: map['currency'],
-      amount: map['amount'],
+      amount: map['amount'].runtimeType != double
+          ? double.parse(map['amount'].toString())
+          : map['amount'],
       note: map['note'],
       date: map['date'].runtimeType == String
           ? DateTime.parse(map['date'])

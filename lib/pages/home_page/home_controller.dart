@@ -1,7 +1,7 @@
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:cashify/gloable_controllers/auth_controller.dart';
 import 'package:cashify/models/catagory_model.dart';
-import 'package:cashify/models/fake_data.dart';
+import 'package:cashify/models/filter_model.dart';
 import 'package:cashify/models/month_setting_model.dart';
 import 'package:cashify/models/transaction_model.dart';
 import 'package:cashify/models/user_model.dart';
@@ -16,6 +16,8 @@ import 'package:cashify/services/currency_exchange_service.dart';
 import 'package:cashify/services/firebase_service.dart';
 import 'package:cashify/utils/constants.dart';
 import 'package:cashify/utils/enums.dart';
+import 'package:cashify/utils/util_functions.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -31,7 +33,7 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   int _pageIndex = 0;
   int get pageIndex => _pageIndex;
 
-  Map<String, MonthSettingModel> _monhtMap = {};
+  final Map<String, MonthSettingModel> _monhtMap = {};
   Map<String, MonthSettingModel> get monhtMap => _monhtMap;
 
   final bool _isIos = Get.find<GloableAuthController>().isIos;
@@ -147,6 +149,15 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   final String _currentTime = '${DateTime.now().year}-${DateTime.now().month}';
   String get currentTime => _currentTime;
 
+  double _moneyTotal = 0.0;
+  double get moneyTotal => _moneyTotal;
+
+  double _moneyTrans = 0.0;
+  double get moneyTrans => _moneyTrans;
+
+  bool _totalchanged = false;
+  bool get totalchanged => _totalchanged;
+
   @override
   void onInit() {
     super.onInit();
@@ -156,8 +167,7 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
       duration: const Duration(milliseconds: 1400),
     );
     _transactionCurrency = _userModel.defaultCurrency;
-    getMonthSetting(time: _currentTime, load: true);
-    setTime();
+    initAll();
   }
 
   @override
@@ -174,22 +184,66 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     _subCatNode.dispose();
   }
 
-  // get the month setting data
-  void getMonthSetting({required String time, required bool load}) async {
-    load ? loadinganimation() : null;
-    await _firebaseService
-        .getRecordDocu(
-            userId: _userModel.userId,
-            path: FirebasePaths.monthSetting.name,
-            docId: time)
-        .then((value) {
-      if (value.exists) {
-        MonthSettingModel model =
-            MonthSettingModel.fromMap(value.data() as Map<String, dynamic>);
-        _monhtMap[time] = model;
-      }
-      load ? loadinganimation() : null;
+  // initial function
+  void initAll() async {
+    loadinganimation(load: true);
+    await getMonthSetting(date: _currentTime, calc: true).then((_) async {
+      await moneyNow().then((value) async {
+        await setTime().then((value) async {
+          await calculate(start: value.start, end: value.end).then((value) {
+            loadinganimation(load: false);
+          });
+        });
+      });
     });
+  }
+
+  // calculate total of wallets aka money now
+  Future<void> moneyNow() async {
+    if (_monhtMap[_currentTime] != null) {
+      _moneyTotal = 0.0;
+      for (var i = 0; i < _monhtMap[_currentTime]!.walletInfo.length; i++) {
+        if (_monhtMap[_currentTime]!.walletInfo[i].currency ==
+            _userModel.defaultCurrency) {
+          _moneyTotal = double.parse((_moneyTotal +
+                  (_monhtMap[_currentTime]!.walletInfo[i].start +
+                      _monhtMap[_currentTime]!.walletInfo[i].opSum))
+              .toStringAsFixed(2));
+        } else {
+          await MoneyExchange()
+              .changeCurrency(
+                  base: _monhtMap[_currentTime]!.walletInfo[i].currency,
+                  exchange: _userModel.defaultCurrency,
+                  amount: (_monhtMap[_currentTime]!.walletInfo[i].start +
+                      _monhtMap[_currentTime]!.walletInfo[i].opSum))
+              .then((value) {
+            if (value.status == 'success') {
+              _moneyTotal = double.parse(
+                  (_moneyTotal + double.parse(value.result))
+                      .toStringAsFixed(2));
+            }
+          });
+        }
+      }
+    }
+  }
+
+  // get the month dara
+  Future<void> getMonthSetting(
+      {required String date, required bool calc}) async {
+    if (_monhtMap[date] == null) {
+      await _firebaseService
+          .getRecordDocu(
+              userId: _userModel.userId,
+              path: FirebasePaths.monthSetting.name,
+              docId: date)
+          .then((value) async {
+        if (value.exists) {
+          _monhtMap[date] =
+              MonthSettingModel.fromMap(value.data() as Map<String, dynamic>);
+        }
+      });
+    }
   }
 
   //modal leadig button
@@ -218,21 +272,23 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   }
 
   // switch charts
-  void chartSwitch() {
-    _pieChart = !_pieChart;
-    update();
+  void chartSwitch({required bool pie}) {
+    if (_pieChart != pie) {
+      _pieChart = pie;
+      update();
+    }
   }
 
   // set start and end times
-  void setTime({Times? time, BuildContext? context}) async {
-    bool go = true;
+  Future<({DateTime start, DateTime end})> setTime(
+      {Times? time, BuildContext? context}) async {
     switch (time) {
       case null:
       case Times.thisMonth:
         var controll = DateTime.now();
         _startTime = DateTime(controll.year, controll.month, 1);
         _endTime = DateTime.now();
-        break;
+        return (start: _startTime, end: _endTime);
 
       case Times.lastMonth:
         var controll = DateTime.now();
@@ -244,14 +300,14 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
         _endTime = controll.month < 12
             ? DateTime(controll.year, controll.month, 0)
             : DateTime(controll.year + 1, 1, 0);
-        break;
+        return (start: _startTime, end: _endTime);
 
       case Times.thisYear:
         var controll = DateTime.now();
 
         _startTime = DateTime(controll.year, 1, 1);
         _endTime = DateTime.now();
-        break;
+        return (start: _startTime, end: _endTime);
 
       case Times.custom:
         await showCalendarDatePicker2Dialog(
@@ -268,38 +324,34 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
               _endTime = value[1] as DateTime;
               _chosenTime =
                   '${_startTime.year}/${_startTime.month}/${_startTime.day}  -  ${_endTime.year}/${_endTime.month}/${_endTime.day}';
-              go = true;
-              update();
             } else {
-              go = false;
+              _startTime = DateTime(1, 0, 0);
+              _endTime = DateTime(1, 0, 0);
             }
           },
         );
-        break;
+        return (start: _startTime, end: _endTime);
     }
-    // go ? calculate() : null;
   }
 
   // show income or expence in chart
-  void chartFlip() {
-    _showIncome = !showIncome;
-    update();
+  void chartFlip({required bool income}) {
+    if (_showIncome != income) {
+      _showIncome = income;
+      update();
+    }
   }
 
   // loading animation
-  void loadinganimation() {
-    _loading = !_loading;
-    if (_loading) {
-      _loadingController.repeat();
-    } else {
-      _loadingController.stop();
-    }
+  void loadinganimation({required bool load}) {
+    _loading = load;
+    load ? _loadingController.repeat() : _loadingController.stop();
     update();
   }
 
   // calculate and gather the catagories
-  void calculate() {
-    loadinganimation();
+  Future<void> calculate(
+      {required DateTime start, required DateTime end}) async {
     int tracker = 0;
     _chartHigh = 0;
     _chartLow = 0;
@@ -310,86 +362,118 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     _valsUp = {};
     _valsDown = {};
     _dates = {};
-    for (var i = 0; i < fakeData.length; i++) {
-      TransactionModel transaction = TransactionModel.fromMap(fakeData[i]);
 
-      _dates[transaction.catagory] != null
-          ? _dates[transaction.catagory]!.add(transaction.date)
-          : _dates[transaction.catagory] = [transaction.date];
-      // calculate money in vs out
-      if (transaction.type == TransactionType.moneyIn) {
-        if (transaction.amount > _chartHigh) {
-          _chartHigh = transaction.amount;
-        }
-        _income = _income + transaction.amount;
-        if (_valsUp.containsKey(transaction.catagory)) {
-          _valsUp[transaction.catagory] =
-              _valsUp[transaction.catagory]! + transaction.amount;
-        } else {
-          _valsUp[transaction.catagory] = transaction.amount;
-        }
-      } else if (transaction.type == TransactionType.moneyOut) {
-        if ((transaction.amount * -1) < _chartLow) {
-          _chartLow = (transaction.amount * -1);
-        }
-        _expense = _expense + transaction.amount;
-        if (_valsDown.containsKey(transaction.catagory)) {
-          _valsDown[transaction.catagory] =
-              _valsDown[transaction.catagory]! + transaction.amount;
-        } else {
-          _valsDown[transaction.catagory] = transaction.amount;
-        }
-      }
+    await _firebaseService
+        .filteredTransactions(
+      filter: FilterModel(
+        userId: _userModel.userId,
+        path: FirebasePaths.transactions.name,
+        timeStart: Timestamp.fromDate(start),
+        timeEnd: Timestamp.fromDate(end),
+      ),
+    )
+        .then(
+      (value) async {
+        if (value.docs.isNotEmpty) {
+          for (var i = 0; i < value.docs.length; i++) {
+            TransactionModel transaction = TransactionModel.fromMap(
+                value.docs[i].data() as Map<String, dynamic>);
 
-      if (_catList.isEmpty) {
-        _catList.add(
-          Catagory(
-            name: transaction.catagory,
-            subCatagories: [transaction.subCatagory],
-            icon: Icons.drive_eta_outlined,
-            color: generateRandomColor(prev: Colors.red),
-            transactions: [transaction],
-          ),
-        );
-      } else {
-        tracker = 0;
-        for (var i = 0; i < _catList.length; i++) {
-          if (_catList[i].name == transaction.catagory) {
-            _catList[i].transactions != null
-                ? _catList[i].transactions!.add(transaction)
-                : _catList[i].transactions = [transaction];
-            tracker = 1;
+            _dates[transaction.catagory] != null
+                ? _dates[transaction.catagory]!.add(transaction.date)
+                : _dates[transaction.catagory] = [transaction.date];
+
+            // add to the map to display from
+
+            if (transaction.currency == _userModel.defaultCurrency) {
+              _vals[transaction.catagory] =
+                  (_vals[transaction.catagory] ?? 0) + transaction.amount;
+            } else {
+              await MoneyExchange()
+                  .changeCurrency(
+                      base: transaction.currency,
+                      exchange: _userModel.defaultCurrency,
+                      amount: transaction.amount)
+                  .then((value) {
+                _vals[transaction.catagory] =
+                    (_vals[transaction.catagory] ?? 0) +
+                        double.parse(value.result);
+              });
+            }
+
+            // calculate money in vs out
+            if (transaction.type == TransactionType.moneyIn) {
+              if (transaction.amount > _chartHigh) {
+                _chartHigh = transaction.amount;
+              }
+              _income = _income + transaction.amount;
+              if (_valsUp.containsKey(transaction.catagory)) {
+                _valsUp[transaction.catagory] =
+                    _valsUp[transaction.catagory]! + transaction.amount;
+              } else {
+                _valsUp[transaction.catagory] = transaction.amount;
+              }
+            } else if (transaction.type == TransactionType.moneyOut) {
+              if ((transaction.amount * -1) < _chartLow) {
+                _chartLow = (transaction.amount * -1);
+              }
+              _expense = _expense + transaction.amount;
+              if (_valsDown.containsKey(transaction.catagory)) {
+                _valsDown[transaction.catagory] =
+                    _valsDown[transaction.catagory]! + transaction.amount;
+              } else {
+                _valsDown[transaction.catagory] = transaction.amount;
+              }
+            }
+
+            if (_catList.isEmpty) {
+              _catList.add(
+                Catagory(
+                  name: transaction.catagory,
+                  subCatagories: [transaction.subCatagory],
+                  icon: _userModel.catagories
+                      .firstWhere(
+                          (element) => element.name == transaction.catagory)
+                      .icon,
+                  color: _userModel.catagories
+                      .firstWhere(
+                          (element) => element.name == transaction.catagory)
+                      .color,
+                  transactions: [transaction],
+                ),
+              );
+            } else {
+              tracker = 0;
+              for (var i = 0; i < _catList.length; i++) {
+                if (_catList[i].name == transaction.catagory) {
+                  _catList[i].transactions != null
+                      ? _catList[i].transactions!.add(transaction)
+                      : _catList[i].transactions = [transaction];
+                  tracker = 1;
+                }
+              }
+              if (tracker == 0) {
+                _catList.add(
+                  Catagory(
+                    name: transaction.catagory,
+                    subCatagories: [transaction.subCatagory],
+                    icon: _userModel.catagories
+                        .firstWhere(
+                            (element) => element.name == transaction.catagory)
+                        .icon,
+                    color: _userModel.catagories
+                        .firstWhere(
+                            (element) => element.name == transaction.catagory)
+                        .color,
+                    transactions: [transaction],
+                  ),
+                );
+              }
+            }
           }
         }
-        if (tracker == 0) {
-          _catList.add(
-            Catagory(
-              name: transaction.catagory,
-              subCatagories: [transaction.subCatagory],
-              icon: Icons.drive_eta_outlined,
-              color: generateRandomColor(prev: Colors.blue),
-              transactions: [transaction],
-            ),
-          );
-        }
-      }
-
-      // add to the map to display from
-      if (_vals.containsKey(transaction.catagory)) {
-        transaction.type == TransactionType.moneyIn
-            ? _vals[transaction.catagory] =
-                (_vals[transaction.catagory]! + transaction.amount)
-            : _vals[transaction.catagory] =
-                _vals[transaction.catagory]! - transaction.amount;
-      } else {
-        _vals[transaction.catagory] =
-            transaction.type == TransactionType.moneyIn
-                ? transaction.amount
-                : 0 - transaction.amount;
-      }
-    }
-
-    loadinganimation();
+      },
+    );
   }
 
   // calculate average of spending per day
@@ -401,30 +485,6 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
       ave = days == 0 ? 0.0 : amount / days;
     }
     return ave;
-  }
-
-  // generate random color
-  Color generateRandomColor({required Color prev}) {
-    var lst = [
-      Colors.red,
-      Colors.blue,
-      Colors.green,
-      Colors.blueAccent,
-      Colors.greenAccent,
-      Colors.purple,
-      Colors.purpleAccent,
-      Colors.deepOrange,
-      Colors.orange,
-      Colors.deepPurple,
-      Colors.pink,
-      Colors.pinkAccent,
-      Colors.indigo,
-      Colors.brown,
-      Colors.teal,
-    ];
-    final random = math.Random();
-    final r = random.nextInt(lst.length);
-    return lst[r] == prev ? mainColor : lst[r];
   }
 
   // format the amount
@@ -469,25 +529,32 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   }
 
   // change the tracking of the chosen time period
-  void changeTimePeriod({required String time, required BuildContext context}) {
-    if (_trackNum != _track[time] as int) {
-      _trackNum = _track[time] as int;
-      setTime(
-          time: _trackNum == 0
-              ? Times.thisMonth
-              : _trackNum == 1
-                  ? Times.lastMonth
-                  : _trackNum == 2
-                      ? Times.thisYear
-                      : Times.custom,
-          context: context);
-      _chosenTime = time;
-      update();
-    }
-  }
+  void changeTimePeriod(
+      {required String time, required BuildContext context}) async {
+    loadinganimation(load: true);
+    _trackNum = _track[time] as int;
+    _chosenTime = time;
+    await setTime(
+            time: _trackNum == 0
+                ? Times.thisMonth
+                : _trackNum == 1
+                    ? Times.lastMonth
+                    : _trackNum == 2
+                        ? Times.thisYear
+                        : Times.custom,
+            context: context)
+        .then((value) async {
+      loadinganimation(load: true);
 
-  // check if the local image works
-  void imageCheck() {}
+      if (value.start.year != 0) {
+        await calculate(start: value.start, end: value.end).then((_) {
+          loadinganimation(load: false);
+        });
+      } else {
+        loadinganimation(load: false);
+      }
+    });
+  }
 
   // chcange page index
   void setPageIndex({required int pageIndex}) {
@@ -550,5 +617,29 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     }
   }
 
-  currencyExchange({required base, required String to, required amount}) {}
+  void currencyExchange({
+    required String base,
+    required String to,
+    required double amount,
+  }) async {
+    await MoneyExchange()
+        .changeCurrency(base: base, exchange: to, amount: amount)
+        .then(
+      (value) {
+        if (value.status == 'success') {
+          _moneyTrans = double.parse(value.result);
+          _totalchanged = true;
+          update();
+        }
+      },
+    );
+  }
+
+  // open dialog for currency swap
+  void openDialog({required Widget widget}) {
+    _moneyTrans = 0.0;
+    _totalchanged = false;
+    update();
+    dialogShowing(widget: widget);
+  }
 }

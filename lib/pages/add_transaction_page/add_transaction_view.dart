@@ -238,6 +238,7 @@ class AddTRansactionView extends StatelessWidget {
                               },
                             ),
                           ),
+                          menuHeight: width * 0.75,
                           hintText: 'category'.tr,
                           expandedInsets: const EdgeInsets.all(0),
                           controller: controller.catController,
@@ -348,6 +349,7 @@ class AddTRansactionView extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6.0),
                         child: DropdownMenu(
+                          menuHeight: width * 0.75,
                           enabled: controller.catController.text != '',
                           controller: controller.subcatController,
                           hintText: 'subcat'.tr,
@@ -451,6 +453,7 @@ class AddTRansactionView extends StatelessWidget {
                             ),
                           ),
                           hintText: 'wallet'.tr,
+                          menuHeight: width * 0.75,
                           expandedInsets: const EdgeInsets.all(0),
                           dropdownMenuEntries: List.generate(
                             controller.userModel.wallets.length,

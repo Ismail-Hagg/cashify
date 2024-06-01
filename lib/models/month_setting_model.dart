@@ -7,6 +7,7 @@ class MonthSettingModel {
   List<dynamic> budgetCat;
   List<dynamic> budgetVal;
   List<Catagory> catagory;
+
   MonthSettingModel({
     required this.walletInfo,
     required this.budgetCat,
@@ -61,9 +62,11 @@ class WalletInfo {
   double start;
   double end;
   double opSum;
+  String currency;
   WalletInfo(
       {required this.wallet,
       required this.start,
+      required this.currency,
       required this.end,
       required this.opSum});
 
@@ -72,7 +75,8 @@ class WalletInfo {
       'wallet': wallet,
       'start': start,
       'end': end,
-      'opSum': opSum
+      'opSum': opSum,
+      'currency': currency
     };
   }
 
@@ -87,6 +91,10 @@ class WalletInfo {
         ? double.parse(map['opSum'].toString())
         : map['opSum'];
     return WalletInfo(
-        wallet: map['wallet'], start: start, end: end, opSum: opSumm);
+        wallet: map['wallet'],
+        start: start,
+        end: end,
+        opSum: opSumm,
+        currency: map['currency']);
   }
 }
