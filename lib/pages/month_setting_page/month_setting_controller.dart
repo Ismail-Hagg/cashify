@@ -186,37 +186,50 @@ class MonthSettingController extends GetxController {
     _startController.clear();
     _endController.clear();
     update();
-    await _firebaseService
-        .getRecordDocu(
-            userId: _userModel.userId,
-            path: FirebasePaths.monthSetting.name,
-            docId: '${_date.year}-${_date.month}')
-        .then(
-      (value) {
-        if (value.exists) {
-          MonthSettingModel item =
-              MonthSettingModel.fromMap(value.data() as Map<String, dynamic>);
-          _model = item;
+    if (Get.find<HomeController>().monhtMap['${_date.year}-${_date.month}'] ==
+        null) {
+      await _firebaseService
+          .getRecordDocu(
+              userId: _userModel.userId,
+              path: FirebasePaths.monthSetting.name,
+              docId: '${_date.year}-${_date.month}')
+          .then(
+        (value) {
+          if (value.exists) {
+            MonthSettingModel item =
+                MonthSettingModel.fromMap(value.data() as Map<String, dynamic>);
+            _model = item;
 
-          if (_catController.text.trim() != '') {
-            changeWallet(wallet: _catController.text.trim());
+            if (_catController.text.trim() != '') {
+              changeWallet(wallet: _catController.text.trim());
+            }
           }
-        }
-        _loading = false;
-        update();
-      },
-    );
+          _loading = false;
+          update();
+        },
+      );
+    } else {
+      _model =
+          Get.find<HomeController>().monhtMap['${_date.year}-${_date.month}'];
+      _loading = false;
+      update();
+    }
   }
 
   // add or update month setting
   void addOrUpdateMonthSetting() async {
     if (_model != null) {
+      Get.find<HomeController>().monhtMap['${_date.year}-${_date.month}'] =
+          _model!;
       await _firebaseService.addRecord(
         docPath: '${_date.year}-${_date.month}',
         path: FirebasePaths.monthSetting.name,
         userId: _userModel.userId,
         map: _model!.toMap(),
       );
+      await Get.find<HomeController>().moneyNow().then(
+            (value) => Get.find<HomeController>().update(),
+          );
     }
   }
 

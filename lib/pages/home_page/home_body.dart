@@ -1,3 +1,4 @@
+import 'package:cashify/models/transaction_model.dart';
 import 'package:cashify/pages/home_page/home_controller.dart';
 import 'package:cashify/utils/constants.dart';
 import 'package:cashify/utils/enums.dart';
@@ -6,6 +7,7 @@ import 'package:cashify/widgets/animeted_icon_widget.dart';
 import 'package:cashify/widgets/caragory_indicator_widget.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';
 import 'package:cashify/widgets/expense_tile_widget.dart';
+import 'package:cashify/widgets/modal_widget.dart';
 import 'package:cashify/widgets/text_button_widget.dart';
 import 'package:country_currency_pickers/country.dart';
 import 'package:country_currency_pickers/country_picker_dropdown.dart';
@@ -18,6 +20,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:mrx_charts/mrx_charts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
 class HomeBody extends StatelessWidget {
   const HomeBody({super.key});
@@ -562,82 +565,84 @@ class HomeBody extends StatelessWidget {
                               ),
                             ),
                           ],
-                          // if (!controller.pieChart) ...[
-                          //   Padding(
-                          //     padding:
-                          //         const EdgeInsets.symmetric(horizontal: 12.0),
-                          //     child: SizedBox(
-                          //       height: width * 0.45,
-                          //       width: width,
-                          //       child: Chart(
-                          //         layers: [
-                          //           ChartAxisLayer(
-                          //             settings: ChartAxisSettings(
-                          //               x: ChartAxisSettingsAxis(
-                          //                 frequency: (controller.endTime
-                          //                             .millisecondsSinceEpoch -
-                          //                         controller.startTime
-                          //                             .millisecondsSinceEpoch) /
-                          //                     5.0,
-                          //                 max: controller
-                          //                     .endTime.millisecondsSinceEpoch
-                          //                     .toDouble(),
-                          //                 min: controller
-                          //                     .startTime.millisecondsSinceEpoch
-                          //                     .toDouble(),
-                          //                 textStyle: TextStyle(
-                          //                   color:
-                          //                       Colors.green.withOpacity(0.6),
-                          //                   fontSize: 10.0,
-                          //                 ),
-                          //               ),
-                          //               y: ChartAxisSettingsAxis(
-                          //                 frequency: 100.0,
-                          //                 max: controller.chartHigh,
-                          //                 min: controller.chartLow,
-                          //                 textStyle: TextStyle(
-                          //                   color: Colors.red.withOpacity(0.6),
-                          //                   fontSize: 10.0,
-                          //                 ),
-                          //               ),
-                          //             ),
-                          //             labelX: (value) => DateFormat.d().format(
-                          //                 DateTime.fromMillisecondsSinceEpoch(
-                          //                     value.toInt())),
-                          //             labelY: (value) =>
-                          //                 value.toInt().toString(),
-                          //           ),
-                          //           ChartLineLayer(
-                          //             items: List.generate(
-                          //               controller.vals.length,
-                          //               (index) => ChartLineDataItem(
-                          //                 x: (index *
-                          //                         (controller.endTime
-                          //                                 .millisecondsSinceEpoch -
-                          //                             controller.startTime
-                          //                                 .millisecondsSinceEpoch) /
-                          //                         3.0) +
-                          //                     controller.startTime
-                          //                         .millisecondsSinceEpoch,
-                          //                 value: controller.vals.values
-                          //                     .elementAt(index),
-                          //               ),
-                          //             ),
-                          //             settings: ChartLineSettings(
-                          //               color: mainColor,
-                          //               thickness: 3.0,
-                          //             ),
-                          //           )
-                          //         ],
-                          //         padding: const EdgeInsets.symmetric(
-                          //                 horizontal: 30.0)
-                          //             .copyWith(
-                          //           bottom: 12.0,
-                          //         ),
-                          //       ),
-                          //     ),
-                          //   )
-                          // ]
+                          if (!controller.pieChart) ...[
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12.0),
+                              child: SizedBox(
+                                height: width * 0.45,
+                                width: width,
+                                child: Chart(
+                                  layers: [
+                                    ChartAxisLayer(
+                                      settings: ChartAxisSettings(
+                                        x: ChartAxisSettingsAxis(
+                                          frequency: (controller.endTime
+                                                      .millisecondsSinceEpoch -
+                                                  controller.startTime
+                                                      .millisecondsSinceEpoch) /
+                                              4.toDouble(),
+                                          max: controller
+                                              .endTime.millisecondsSinceEpoch
+                                              .toDouble(),
+                                          min: controller
+                                              .startTime.millisecondsSinceEpoch
+                                              .toDouble(),
+                                          textStyle: TextStyle(
+                                            color:
+                                                Colors.green.withOpacity(0.6),
+                                            fontSize: 10.0,
+                                          ),
+                                        ),
+                                        y: ChartAxisSettingsAxis(
+                                          frequency: (controller.chartHigh -
+                                                  controller.chartLow) *
+                                              0.1,
+                                          max: controller.chartHigh,
+                                          min: controller.chartLow,
+                                          textStyle: TextStyle(
+                                            color: Colors.red.withOpacity(0.6),
+                                            fontSize: 10.0,
+                                          ),
+                                        ),
+                                      ),
+                                      labelX: (value) => DateFormat.d().format(
+                                          DateTime.fromMillisecondsSinceEpoch(
+                                              value.toInt())),
+                                      labelY: (value) =>
+                                          value.toInt().toString(),
+                                    ),
+                                    ChartLineLayer(
+                                      items: List.generate(
+                                        controller.vals.length,
+                                        (index) => ChartLineDataItem(
+                                          x: (index *
+                                                  (controller.endTime
+                                                          .millisecondsSinceEpoch -
+                                                      controller.startTime
+                                                          .millisecondsSinceEpoch) /
+                                                  3.0) +
+                                              controller.startTime
+                                                  .millisecondsSinceEpoch,
+                                          value: controller.vals.values
+                                              .elementAt(index),
+                                        ),
+                                      ),
+                                      settings: ChartLineSettings(
+                                        color: mainColor,
+                                        thickness: 3.0,
+                                      ),
+                                    )
+                                  ],
+                                  padding: const EdgeInsets.symmetric(
+                                          horizontal: 30.0)
+                                      .copyWith(
+                                    bottom: 12.0,
+                                  ),
+                                ),
+                              ),
+                            )
+                          ]
                         ],
                       ),
                     ),
@@ -645,39 +650,117 @@ class HomeBody extends StatelessWidget {
                   Column(
                     children: List.generate(
                       controller.loading ? 10 : controller.catList.length,
-                      (index) => Skeletonizer(
-                        enabled: controller.loading,
-                        child: ExpenceTile(
-                          loading: false,
-                          budgetPercent: 0.5,
-                          width: width,
-                          color: controller.loading
-                              ? Colors.grey.shade300
-                              : controller.catList[index].color,
-                          title: controller.loading
-                              ? ''
-                              : controller.catList[index].name,
-                          subtitle: controller.loading
-                              ? ''
-                              : '${controller.catList[index].transactions!.length} transactions',
-                          amount: controller.loading
-                              ? '0'
-                              : controller.humanFormat(controller
-                                      .vals[controller.catList[index].name]
-                                  as double),
-                          ave: controller.loading
-                              ? '0'
-                              : '${'ave'.tr} ${(controller.aveCalc(amount: controller.vals[controller.catList[index].name] as double, dates: controller.dates[controller.catList[index].name] as List<DateTime>)).toStringAsFixed(2)}',
-                          budget: false,
-                          icon: controller.loading
-                              ? Icons.add
-                              : controller.catList[index].icon,
-                          padding: const EdgeInsets.only(
-                            right: 12,
-                            left: 12,
-                            bottom: 16,
+                      (index) => GestureDetector(
+                        onTap: () {
+                          if (controller.loading == false) {
+                            WoltModalSheet.show(
+                              context: context,
+                              pageListBuilder: (modalSheetContext) {
+                                return [
+                                  modalPage(
+                                      context: context,
+                                      title: controller.catList[index].name,
+                                      child: SingleChildScrollView(
+                                        physics: const BouncingScrollPhysics(),
+                                        child: Column(
+                                          children: List.generate(
+                                            controller.catList[index]
+                                                .transactions!.length,
+                                            (i) {
+                                              Color transColor = controller
+                                                  .userModel.catagories
+                                                  .firstWhere((element) =>
+                                                      element.name ==
+                                                      controller
+                                                          .catList[index]
+                                                          .transactions![i]
+                                                          .catagory)
+                                                  .color;
+
+                                              IconData iconDat = controller
+                                                  .userModel.catagories
+                                                  .firstWhere((element) =>
+                                                      element.name ==
+                                                      controller
+                                                          .catList[index]
+                                                          .transactions![i]
+                                                          .catagory)
+                                                  .icon;
+                                              TransactionModel
+                                                  chosenTransaction = controller
+                                                      .catList[index]
+                                                      .transactions![i];
+                                              return ExpenceTile(
+                                                  width: width,
+                                                  color: transColor,
+                                                  title: chosenTransaction
+                                                      .catagory,
+                                                  subtitle: DateFormat.yMd()
+                                                      .format(chosenTransaction
+                                                          .date),
+                                                  amount: chosenTransaction
+                                                      .amount
+                                                      .toString(),
+                                                  budget: false,
+                                                  icon: iconDat,
+                                                  ave: chosenTransaction
+                                                              .subCatagory ==
+                                                          ''
+                                                      ? 'noavailable'.tr
+                                                      : chosenTransaction
+                                                          .subCatagory,
+                                                  padding:
+                                                      const EdgeInsets.all(8),
+                                                  loading: false);
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                      icon: FaIcon(
+                                        FontAwesomeIcons.xmark,
+                                        color: mainColor,
+                                      ),
+                                      leadingButtonFunction: () {},
+                                      button: Container())
+                                ];
+                              },
+                            );
+                          }
+                        },
+                        child: Skeletonizer(
+                          enabled: controller.loading,
+                          child: ExpenceTile(
+                            loading: false,
+                            budgetPercent: 0.5,
+                            width: width,
+                            color: controller.loading
+                                ? Colors.grey.shade300
+                                : controller.catList[index].color,
+                            title: controller.loading
+                                ? ''
+                                : controller.catList[index].name,
+                            subtitle: controller.loading
+                                ? ''
+                                : '${controller.catList[index].transactions!.length} transactions',
+                            amount: controller.loading
+                                ? '0'
+                                : controller.humanFormat(controller
+                                        .vals[controller.catList[index].name]
+                                    as double),
+                            ave: controller.loading
+                                ? '0'
+                                : '${'ave'.tr} ${(controller.aveCalc(amount: controller.vals[controller.catList[index].name] as double, dates: controller.dates[controller.catList[index].name] as List<DateTime>)).toStringAsFixed(2)}',
+                            budget: false,
+                            icon: controller.loading
+                                ? Icons.add
+                                : controller.catList[index].icon,
+                            padding: const EdgeInsets.only(
+                              right: 12,
+                              left: 12,
+                              bottom: 16,
+                            ),
+                            budgetKeeping: '50/100',
                           ),
-                          budgetKeeping: '50/100',
                         ),
                       ),
                     )

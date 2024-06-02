@@ -14,7 +14,6 @@ import 'package:cashify/pages/settings_page/settings_controller.dart';
 import 'package:cashify/pages/settings_page/settings_view.dart';
 import 'package:cashify/services/currency_exchange_service.dart';
 import 'package:cashify/services/firebase_service.dart';
-import 'package:cashify/utils/constants.dart';
 import 'package:cashify/utils/enums.dart';
 import 'package:cashify/utils/util_functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -22,7 +21,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'dart:math' as math;
 
 class HomeController extends GetxController with GetTickerProviderStateMixin {
   late UserModel _userModel;
@@ -212,10 +210,11 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
         } else {
           await MoneyExchange()
               .changeCurrency(
-                  base: _monhtMap[_currentTime]!.walletInfo[i].currency,
-                  exchange: _userModel.defaultCurrency,
-                  amount: (_monhtMap[_currentTime]!.walletInfo[i].start +
-                      _monhtMap[_currentTime]!.walletInfo[i].opSum))
+            base: _monhtMap[_currentTime]!.walletInfo[i].currency,
+            exchange: _userModel.defaultCurrency,
+            amount: (_monhtMap[_currentTime]!.walletInfo[i].start +
+                _monhtMap[_currentTime]!.walletInfo[i].opSum),
+          )
               .then((value) {
             if (value.status == 'success') {
               _moneyTotal = double.parse(
@@ -319,7 +318,7 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
           borderRadius: BorderRadius.circular(15),
         ).then(
           (value) {
-            if (value != null && value.isNotEmpty) {
+            if (value != null && value.length == 2) {
               _startTime = value[0] as DateTime;
               _endTime = value[1] as DateTime;
               _chosenTime =
@@ -481,7 +480,7 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     double ave = 0.0;
     if (dates.isNotEmpty) {
       dates.sort();
-      int days = dates.last.difference(dates.first).inDays;
+      int days = dates.last.difference(dates.first).inDays + 1;
       ave = days == 0 ? 0.0 : amount / days;
     }
     return ave;
