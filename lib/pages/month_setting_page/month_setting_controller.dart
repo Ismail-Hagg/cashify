@@ -199,6 +199,8 @@ class MonthSettingController extends GetxController {
             MonthSettingModel item =
                 MonthSettingModel.fromMap(value.data() as Map<String, dynamic>);
             _model = item;
+            Get.find<HomeController>()
+                .monhtMap['${_date.year}-${_date.month}'] = item;
 
             if (_catController.text.trim() != '') {
               changeWallet(wallet: _catController.text.trim());

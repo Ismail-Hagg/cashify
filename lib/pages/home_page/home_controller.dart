@@ -215,13 +215,15 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
             amount: (_monhtMap[_currentTime]!.walletInfo[i].start +
                 _monhtMap[_currentTime]!.walletInfo[i].opSum),
           )
-              .then((value) {
-            if (value.status == 'success') {
-              _moneyTotal = double.parse(
-                  (_moneyTotal + double.parse(value.result))
-                      .toStringAsFixed(2));
-            }
-          });
+              .then(
+            (value) {
+              if (value.status == 'success') {
+                _moneyTotal = double.parse(
+                    (_moneyTotal + double.parse(value.result))
+                        .toStringAsFixed(2));
+              }
+            },
+          );
         }
       }
     }
@@ -350,7 +352,7 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
 
   // calculate and gather the catagories
   Future<void> calculate(
-      {required DateTime start, required DateTime end}) async {
+      {required DateTime start, required DateTime end, bool? refresh}) async {
     int tracker = 0;
     _chartHigh = 0;
     _chartLow = 0;
@@ -469,6 +471,9 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
                 );
               }
             }
+          }
+          if (refresh == true) {
+            update();
           }
         }
       },

@@ -1,6 +1,7 @@
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:cashify/gloable_controllers/auth_controller.dart';
 import 'package:cashify/models/catagory_model.dart';
+import 'package:cashify/models/month_setting_model.dart';
 import 'package:cashify/models/transaction_model.dart';
 import 'package:cashify/models/user_model.dart';
 import 'package:cashify/models/wallet_model.dart';
@@ -170,16 +171,17 @@ class AddTransactionController extends GetxController {
         );
       } else {
         TransactionModel model = TransactionModel(
-            catagory: _catController.text.trim(),
-            subCatagory: _subcatController.text.trim(),
-            currency: _transactionCurrency,
-            amount: double.parse(_transactionAddController.text.trim()),
-            note: _commentController.text.trim(),
-            date: _transactionAddTime,
-            wallet: _chosenWallet.text.trim(),
-            fromWallet: _fromWalletTransaction.text.trim(),
-            toWallet: _toWalletTransaction.text.trim(),
-            type: _transactionType);
+          catagory: _catController.text.trim(),
+          subCatagory: _subcatController.text.trim(),
+          currency: _transactionCurrency,
+          amount: double.parse(_transactionAddController.text.trim()),
+          note: _commentController.text.trim(),
+          date: _transactionAddTime,
+          wallet: _chosenWallet.text.trim(),
+          fromWallet: _fromWalletTransaction.text.trim(),
+          toWallet: _toWalletTransaction.text.trim(),
+          type: _transactionType,
+        );
         update
             ? updateTransactioin(
                 transaction: model, recId: _transactionId ?? '')
@@ -271,10 +273,88 @@ class AddTransactionController extends GetxController {
       Get.find<AllTransactionsController>()
           .transactionAdd(model: TransactionModel.fromMap(map), id: '');
     }
-    await _firebaseService.addRecord(
-      path: FirebasePaths.transactions.name,
-      userId: _userModel.userId,
-      map: map,
+    await updateMonthSettingAdding(
+            transaction: transaction,
+            time: '${transaction.date.year}-${transaction.date.month}')
+        .then((value) async {
+      await _firebaseService.addRecord(
+        path: FirebasePaths.transactions.name,
+        userId: _userModel.userId,
+        map: map,
+      );
+    });
+  }
+
+  // update month setting on adding transaction
+  Future<void> updateMonthSettingAdding(
+      {required String time, required TransactionModel transaction}) async {
+    await Get.find<HomeController>()
+        .getMonthSetting(date: time, calc: false)
+        .then(
+      (value) async {
+        Map<String, MonthSettingModel> monthSetting =
+            Get.find<HomeController>().monhtMap;
+        String time = '${transaction.date.year}-${transaction.date.month}';
+        if (monthSetting[time] != null) {
+          int index = monthSetting[time]!.walletInfo.indexWhere(
+                (element) => element.wallet == transaction.wallet,
+              );
+          if (index != -1) {
+            monthSetting[time]!.walletInfo[index].opSum += transaction.amount;
+          } else {
+            WalletInfo walet = WalletInfo(
+              wallet: transaction.wallet,
+              start: 0,
+              currency: _userModel.wallets
+                  .firstWhere((element) => element.name == transaction.wallet)
+                  .currency,
+              end: 0,
+              opSum: transaction.amount,
+            );
+            monthSetting[time]!.walletInfo.add(walet);
+          }
+        } else {
+          WalletInfo walet = WalletInfo(
+              wallet: transaction.wallet,
+              start: 0,
+              currency: transaction.currency,
+              end: 0,
+              opSum: transaction.amount);
+          MonthSettingModel model = MonthSettingModel(
+            walletInfo: [walet],
+            budgetCat: [],
+            budgetVal: [],
+            year: transaction.date.year,
+            month: transaction.date.month,
+            catagory: [],
+          );
+          monthSetting[time] = model;
+        }
+        await postMonthSetting(time: time, model: monthSetting[time]!);
+      },
+    );
+  }
+
+  // post monthsetting update
+  Future<void> postMonthSetting(
+      {required String time, required MonthSettingModel model}) async {
+    Get.find<HomeController>().monhtMap[time] = model;
+    await Get.find<HomeController>().moneyNow().then(
+      (value) async {
+        await Get.find<HomeController>()
+            .calculate(
+                refresh: true,
+                start: Get.find<HomeController>().startTime,
+                end: Get.find<HomeController>().endTime)
+            .then((value) async {
+          await _firebaseService.addRecord(
+            docPath: time,
+            path: FirebasePaths.monthSetting.name,
+            userId: _userModel.userId,
+            map: model.toMap(),
+          );
+        });
+      },
     );
   }
 
