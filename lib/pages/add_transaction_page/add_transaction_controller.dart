@@ -291,10 +291,9 @@ class AddTransactionController extends GetxController {
     await Get.find<HomeController>()
         .getMonthSetting(date: time, calc: false)
         .then(
-      (value) async {
+      (_) async {
         Map<String, MonthSettingModel> monthSetting =
             Get.find<HomeController>().monhtMap;
-        String time = '${transaction.date.year}-${transaction.date.month}';
         if (monthSetting[time] != null) {
           int index = monthSetting[time]!.walletInfo.indexWhere(
                 (element) => element.wallet == transaction.wallet,
@@ -330,30 +329,28 @@ class AddTransactionController extends GetxController {
           );
           monthSetting[time] = model;
         }
-        await postMonthSetting(time: time, model: monthSetting[time]!);
+        await postMonthSetting(
+            time: time, model: monthSetting[time]!, transaction: transaction);
       },
     );
   }
 
   // post monthsetting update
   Future<void> postMonthSetting(
-      {required String time, required MonthSettingModel model}) async {
+      {required String time,
+      required MonthSettingModel model,
+      required TransactionModel transaction}) async {
     Get.find<HomeController>().monhtMap[time] = model;
     await Get.find<HomeController>().moneyNow().then(
-      (value) async {
-        await Get.find<HomeController>()
-            .calculate(
-                refresh: true,
-                start: Get.find<HomeController>().startTime,
-                end: Get.find<HomeController>().endTime)
-            .then((value) async {
-          await _firebaseService.addRecord(
-            docPath: time,
-            path: FirebasePaths.monthSetting.name,
-            userId: _userModel.userId,
-            map: model.toMap(),
-          );
-        });
+      (_) async {
+        Get.find<HomeController>()
+            .addTransactionUpdate(transaction: transaction);
+        await _firebaseService.addRecord(
+          docPath: time,
+          path: FirebasePaths.monthSetting.name,
+          userId: _userModel.userId,
+          map: model.toMap(),
+        );
       },
     );
   }

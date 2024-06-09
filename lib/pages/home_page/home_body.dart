@@ -2,7 +2,6 @@ import 'package:cashify/models/transaction_model.dart';
 import 'package:cashify/pages/home_page/home_controller.dart';
 import 'package:cashify/utils/constants.dart';
 import 'package:cashify/utils/enums.dart';
-import 'package:cashify/utils/util_functions.dart';
 import 'package:cashify/widgets/animeted_icon_widget.dart';
 import 'package:cashify/widgets/caragory_indicator_widget.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';
@@ -13,6 +12,7 @@ import 'package:country_currency_pickers/country.dart';
 import 'package:country_currency_pickers/country_picker_dropdown.dart';
 import 'package:country_currency_pickers/utils/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_animated_icons/icons8.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -653,6 +653,9 @@ class HomeBody extends StatelessWidget {
                       (index) => GestureDetector(
                         onTap: () {
                           if (controller.loading == false) {
+                            controller.calculateSubcategories(
+                                transactions: controller.catList[index]
+                                    .transactions as List<TransactionModel>);
                             WoltModalSheet.show(
                               context: context,
                               pageListBuilder: (modalSheetContext) {
@@ -660,60 +663,225 @@ class HomeBody extends StatelessWidget {
                                   modalPage(
                                       context: context,
                                       title: controller.catList[index].name,
-                                      child: SingleChildScrollView(
-                                        physics: const BouncingScrollPhysics(),
-                                        child: Column(
-                                          children: List.generate(
-                                            controller.catList[index]
-                                                .transactions!.length,
-                                            (i) {
-                                              Color transColor = controller
-                                                  .userModel.catagories
-                                                  .firstWhere((element) =>
-                                                      element.name ==
-                                                      controller
+                                      child: GetBuilder<HomeController>(
+                                        init: Get.find<HomeController>(),
+                                        builder: (controller) => Column(
+                                          children: [
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 12.0),
+                                              child: SizedBox(
+                                                width: width,
+                                                height: width * 0.135,
+                                                child: Row(
+                                                  children: [
+                                                    GestureDetector(
+                                                      onTap: () => controller
+                                                          .mainSubFlip(
+                                                              all: false),
+                                                      child: Column(
+                                                        children: [
+                                                          SizedBox(
+                                                            width: (width / 2) -
+                                                                12,
+                                                            height: (width *
+                                                                    0.135) *
+                                                                0.95,
+                                                            child: Center(
+                                                              child: CustomText(
+                                                                text:
+                                                                    'calced'.tr,
+                                                                color: controller
+                                                                        .mainSubAll
+                                                                    ? mainColor
+                                                                        .withOpacity(
+                                                                            0.5)
+                                                                    : mainColor,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Container(
+                                                            width: (width / 2) -
+                                                                12,
+                                                            height: (width *
+                                                                    0.135) *
+                                                                0.05,
+                                                            color: controller
+                                                                    .mainSubAll
+                                                                ? mainColor
+                                                                    .withOpacity(
+                                                                        0.5)
+                                                                : mainColor,
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    GestureDetector(
+                                                      onTap: () => controller
+                                                          .mainSubFlip(
+                                                              all: true),
+                                                      child: Column(
+                                                        children: [
+                                                          SizedBox(
+                                                            width: (width / 2) -
+                                                                12,
+                                                            height: (width *
+                                                                    0.135) *
+                                                                0.95,
+                                                            child: Center(
+                                                              child: CustomText(
+                                                                text:
+                                                                    'totals'.tr,
+                                                                color: controller
+                                                                        .mainSubAll
+                                                                    ? mainColor
+                                                                    : mainColor
+                                                                        .withOpacity(
+                                                                            0.5),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Container(
+                                                            width: (width / 2) -
+                                                                12,
+                                                            height: (width *
+                                                                    0.135) *
+                                                                0.05,
+                                                            color: controller
+                                                                    .mainSubAll
+                                                                ? mainColor
+                                                                : mainColor
+                                                                    .withOpacity(
+                                                                        0.5),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                            SingleChildScrollView(
+                                              physics:
+                                                  const BouncingScrollPhysics(),
+                                              child: Column(
+                                                children: List.generate(
+                                                  controller.mainSubAll
+                                                      ? controller
                                                           .catList[index]
-                                                          .transactions![i]
-                                                          .catagory)
-                                                  .color;
+                                                          .transactions!
+                                                          .length
+                                                      : controller
+                                                          .mainSub.length,
+                                                  (i) {
+                                                    print(
+                                                      controller.mainSubAll
+                                                          ? controller
+                                                              .catList[index]
+                                                              .transactions!
+                                                              .length
+                                                          : controller
+                                                              .mainSub.length,
+                                                    );
+                                                    String cat = controller
+                                                            .mainSubAll
+                                                        ? controller
+                                                            .catList[index]
+                                                            .transactions![i]
+                                                            .catagory
+                                                        : controller
+                                                            .mainSub[controller
+                                                                .mainSub.keys
+                                                                .elementAt(i)]!
+                                                            .cat;
 
-                                              IconData iconDat = controller
-                                                  .userModel.catagories
-                                                  .firstWhere((element) =>
-                                                      element.name ==
-                                                      controller
-                                                          .catList[index]
-                                                          .transactions![i]
-                                                          .catagory)
-                                                  .icon;
-                                              TransactionModel
-                                                  chosenTransaction = controller
-                                                      .catList[index]
-                                                      .transactions![i];
-                                              return ExpenceTile(
-                                                  width: width,
-                                                  color: transColor,
-                                                  title: chosenTransaction
-                                                      .catagory,
-                                                  subtitle: DateFormat.yMd()
-                                                      .format(chosenTransaction
-                                                          .date),
-                                                  amount: chosenTransaction
-                                                      .amount
-                                                      .toString(),
-                                                  budget: false,
-                                                  icon: iconDat,
-                                                  ave: chosenTransaction
-                                                              .subCatagory ==
-                                                          ''
-                                                      ? 'noavailable'.tr
-                                                      : chosenTransaction
-                                                          .subCatagory,
-                                                  padding:
-                                                      const EdgeInsets.all(8),
-                                                  loading: false);
-                                            },
-                                          ),
+                                                    Color transColor =
+                                                        controller.userModel
+                                                            .catagories
+                                                            .firstWhere(
+                                                                (element) =>
+                                                                    element
+                                                                        .name ==
+                                                                    cat)
+                                                            .color;
+
+                                                    IconData iconDat =
+                                                        controller.userModel
+                                                            .catagories
+                                                            .firstWhere(
+                                                                (element) =>
+                                                                    element
+                                                                        .name ==
+                                                                    cat)
+                                                            .icon;
+                                                    TransactionModel
+                                                        chosenTransaction =
+                                                        controller.mainSubAll
+                                                            ? controller
+                                                                .catList[index]
+                                                                .transactions![i]
+                                                            : TransactionModel(
+                                                                catagory:
+                                                                    'catagory',
+                                                                subCatagory:
+                                                                    'subCatagory',
+                                                                currency:
+                                                                    currency,
+                                                                amount: 0,
+                                                                note: 'note',
+                                                                date: DateTime
+                                                                    .now(),
+                                                                wallet:
+                                                                    'wallet',
+                                                                fromWallet:
+                                                                    'fromWallet',
+                                                                toWallet:
+                                                                    'toWallet',
+                                                                type: TransactionType
+                                                                    .transfer,
+                                                              );
+                                                    return ExpenceTile(
+                                                        width: width,
+                                                        color: transColor,
+                                                        title: controller.mainSubAll
+                                                            ? chosenTransaction
+                                                                .catagory
+                                                            : controller
+                                                                .mainSub.keys
+                                                                .elementAt(i),
+                                                        subtitle: controller
+                                                                .mainSubAll
+                                                            ? DateFormat.yMd().format(
+                                                                chosenTransaction
+                                                                    .date)
+                                                            : '',
+                                                        amount: controller
+                                                                .mainSubAll
+                                                            ? controller.walletAmount(
+                                                                amount:
+                                                                    chosenTransaction
+                                                                        .amount)
+                                                            : controller.walletAmount(
+                                                                amount: controller
+                                                                    .mainSub
+                                                                    .values
+                                                                    .elementAt(i)
+                                                                    .amount),
+                                                        budget: false,
+                                                        icon: iconDat,
+                                                        ave: controller.mainSubAll
+                                                            ? chosenTransaction.subCatagory == ''
+                                                                ? 'noavailable'.tr
+                                                                : chosenTransaction.subCatagory
+                                                            : ' ',
+                                                        padding: const EdgeInsets.all(8),
+                                                        loading: false);
+                                                  },
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                       icon: FaIcon(
@@ -749,7 +917,10 @@ class HomeBody extends StatelessWidget {
                                     as double),
                             ave: controller.loading
                                 ? '0'
-                                : '${'ave'.tr} ${(controller.aveCalc(amount: controller.vals[controller.catList[index].name] as double, dates: controller.dates[controller.catList[index].name] as List<DateTime>)).toStringAsFixed(2)}',
+                                : '${'ave'.tr} ${(controller.aveCalc(
+                                    amount: controller.vals[controller
+                                        .catList[index].name] as double,
+                                  )).toStringAsFixed(2)}',
                             budget: false,
                             icon: controller.loading
                                 ? Icons.add

@@ -19,6 +19,7 @@ import 'package:cashify/utils/util_functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -156,9 +157,14 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   bool _totalchanged = false;
   bool get totalchanged => _totalchanged;
 
+  final Map<String, ({String cat, double amount})> _mainSub = {};
+  Map<String, ({String cat, double amount})> get mainSub => _mainSub;
+
+  bool _mainSubAll = false;
+  bool get mainSubAll => _mainSubAll;
+
   @override
   void onInit() {
-    super.onInit();
     _userModel = Get.find<GloableAuthController>().userModel;
     _loadingController = AnimationController(
       vsync: this,
@@ -166,11 +172,11 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     );
     _transactionCurrency = _userModel.defaultCurrency;
     initAll();
+    super.onInit();
   }
 
   @override
   void onClose() {
-    super.onClose();
     _loadingController.dispose();
     _transactionAddController.dispose();
     _transactionAddNode.dispose();
@@ -180,6 +186,7 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     _catAddNode.dispose();
     _subCatAddController.dispose();
     _subCatNode.dispose();
+    super.onClose();
   }
 
   // initial function
@@ -288,7 +295,10 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
       case Times.thisMonth:
         var controll = DateTime.now();
         _startTime = DateTime(controll.year, controll.month, 1);
-        _endTime = DateTime.now();
+        _endTime = controll.month < 12
+            ? DateTime(controll.year, controll.month + 1, 0)
+            : DateTime(controll.year + 1, 1, 0);
+
         return (start: _startTime, end: _endTime);
 
       case Times.lastMonth:
@@ -307,7 +317,7 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
         var controll = DateTime.now();
 
         _startTime = DateTime(controll.year, 1, 1);
-        _endTime = DateTime.now();
+        _endTime = DateTime(controll.year + 1, 1, 0);
         return (start: _startTime, end: _endTime);
 
       case Times.custom:
@@ -331,6 +341,7 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
             }
           },
         );
+
         return (start: _startTime, end: _endTime);
     }
   }
@@ -480,14 +491,40 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     );
   }
 
-  // calculate average of spending per day
-  double aveCalc({required double amount, required List<DateTime> dates}) {
-    double ave = 0.0;
-    if (dates.isNotEmpty) {
-      dates.sort();
-      int days = dates.last.difference(dates.first).inDays + 1;
-      ave = days == 0 ? 0.0 : amount / days;
+  // calculate subcategories of main catagories
+  void calculateSubcategories({required List<TransactionModel> transactions}) {
+    _mainSub.clear();
+    for (var i = 0; i < transactions.length; i++) {
+      String title = transactions[i].subCatagory == ''
+          ? 'No SubCatagory'
+          : transactions[i].subCatagory;
+      if (_mainSub[title] != null) {
+        _mainSub[title] = (
+          amount: _mainSub[title]!.amount + transactions[i].amount,
+          cat: transactions[i].catagory
+        );
+      } else {
+        _mainSub[title] =
+            (amount: transactions[i].amount, cat: transactions[i].catagory);
+      }
     }
+  }
+
+  // flip main subCatagory view
+  void mainSubFlip({required bool all}) {
+    _mainSubAll = all;
+    update();
+  }
+
+  // calculate average of spending per day
+  double aveCalc({required double amount}) {
+    double ave = 0.0;
+
+    DateTime ending =
+        _trackNum == 0 || _trackNum == 2 ? DateTime.now() : _endTime;
+    int days = ending.difference(_startTime).inDays + 1;
+    ave = days == 0 ? 0.0 : amount / days;
+
     return ave;
   }
 
@@ -528,7 +565,7 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     if (post == 0) {
       return pre.toString();
     } else {
-      return amount.toString();
+      return amount.toStringAsFixed(2);
     }
   }
 
@@ -645,5 +682,43 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     _totalchanged = false;
     update();
     dialogShowing(widget: widget);
+  }
+
+  // update when adding transaction
+  void addTransactionUpdate({required TransactionModel transaction}) {
+    if (transaction.date.isBefore(_endTime.add(const Duration(seconds: 1))) &&
+        transaction.date
+            .isAfter(_startTime.subtract(const Duration(seconds: 1)))) {
+      int index = _catList
+          .indexWhere((element) => element.name == transaction.catagory);
+      if (index != -1) {
+        _catList[index].transactions!.add(transaction);
+      } else {
+        IconData icon = _userModel.catagories
+            .firstWhere((element) => element.name == transaction.catagory)
+            .icon;
+        Color color = _userModel.catagories
+            .firstWhere((element) => element.name == transaction.catagory)
+            .color;
+        _catList.add(
+          Catagory(
+            transactions: [transaction],
+            name: transaction.catagory,
+            subCatagories: [transaction.subCatagory],
+            icon: icon,
+            color: color,
+          ),
+        );
+      }
+      _vals[transaction.catagory] =
+          (_vals[transaction.catagory] ?? 0) + transaction.amount;
+      _dates[transaction.catagory] = [transaction.date];
+      transaction.type == TransactionType.moneyIn
+          ? _income = _income + transaction.amount
+          : transaction.type == TransactionType.moneyOut
+              ? _expense = _expense + transaction.amount
+              : null;
+    }
+    update();
   }
 }

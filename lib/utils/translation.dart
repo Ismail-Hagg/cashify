@@ -88,6 +88,8 @@ class Translation extends Translations {
           'start': 'Start',
           'end': 'End',
           'addbudgetitem': 'Add Budget Item',
+          'calced': 'Calculated',
+          'totals': 'All'
         },
         'ar_SA': {
           'email': 'البريد الالكتروني',
@@ -173,7 +175,9 @@ class Translation extends Translations {
           'budget': 'ميزانة',
           'start': 'بداية',
           'end': 'نهاية',
-          'addbudgetitem': 'اضف بند ميزانية'
+          'addbudgetitem': 'اضف بند ميزانية',
+          'calced': 'محموعة',
+          'totals': 'الكل'
         },
       };
 }
