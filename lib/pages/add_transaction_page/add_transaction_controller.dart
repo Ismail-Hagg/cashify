@@ -159,71 +159,52 @@ class AddTransactionController extends GetxController {
     required bool update,
     required BuildContext context,
   }) {
-    if (_transactionType != TransactionType.transfer) {
-      if (_transactionAddController.text.trim() == '' ||
-          _catController.text.trim() == '' ||
-          _chosenWallet.text.trim() == '') {
-        showToast(
-          title: CustomText(text: 'infoadd'.tr),
-          context: context,
-          type: ToastificationType.error,
-          isEng: _userModel.language == 'en_US',
-        );
-      } else {
-        TransactionModel model = TransactionModel(
-          catagory: _catController.text.trim(),
-          subCatagory: _subcatController.text.trim(),
-          currency: _transactionCurrency,
-          amount: double.parse(_transactionAddController.text.trim()),
-          note: _commentController.text.trim(),
-          date: _transactionAddTime,
-          wallet: _chosenWallet.text.trim(),
-          fromWallet: _fromWalletTransaction.text.trim(),
-          toWallet: _toWalletTransaction.text.trim(),
-          type: _transactionType,
-        );
-        update
-            ? updateTransactioin(
-                transaction: model, recId: _transactionId ?? '')
-            : addTransactioin(transaction: model);
-        Get.back();
-      }
+    bool transferError = _transactionType == TransactionType.transfer &&
+        (_transactionAddController.text.trim() == '' ||
+            _fromWalletTransaction.text.trim() == '' ||
+            _toWalletTransaction.text.trim() == '');
+
+    bool regError = _transactionType != TransactionType.transfer &&
+        (_transactionAddController.text.trim() == '' ||
+            _catController.text.trim() == '' ||
+            _chosenWallet.text.trim() == '');
+
+    bool walletError = _transactionType == TransactionType.transfer &&
+        (_fromWalletTransaction.text.trim() ==
+            _toWalletTransaction.text.trim());
+
+    print(transferError);
+    print(regError);
+    print(walletError);
+
+    if (transferError || regError || walletError) {
+      showToast(
+        title: CustomText(
+            text: (transferError && walletError)
+                ? 'otherwallet'.tr
+                : 'infoadd'.tr),
+        context: context,
+        type: ToastificationType.error,
+        isEng: _userModel.language == 'en_US',
+      );
     } else {
-      if (_transactionAddController.text.trim() == '' ||
-          _fromWalletTransaction.text.trim() == '' ||
-          _toWalletTransaction.text.trim() == '') {
-        showToast(
-          title: CustomText(text: 'infoadd'.tr),
-          context: context,
-          type: ToastificationType.error,
-          isEng: _userModel.language == 'en_US',
-        );
-      } else if (_fromWalletTransaction.text.trim() ==
-          _toWalletTransaction.text.trim()) {
-        showToast(
-          title: CustomText(text: 'otherwallet'.tr),
-          context: context,
-          type: ToastificationType.error,
-          isEng: _userModel.language == 'en_US',
-        );
-      } else {
-        TransactionModel model = TransactionModel(
-            catagory: _catController.text.trim(),
-            subCatagory: _subcatController.text.trim(),
-            currency: _transactionCurrency,
-            amount: double.parse(_transactionAddController.text.trim()),
-            note: _commentController.text.trim(),
-            date: _transactionAddTime,
-            wallet: _chosenWallet.text.trim(),
-            fromWallet: _fromWalletTransaction.text.trim(),
-            toWallet: _toWalletTransaction.text.trim(),
-            type: _transactionType);
-        update
-            ? updateTransactioin(
-                transaction: model, recId: _transactionId ?? '')
-            : addTransactioin(transaction: model);
-        Get.back();
-      }
+      TransactionModel model = TransactionModel(
+        catagory: _catController.text.trim(),
+        subCatagory: _subcatController.text.trim(),
+        currency: _transactionCurrency,
+        amount: double.parse(_transactionAddController.text.trim()),
+        note: _commentController.text.trim(),
+        date: _transactionAddTime,
+        wallet: _chosenWallet.text.trim(),
+        fromWallet: _fromWalletTransaction.text.trim(),
+        toWallet: _toWalletTransaction.text.trim(),
+        type: _transactionType,
+      );
+      update
+          ? updateTransactioin(transaction: model, recId: _transactionId ?? '')
+          : Get.find<HomeController>().addTransaction(transaction: model);
+      // addTransactioin(transaction: model);
+      Get.back();
     }
   }
 
@@ -289,7 +270,9 @@ class AddTransactionController extends GetxController {
   Future<void> updateMonthSettingAdding(
       {required String time, required TransactionModel transaction}) async {
     await Get.find<HomeController>()
-        .getMonthSetting(date: time, calc: false)
+        .getMonthSetting(
+      date: time,
+    )
         .then(
       (_) async {
         Map<String, MonthSettingModel> monthSetting =
@@ -344,7 +327,7 @@ class AddTransactionController extends GetxController {
     await Get.find<HomeController>().moneyNow().then(
       (_) async {
         Get.find<HomeController>()
-            .addTransactionUpdate(transaction: transaction);
+            .addTransactionUpdate(transaction: transaction, amount: 0);
         await _firebaseService.addRecord(
           docPath: time,
           path: FirebasePaths.monthSetting.name,

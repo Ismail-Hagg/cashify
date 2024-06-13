@@ -192,7 +192,7 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   // initial function
   void initAll() async {
     loadinganimation(load: true);
-    await getMonthSetting(date: _currentTime, calc: true).then((_) async {
+    await getMonthSetting(date: _currentTime).then((_) async {
       await moneyNow().then((value) async {
         await setTime().then((value) async {
           await calculate(start: value.start, end: value.end).then((value) {
@@ -215,19 +215,16 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
                       _monhtMap[_currentTime]!.walletInfo[i].opSum))
               .toStringAsFixed(2));
         } else {
-          await MoneyExchange()
-              .changeCurrency(
+          await currencySwapp(
             base: _monhtMap[_currentTime]!.walletInfo[i].currency,
-            exchange: _userModel.defaultCurrency,
+            exTo: _userModel.defaultCurrency,
             amount: (_monhtMap[_currentTime]!.walletInfo[i].start +
                 _monhtMap[_currentTime]!.walletInfo[i].opSum),
-          )
-              .then(
+          ).then(
             (value) {
-              if (value.status == 'success') {
+              if (value != '') {
                 _moneyTotal = double.parse(
-                    (_moneyTotal + double.parse(value.result))
-                        .toStringAsFixed(2));
+                    (_moneyTotal + double.parse(value)).toStringAsFixed(2));
               }
             },
           );
@@ -237,8 +234,7 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   }
 
   // get the month dara
-  Future<void> getMonthSetting(
-      {required String date, required bool calc}) async {
+  Future<void> getMonthSetting({required String date}) async {
     if (_monhtMap[date] == null) {
       await _firebaseService
           .getRecordDocu(
@@ -401,15 +397,13 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
               _vals[transaction.catagory] =
                   (_vals[transaction.catagory] ?? 0) + transaction.amount;
             } else {
-              await MoneyExchange()
-                  .changeCurrency(
+              await currencySwapp(
                       base: transaction.currency,
-                      exchange: _userModel.defaultCurrency,
+                      exTo: _userModel.defaultCurrency,
                       amount: transaction.amount)
                   .then((value) {
                 _vals[transaction.catagory] =
-                    (_vals[transaction.catagory] ?? 0) +
-                        double.parse(value.result);
+                    (_vals[transaction.catagory] ?? 0) + double.parse(value);
               });
             }
 
@@ -685,7 +679,8 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   }
 
   // update when adding transaction
-  void addTransactionUpdate({required TransactionModel transaction}) {
+  void addTransactionUpdate(
+      {required TransactionModel transaction, required double amount}) {
     if (transaction.date.isBefore(_endTime.add(const Duration(seconds: 1))) &&
         transaction.date
             .isAfter(_startTime.subtract(const Duration(seconds: 1)))) {
@@ -710,15 +705,159 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
           ),
         );
       }
-      _vals[transaction.catagory] =
-          (_vals[transaction.catagory] ?? 0) + transaction.amount;
+      _vals[transaction.catagory] = (_vals[transaction.catagory] ?? 0) + amount;
       _dates[transaction.catagory] = [transaction.date];
-      transaction.type == TransactionType.moneyIn
-          ? _income = _income + transaction.amount
-          : transaction.type == TransactionType.moneyOut
-              ? _expense = _expense + transaction.amount
-              : null;
     }
-    update();
+  }
+
+  // transaction operations
+  void addTransaction({required TransactionModel transaction}) async {
+    TransactionModel model = amountEdit(transaction: transaction);
+
+    final String time = '${model.date.year}-${model.date.month}';
+
+    final String walletCurrency = _userModel.wallets
+        .firstWhere((element) => element.name == model.wallet)
+        .currency;
+    final bool transactionAndWallet = model.currency != walletCurrency;
+    final bool transactionAndDefault =
+        model.currency != _userModel.defaultCurrency;
+
+    final double tranWallet = transactionAndWallet
+        ? double.parse(await currencySwapp(
+            base: model.currency, exTo: walletCurrency, amount: model.amount))
+        : 0;
+    final double tranDefault = transactionAndDefault
+        ? double.parse(
+            await currencySwapp(
+              base: model.currency,
+              exTo: _userModel.defaultCurrency,
+              amount: model.amount,
+            ),
+          )
+        : 0;
+
+    if (model.type == TransactionType.transfer) {
+      // updateMonthsetting(
+      //     date: model.date,
+      //     wallet: model.fromWallet,
+      //     currency: model.currency,
+      //     amount: model.amount * -1);
+      // updateMonthsetting(
+      //     date: model.date,
+      //     wallet: model.toWallet,
+      //     currency: model.currency,
+      //     amount: model.amount);
+      // update();
+    } else {
+      updateMonthsetting(
+        date: model.date,
+        wallet: model.wallet,
+        amount: transactionAndWallet ? tranWallet : model.amount,
+      );
+      if (model.type == TransactionType.moneyIn) {
+        _income += (transactionAndDefault ? tranDefault : transaction.amount);
+        _valsUp[model.catagory] = (_valsUp[model.catagory] ?? 0) +
+            (transactionAndDefault ? tranDefault : transaction.amount);
+      }
+      if (model.type == TransactionType.moneyOut) {
+        _expense += (transactionAndDefault ? tranDefault : transaction.amount);
+        _valsDown[model.catagory] = (_valsDown[model.catagory] ?? 0) +
+            (transactionAndDefault ? tranDefault : transaction.amount);
+      }
+      _moneyTotal += (transactionAndDefault ? tranDefault : model.amount);
+      addTransactionUpdate(
+          transaction: model,
+          amount: transactionAndDefault ? tranDefault : model.amount);
+      update();
+    }
+    if (Get.isRegistered<AllTransactionsController>()) {
+      Get.find<AllTransactionsController>().transactionAdd(
+          model: TransactionModel.fromMap(model.toMap()), id: '');
+    }
+
+    await _firebaseService
+        .addRecord(
+          docPath: time,
+          path: FirebasePaths.monthSetting.name,
+          userId: _userModel.userId,
+          map: _monhtMap[time]!.toMap(),
+        )
+        .onError((error, stackTrace) => print('=====monthSetting $error'))
+        .then((value) async {
+      print('==== did the setting thing');
+      await _firebaseService.addRecord(
+        path: FirebasePaths.transactions.name,
+        userId: _userModel.userId,
+        map: model.toMap(),
+      );
+    }).onError((error, stackTrace) {
+      print('======transaction add $error');
+    });
+  }
+
+  TransactionModel amountEdit({required TransactionModel transaction}) {
+    TransactionModel model = transaction;
+    if (model.type == TransactionType.moneyOut && model.amount > 0) {
+      model.amount = model.amount * -1;
+    }
+    if (model.type == TransactionType.moneyIn && model.amount < 0) {
+      model.amount = model.amount * -1;
+    }
+
+    // break the note into a list of words to help with searching
+
+    Map<String, dynamic> map = model.toMap();
+    map['notes'] = transaction.note.split(' ');
+
+    return TransactionModel.fromMap(map);
+  }
+
+  // update monthsetting
+  void updateMonthsetting({
+    required DateTime date,
+    required double amount,
+    required String wallet,
+  }) async {
+    String time = '${date.year}-${date.month}';
+    await getMonthSetting(date: time).then((_) async {
+      if (_monhtMap[time] != null) {
+        int index = _monhtMap[time]!.walletInfo.indexWhere(
+              (element) => element.wallet == wallet,
+            );
+        if (index != -1) {
+          _monhtMap[time]!.walletInfo[index].opSum += amount;
+        } else {
+          WalletInfo walet = WalletInfo(
+            wallet: wallet,
+            start: 0,
+            currency: _userModel.wallets
+                .firstWhere((element) => element.name == wallet)
+                .currency,
+            end: 0,
+            opSum: amount,
+          );
+          _monhtMap[time]!.walletInfo.add(walet);
+        }
+      } else {
+        WalletInfo walet = WalletInfo(
+            wallet: wallet,
+            start: 0,
+            currency: _userModel.wallets
+                .firstWhere((element) => element.name == wallet)
+                .currency,
+            end: 0,
+            opSum: amount);
+        MonthSettingModel model = MonthSettingModel(
+          walletInfo: [walet],
+          budgetCat: [],
+          budgetVal: [],
+          year: date.year,
+          month: date.month,
+          catagory: [],
+        );
+        _monhtMap[time] = model;
+      }
+    });
   }
 }

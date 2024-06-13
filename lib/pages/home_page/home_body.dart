@@ -12,7 +12,6 @@ import 'package:country_currency_pickers/country.dart';
 import 'package:country_currency_pickers/country_picker_dropdown.dart';
 import 'package:country_currency_pickers/utils/utils.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_animated_icons/icons8.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -775,15 +774,6 @@ class HomeBody extends StatelessWidget {
                                                       : controller
                                                           .mainSub.length,
                                                   (i) {
-                                                    print(
-                                                      controller.mainSubAll
-                                                          ? controller
-                                                              .catList[index]
-                                                              .transactions!
-                                                              .length
-                                                          : controller
-                                                              .mainSub.length,
-                                                    );
                                                     String cat = controller
                                                             .mainSubAll
                                                         ? controller
@@ -842,41 +832,50 @@ class HomeBody extends StatelessWidget {
                                                                     .transfer,
                                                               );
                                                     return ExpenceTile(
-                                                        width: width,
-                                                        color: transColor,
-                                                        title: controller.mainSubAll
-                                                            ? chosenTransaction
-                                                                .catagory
-                                                            : controller
-                                                                .mainSub.keys
-                                                                .elementAt(i),
-                                                        subtitle: controller
-                                                                .mainSubAll
-                                                            ? DateFormat.yMd().format(
-                                                                chosenTransaction
-                                                                    .date)
-                                                            : '',
-                                                        amount: controller
-                                                                .mainSubAll
-                                                            ? controller.walletAmount(
-                                                                amount:
-                                                                    chosenTransaction
-                                                                        .amount)
-                                                            : controller.walletAmount(
-                                                                amount: controller
-                                                                    .mainSub
-                                                                    .values
-                                                                    .elementAt(i)
-                                                                    .amount),
-                                                        budget: false,
-                                                        icon: iconDat,
-                                                        ave: controller.mainSubAll
-                                                            ? chosenTransaction.subCatagory == ''
-                                                                ? 'noavailable'.tr
-                                                                : chosenTransaction.subCatagory
-                                                            : ' ',
-                                                        padding: const EdgeInsets.all(8),
-                                                        loading: false);
+                                                      width: width,
+                                                      color: transColor,
+                                                      title: controller
+                                                              .mainSubAll
+                                                          ? chosenTransaction
+                                                              .catagory
+                                                          : controller
+                                                              .mainSub.keys
+                                                              .elementAt(i),
+                                                      subtitle: controller
+                                                              .mainSubAll
+                                                          ? DateFormat.yMd()
+                                                              .format(
+                                                                  chosenTransaction
+                                                                      .date)
+                                                          : '',
+                                                      amount: controller
+                                                              .mainSubAll
+                                                          ? controller.walletAmount(
+                                                              amount:
+                                                                  chosenTransaction
+                                                                      .amount)
+                                                          : controller.walletAmount(
+                                                              amount: controller
+                                                                  .mainSub
+                                                                  .values
+                                                                  .elementAt(i)
+                                                                  .amount),
+                                                      budget: false,
+                                                      icon: iconDat,
+                                                      ave: controller.mainSubAll
+                                                          ? chosenTransaction
+                                                                      .subCatagory ==
+                                                                  ''
+                                                              ? 'noavailable'.tr
+                                                              : chosenTransaction
+                                                                  .subCatagory
+                                                          : ' ',
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              8),
+                                                      loading:
+                                                          controller.loading,
+                                                    );
                                                   },
                                                 ),
                                               ),
