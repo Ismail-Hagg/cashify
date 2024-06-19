@@ -1,6 +1,8 @@
 import 'package:cashify/pages/settings_page/settings_controller.dart';
 import 'package:cashify/utils/constants.dart';
+import 'package:cashify/utils/enums.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';
+import 'package:cashify/widgets/text_button_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -12,15 +14,34 @@ class SettingsView extends StatelessWidget {
     Get.put(SettingsController());
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: GetBuilder<SettingsController>(
-        init: Get.find<SettingsController>(),
-        builder: (controller) => Center(
-          child: GestureDetector(
-              onTap: () => controller.logout(),
-              child: CustomText(
-                  text: 'Settings Page ${controller.userModel.email}')),
-        ),
-      ),
+      body: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+        double width = constraints.maxWidth;
+        return SizedBox(
+          width: width,
+          child: GetBuilder<SettingsController>(
+            init: Get.find<SettingsController>(),
+            builder: (controller) => Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                ButtonWidget(
+                    isIos: controller.isIos,
+                    textSize: 16,
+                    type: ButtonType.raised,
+                    onClick: () => controller.func(),
+                    text: 'machine'),
+                Column(
+                  children: List.generate(
+                      controller.lst!.length,
+                      (index) => CustomText(
+                          text: controller.lst![index].value.toString())),
+                )
+              ],
+            ),
+          ),
+        );
+      }),
     );
   }
 }

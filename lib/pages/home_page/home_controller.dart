@@ -5,6 +5,7 @@ import 'package:cashify/models/filter_model.dart';
 import 'package:cashify/models/month_setting_model.dart';
 import 'package:cashify/models/transaction_model.dart';
 import 'package:cashify/models/user_model.dart';
+import 'package:cashify/models/wallet_model.dart';
 import 'package:cashify/pages/all_transactions_page/all_transaction_view.dart';
 import 'package:cashify/pages/all_transactions_page/all_transactoins_controller.dart';
 import 'package:cashify/pages/home_page/home_body.dart';
@@ -198,7 +199,11 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
           await calculate(start: value.start, end: value.end).then((value) {
             loadinganimation(load: false);
           });
+        }).onError((error, stackTrace) {
+          print('===er $error');
         });
+      }).onError((error, stackTrace) {
+        print('=== $error');
       });
     });
   }
@@ -482,7 +487,9 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
           }
         }
       },
-    );
+    ).onError((error, stackTrace) {
+      print('= erroring $error');
+    });
   }
 
   // calculate subcategories of main catagories
@@ -642,16 +649,6 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     _modalIndex.value != 0 ? _modalIndex.value = 0 : null;
   }
 
-  void recordSend(
-      {required String path, required Map<String, dynamic> map}) async {
-    try {
-      await _firebaseService.addRecord(
-          userId: _userModel.userId, path: path, map: map);
-    } catch (e) {
-      print('== $e');
-    }
-  }
-
   void currencyExchange({
     required String base,
     required String to,
@@ -716,83 +713,118 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
 
     final String time = '${model.date.year}-${model.date.month}';
 
-    final String walletCurrency = _userModel.wallets
-        .firstWhere((element) => element.name == model.wallet)
-        .currency;
-    final bool transactionAndWallet = model.currency != walletCurrency;
-    final bool transactionAndDefault =
-        model.currency != _userModel.defaultCurrency;
-
-    final double tranWallet = transactionAndWallet
-        ? double.parse(await currencySwapp(
-            base: model.currency, exTo: walletCurrency, amount: model.amount))
-        : 0;
-    final double tranDefault = transactionAndDefault
-        ? double.parse(
-            await currencySwapp(
-              base: model.currency,
-              exTo: _userModel.defaultCurrency,
-              amount: model.amount,
-            ),
-          )
-        : 0;
-
     if (model.type == TransactionType.transfer) {
-      // updateMonthsetting(
-      //     date: model.date,
-      //     wallet: model.fromWallet,
-      //     currency: model.currency,
-      //     amount: model.amount * -1);
-      // updateMonthsetting(
-      //     date: model.date,
-      //     wallet: model.toWallet,
-      //     currency: model.currency,
-      //     amount: model.amount);
-      // update();
+      final String fromWalletCurrency = _userModel.wallets
+          .firstWhere((element) => element.name == model.fromWallet)
+          .currency;
+      final String toWlletCurrency = _userModel.wallets
+          .firstWhere((element) => element.name == model.toWallet)
+          .currency;
+      double fromAmount = fromWalletCurrency == model.currency
+          ? (model.amount * -1)
+          : double.parse(
+                await currencySwapp(
+                    base: model.currency,
+                    exTo: fromWalletCurrency,
+                    amount: model.amount),
+              ) *
+              -1;
+
+      double toAmount = toWlletCurrency == model.currency
+          ? (model.amount)
+          : double.parse(
+              await currencySwapp(
+                  base: model.currency,
+                  exTo: toWlletCurrency,
+                  amount: model.amount),
+            );
+
+      print(
+        'take $fromAmount $fromWalletCurrency from ${model.fromWallet} and put $toAmount $toWlletCurrency in ${model.toWallet}',
+      );
+      await updateMonthsetting(
+        date: model.date,
+        wallet: model.fromWallet,
+        amount: fromAmount,
+      ).then((value) async {
+        await updateMonthsetting(
+          date: model.date,
+          wallet: model.toWallet,
+          amount: toAmount,
+        ).then((value) async {
+          update();
+          await _firebaseService.addRecord(
+            docPath: time,
+            path: FirebasePaths.monthSetting.name,
+            userId: _userModel.userId,
+            map: _monhtMap[time]!.toMap(),
+          );
+        });
+      });
     } else {
-      updateMonthsetting(
+      final String walletCurrency = _userModel.wallets
+          .firstWhere((element) => element.name == model.wallet)
+          .currency;
+
+      final bool transactionAndWallet = model.currency != walletCurrency;
+      final bool transactionAndDefault =
+          model.currency != _userModel.defaultCurrency;
+
+      final double tranWallet = transactionAndWallet
+          ? double.parse(await currencySwapp(
+              base: model.currency, exTo: walletCurrency, amount: model.amount))
+          : model.amount;
+      final double tranDefault = transactionAndDefault
+          ? double.parse(
+              await currencySwapp(
+                base: model.currency,
+                exTo: _userModel.defaultCurrency,
+                amount: model.amount,
+              ),
+            )
+          : transaction.amount;
+      await updateMonthsetting(
         date: model.date,
         wallet: model.wallet,
-        amount: transactionAndWallet ? tranWallet : model.amount,
-      );
-      if (model.type == TransactionType.moneyIn) {
-        _income += (transactionAndDefault ? tranDefault : transaction.amount);
-        _valsUp[model.catagory] = (_valsUp[model.catagory] ?? 0) +
-            (transactionAndDefault ? tranDefault : transaction.amount);
-      }
-      if (model.type == TransactionType.moneyOut) {
-        _expense += (transactionAndDefault ? tranDefault : transaction.amount);
-        _valsDown[model.catagory] = (_valsDown[model.catagory] ?? 0) +
-            (transactionAndDefault ? tranDefault : transaction.amount);
-      }
-      _moneyTotal += (transactionAndDefault ? tranDefault : model.amount);
-      addTransactionUpdate(
-          transaction: model,
-          amount: transactionAndDefault ? tranDefault : model.amount);
-      update();
+        amount: tranWallet,
+      ).then((_) {
+        if (model.type == TransactionType.moneyIn) {
+          _income += tranDefault;
+          _valsUp[model.catagory] =
+              (_valsUp[model.catagory] ?? 0) + tranDefault;
+        }
+        if (model.type == TransactionType.moneyOut) {
+          _expense += tranDefault;
+          _valsDown[model.catagory] =
+              (_valsDown[model.catagory] ?? 0) + tranDefault;
+        }
+        _moneyTotal += tranDefault;
+        addTransactionUpdate(transaction: model, amount: tranDefault);
+      });
     }
     if (Get.isRegistered<AllTransactionsController>()) {
       Get.find<AllTransactionsController>().transactionAdd(
           model: TransactionModel.fromMap(model.toMap()), id: '');
     }
+    update();
 
     await _firebaseService
         .addRecord(
-          docPath: time,
-          path: FirebasePaths.monthSetting.name,
-          userId: _userModel.userId,
-          map: _monhtMap[time]!.toMap(),
-        )
-        .onError((error, stackTrace) => print('=====monthSetting $error'))
+      docPath: time,
+      path: FirebasePaths.monthSetting.name,
+      userId: _userModel.userId,
+      map: _monhtMap[time]!.toMap(),
+    )
         .then((value) async {
-      print('==== did the setting thing');
+      // break the note into a list of words to help with searching
+
+      Map<String, dynamic> map = model.toMap();
+      map['notes'] = model.note.split(' ');
       await _firebaseService.addRecord(
         path: FirebasePaths.transactions.name,
         userId: _userModel.userId,
-        map: model.toMap(),
+        map: map,
       );
-    }).onError((error, stackTrace) {
-      print('======transaction add $error');
     });
   }
 
@@ -805,16 +837,11 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
       model.amount = model.amount * -1;
     }
 
-    // break the note into a list of words to help with searching
-
-    Map<String, dynamic> map = model.toMap();
-    map['notes'] = transaction.note.split(' ');
-
-    return TransactionModel.fromMap(map);
+    return model;
   }
 
   // update monthsetting
-  void updateMonthsetting({
+  Future<void> updateMonthsetting({
     required DateTime date,
     required double amount,
     required String wallet,

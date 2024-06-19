@@ -173,10 +173,6 @@ class AddTransactionController extends GetxController {
         (_fromWalletTransaction.text.trim() ==
             _toWalletTransaction.text.trim());
 
-    print(transferError);
-    print(regError);
-    print(walletError);
-
     if (transferError || regError || walletError) {
       showToast(
         title: CustomText(
