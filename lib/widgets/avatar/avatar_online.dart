@@ -6,12 +6,14 @@ class AvatarOnlineInside extends StatelessWidget {
   final double width;
   final bool border;
   final bool shadow;
+  final Color? borderColor;
   final ImageProvider provider;
 
   const AvatarOnlineInside({
     super.key,
     required this.height,
     required this.width,
+    this.borderColor,
     required this.border,
     required this.shadow,
     required this.provider,
@@ -36,7 +38,7 @@ class AvatarOnlineInside extends StatelessWidget {
         shape: BoxShape.circle,
         border: border == true
             ? Border.all(
-                color: mainColor.withOpacity(0.7),
+                color: borderColor ?? mainColor.withOpacity(0.7),
               )
             : null,
         color: Colors.grey.shade200,

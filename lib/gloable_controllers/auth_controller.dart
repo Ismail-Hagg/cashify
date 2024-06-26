@@ -1,32 +1,32 @@
 import 'dart:ui';
 
-import 'package:cashify/models/user_model.dart';
-import 'package:cashify/services/user_data_service.dart';
+import 'package:cashify/data_models/user_data_model.dart';
+import 'package:cashify/local_storage/local_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
 class GloableAuthController extends GetxController {
-  UserModel _userModel;
+  final UserDataModel _userModel;
   GloableAuthController(this._userModel);
-
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
-  final UserData userData = UserData();
 
   final Rxn<User> _user = Rxn<User>();
   User? get user => _user.value;
 
-  UserModel get userModel => _userModel;
+  final LocalStorage localStorage = LocalStorage();
+
+  UserDataModel get userModel => _userModel;
 
   final bool _isIos = defaultTargetPlatform == TargetPlatform.iOS;
   bool get isIos => _isIos;
+
+  final LocalStorage _localStorage = LocalStorage();
 
   @override
   void onInit() async {
     super.onInit();
     _user.bindStream(_auth.authStateChanges());
-    getUser();
   }
 
   void reload() {
@@ -34,21 +34,9 @@ class GloableAuthController extends GetxController {
     update();
   }
 
-  // get the user
-  void getUser() async {
-    _userModel = await userData.getUserData();
-  }
-
   // update and save the user locally
-  Future<bool> userChange({required UserModel model}) async {
-    try {
-      _userModel = model;
-      await userData.saveUser(model: model);
-      return true;
-    } catch (e) {
-      print(e);
-      return false;
-    }
+  Future<void> userChange({required UserDataModel model}) async {
+    await _localStorage.saveUser(model: model);
   }
 
   // change app language on login if needed

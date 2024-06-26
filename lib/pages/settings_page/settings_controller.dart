@@ -1,76 +1,81 @@
+import 'package:cashify/data_models/user_data_model.dart';
 import 'package:cashify/gloable_controllers/auth_controller.dart';
-import 'package:cashify/models/hive_class.dart';
-import 'package:cashify/models/user_model.dart';
 import 'package:cashify/pages/all_transactions_page/all_transactoins_controller.dart';
 import 'package:cashify/pages/home_page/home_controller.dart';
 import 'package:cashify/pages/month_setting_page/month_setting_controller.dart';
-import 'package:cashify/services/user_data_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cashify/pages/settings_page/repository.dart';
+import 'package:cashify/utils/constants.dart';
 import 'package:get/get.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 class SettingsController extends GetxController {
-  final UserModel _userModel = Get.find<HomeController>().userModel;
-  UserModel get userModel => _userModel;
+  final SettingRepository _repo = SettingRepository();
+  final UserDataModel _userModel = Get.find<HomeController>().userModel;
+  UserDataModel get userModel => _userModel;
 
   final bool _isIos = Get.find<HomeController>().isIos;
   bool get isIos => _isIos;
-  final UserData _userService = UserData();
 
   final GloableAuthController _authControlleer = Get.find();
 
-  late Box<List> box;
+  late Box<UserDataModel> box;
+
+  UserDataModel? newMod;
 
   List _lst = [];
   List get lst => _lst;
 
   @override
   void onInit() async {
-    await Hive.initFlutter();
-    Hive.isAdapterRegistered(1)
-        ? null
-        : Hive.registerAdapter(MyCustomObjectAdapter());
-    //await Hive.close();
-    box = await Hive.openBox<List>('lst');
-    //box.put('name', []);
-    try {
-      _lst = box.get('name') ?? [];
-      update();
-    } catch (e) {
-      print('==-=-= $e');
-    }
-
     super.onInit();
+    box = Hive.isBoxOpen(userBox)
+        ? Hive.box<UserDataModel>(userBox)
+        : await Hive.openBox(userBox);
+
+    newMod = box.get(userData);
+    update();
   }
 
-  void func() {
-    print('===thing');
-    print(box.get('name').runtimeType);
-    for (var i = 0; i < 5; i++) {
-      _lst.add(MyCustomObject('indexing', i));
-      try {
-        box.put(
-          'name',
-          _lst,
-        );
-      } catch (e) {
-        print('==$e');
-      }
-    }
+  void func() async {
+    // box.put(
+    //     'user',
+    //     UserDataModel(
+    //         username: 'dork',
+    //         email: 'email',
+    //         userId: 'userId',
+    //         localImage: false,
+    //         localPath: 'localPath',
+    //         onlinePath: 'onlinePath',
+    //         language: 'language',
+    //         defaultCurrency: 'defaultCurrency',
+    //         messagingToken: 'messagingToken',
+    //         errorMessage: 'errorMessage',
+    //         phoneNumber: 'phoneNumber',
+    //         wallets: [],
+    //         isError: false,
+    //         catagories: [],
+    //         isSynced: true));
 
-    update();
+    // newMod = box.get('user')!;
+
+    // update();
   }
 
   // logout
   void logout() async {
-    await FirebaseAuth.instance.signOut();
-    await GoogleSignIn().signOut();
-    await _authControlleer.userData.deleteUser();
+    String userId = _userModel.userId;
+    await _repo.signOut();
     Get.delete<HomeController>();
     Get.delete<AllTransactionsController>();
     Get.delete<MonthSettingController>();
     _authControlleer.reload();
+    await _repo.wipeAllData();
+    await syncOut(userId: userId);
     Get.delete<SettingsController>();
+  }
+
+  // set user isSync field to false when user logs out fo that when he login again data is downloaded and saved
+  Future<void> syncOut({required String userId}) async {
+    await _repo.changeUserData(userId: userId);
   }
 }

@@ -29,14 +29,20 @@ class SettingsView extends StatelessWidget {
                     isIos: controller.isIos,
                     textSize: 16,
                     type: ButtonType.raised,
-                    onClick: () => controller.func(),
+                    onClick: () => controller.logout(),
                     text: 'machine'),
-                Column(
-                  children: List.generate(
-                      controller.lst!.length,
-                      (index) => CustomText(
-                          text: controller.lst![index].value.toString())),
-                )
+                Center(
+                    child: CustomText(
+                  text: controller.newMod == null
+                      ? 'the thing is null'
+                      : controller.newMod!.toMap().toString(),
+                ))
+                // Column(
+                //   children: List.generate(
+                //       controller.lst!.length,
+                //       (index) => CustomText(
+                //           text: controller.lst![index].value.toString())),
+                // )
               ],
             ),
           ),

@@ -11,9 +11,11 @@ class AvatarOnline extends StatelessWidget {
   final bool border;
   final String link;
   final bool shadow;
+  final Color? borderColor;
   const AvatarOnline({
     super.key,
     required this.width,
+    this.borderColor,
     required this.height,
     required this.border,
     required this.link,
@@ -26,6 +28,7 @@ class AvatarOnline extends StatelessWidget {
       imageUrl: link,
       imageBuilder: (context, provider) {
         return AvatarOnlineInside(
+            borderColor: borderColor,
             height: height,
             width: width,
             border: border,
@@ -34,10 +37,15 @@ class AvatarOnline extends StatelessWidget {
       },
       placeholder: (context, url) {
         return AvatarLoading(
-            height: height, width: width, border: border, shadow: shadow);
+            borderColor: borderColor,
+            height: height,
+            width: width,
+            border: border,
+            shadow: shadow);
       },
       errorWidget: (context, url, error) {
         return AvatarNon(
+          borderColor: borderColor,
           height: height,
           width: width,
           border: border,

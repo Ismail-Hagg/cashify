@@ -1,8 +1,11 @@
 // utility functions
 
+import 'package:cashify/widgets/modal_widget.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:toastification/toastification.dart';
+import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
 // get device language
 String languageDev() {
@@ -73,4 +76,63 @@ String getMessageFromErrorCode({required String errorMessage}) {
 // show dialog
 void dialogShowing({required Widget widget}) {
   Get.dialog(widget);
+}
+
+// converto data to icon data
+IconData iconConvert({required String code}) {
+  return IconData(
+    int.parse(
+      code.substring(
+        0,
+        code.indexOf('-'),
+      ),
+    ),
+    fontFamily: code.substring(
+      (code.indexOf('-') + 1),
+    ),
+  );
+}
+
+// convert data to colot
+Color colorConvert({required int code}) {
+  return Color(
+    code,
+  );
+}
+
+// remove zeros from double
+String zerosConvert({required double val}) {
+  bool whole = val % 1 == 0;
+  int whileNum = whole ? val.toInt() : 0;
+  String newVal = whole ? whileNum.toString() : val.toStringAsFixed(2);
+  return newVal;
+}
+
+// show modal
+void showModal(
+    {Function()? dissBarr,
+    required Function() xFunction,
+    Function()? dissDrag,
+    required BuildContext context,
+    required String title,
+    required Widget child,
+    required Widget button}) {
+  WoltModalSheet.show(
+    onModalDismissedWithBarrierTap: dissBarr,
+    onModalDismissedWithDrag: dissDrag,
+    context: context,
+    modalTypeBuilder: (context) => WoltModalType.bottomSheet,
+    pageListBuilder: (modalSheetContext) {
+      return [
+        modalPage(
+          icon: const FaIcon(FontAwesomeIcons.xmark),
+          leadingButtonFunction: xFunction,
+          context: modalSheetContext,
+          title: title,
+          child: child,
+          button: Padding(padding: const EdgeInsets.all(16.0), child: button),
+        )
+      ];
+    },
+  );
 }

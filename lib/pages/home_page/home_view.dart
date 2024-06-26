@@ -25,7 +25,7 @@ class HomeView extends StatelessWidget {
           init: Get.find<HomeController>(),
           builder: (controller) => StylishBottomBar(
             notchStyle: NotchStyle.circle,
-            backgroundColor: forgroundColor,
+            backgroundColor: whiteColor,
             option: AnimatedBarOptions(
               iconSize: 18,
               barAnimation: BarAnimation.fade,
@@ -97,15 +97,14 @@ class HomeView extends StatelessWidget {
           height: MediaQuery.of(context).size.width * 0.159,
           width: MediaQuery.of(context).size.width * 0.159,
           child: FloatingActionButton(
-            backgroundColor: forgroundColor,
+            backgroundColor: mainColor,
             onPressed: () {
-              Get.to(
-                () => const AddTRansactionView(),
-              );
+              Get.to(() => const AddTransactionView(),
+                  transition: Transition.native);
             },
             child: FaIcon(
               FontAwesomeIcons.plus,
-              color: mainColor,
+              color: backgroundColor,
             ),
           ),
         ),

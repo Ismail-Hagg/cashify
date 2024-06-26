@@ -89,7 +89,10 @@ class Translation extends Translations {
           'end': 'End',
           'addbudgetitem': 'Add Budget Item',
           'calced': 'Calculated',
-          'totals': 'All'
+          'totals': 'All',
+          'wallmpt': 'Wallet Must Be Empty',
+          'welcome': 'WELCOME',
+          'balance': 'Total Balance'
         },
         'ar_SA': {
           'email': 'البريد الالكتروني',
@@ -177,7 +180,10 @@ class Translation extends Translations {
           'end': 'نهاية',
           'addbudgetitem': 'اضف بند ميزانية',
           'calced': 'محموعة',
-          'totals': 'الكل'
+          'totals': 'الكل',
+          'wallmpt': 'يجب ان تكون المحفظة فارغة',
+          'welcome': 'مرحبا',
+          'balance': 'الرصيد الحالي'
         },
       };
 }

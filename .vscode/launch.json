@@ -43,7 +43,7 @@
   "compounds": [
     {
       "name": "mobile",
-      "configurations": ["Android", "Iphone"]
+      "configurations": ["Android", "Iphone", "real"]
     }
   ]
 }

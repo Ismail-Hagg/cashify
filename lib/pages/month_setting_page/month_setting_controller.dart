@@ -74,7 +74,7 @@ class MonthSettingController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _userModel = Get.find<GloableAuthController>().userModel;
+    // _userModel = Get.find<GloableAuthController>().userModel;
     _startNode.addListener(_startListen);
     _endNode.addListener(_endListen);
     _budgetNode.addListener(_budgetListen);

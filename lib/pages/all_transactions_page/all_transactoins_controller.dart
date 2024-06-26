@@ -1,6 +1,7 @@
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
+import 'package:cashify/data_models/user_data_model.dart';
 import 'package:cashify/gloable_controllers/auth_controller.dart';
-import 'package:cashify/models/filter_model.dart';
+import 'package:cashify/data_models/filter_model.dart';
 import 'package:cashify/models/transaction_model.dart';
 import 'package:cashify/models/user_model.dart';
 import 'package:cashify/pages/add_transaction_page/add_transaction_view.dart';
@@ -19,8 +20,8 @@ import 'package:toastification/toastification.dart';
 class AllTransactionsController extends GetxController {
   final FirebaseService _firebaseService = FirebaseService();
 
-  late UserModel _userModel;
-  UserModel get userModel => _userModel;
+  late UserDataModel _userModel;
+  UserDataModel get userModel => _userModel;
 
   final bool _isIos = Get.find<GloableAuthController>().isIos;
   bool get isIos => _isIos;
@@ -255,16 +256,18 @@ class AllTransactionsController extends GetxController {
 
   // get icon
   IconData getIcon({required String category}) {
-    return _userModel.catagories
-        .firstWhere((element) => element.name == category)
-        .icon;
+    return Icons.add;
+    //  _userModel.catagories
+    //     .firstWhere((element) => element.name == category)
+    //     .icon;
   }
 
   // get color
   Color getColor({required String category}) {
-    return _userModel.catagories
-        .firstWhere((element) => element.name == category)
-        .color;
+    return Colors.red;
+    // _userModel.catagories
+    //     .firstWhere((element) => element.name == category)
+    //     .color;
   }
 
   // format amount
@@ -310,10 +313,10 @@ class AllTransactionsController extends GetxController {
 
   // edit a transaction
   void queryTransaction({required TransactionModel model, required String id}) {
-    Get.to(
-      () => const AddTRansactionView(),
-      arguments: {'model': model, 'id': id},
-    );
+    // Get.to(
+    //   () => const AddTRansactionView(),
+    //   arguments: {'model': model, 'id': id},
+    // );
   }
 
   // load more transactions

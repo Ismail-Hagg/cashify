@@ -1,19 +1,22 @@
-import 'package:cashify/models/filter_model.dart';
-import 'package:cashify/models/user_model.dart';
+import 'package:cashify/data_models/user_data_model.dart';
+import 'package:cashify/data_models/filter_model.dart';
 import 'package:cashify/utils/enums.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 class FirebaseService {
   final CollectionReference _ref =
       FirebaseFirestore.instance.collection(FirebasePaths.users.name);
 
+  final FirebaseFunctions _functions = FirebaseFunctions.instance;
+
   // add user data to firebase
-  Future<void> addUsers({required UserModel model}) async {
+  Future<void> addUsers({required UserDataModel model}) async {
     await _ref.doc(model.userId).set(model.toMap());
   }
 
   // update user data to firebase
-  Future<void> updateUsers({required UserModel model}) async {
+  Future<void> updateUsers({required UserDataModel model}) async {
     await _ref.doc(model.userId).update(model.toMap());
   }
 
@@ -115,5 +118,18 @@ class FirebaseService {
         .collection(path)
         .where(field, arrayContainsAny: query)
         .get();
+  }
+
+  // // cloud funciton to change the isSynced field to falsd
+  Future<bool> cloudSync({required String userId, required bool val}) async {
+    HttpsCallable callable = _functions.httpsCallable('syncOut');
+    try {
+      final response =
+          await callable.call(<String, dynamic>{'userId': userId, 'val': val});
+
+      return response.data == null ? false : true;
+    } catch (e) {
+      return false;
+    }
   }
 }

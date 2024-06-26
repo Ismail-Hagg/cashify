@@ -1,25 +1,21 @@
-import 'package:cashify/models/transaction_model.dart';
+import 'dart:math';
+
 import 'package:cashify/pages/home_page/home_controller.dart';
 import 'package:cashify/utils/constants.dart';
+import 'package:cashify/utils/countries.dart';
 import 'package:cashify/utils/enums.dart';
-import 'package:cashify/widgets/animeted_icon_widget.dart';
-import 'package:cashify/widgets/caragory_indicator_widget.dart';
+import 'package:cashify/utils/util_functions.dart';
+import 'package:cashify/widgets/avatar_widget.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';
-import 'package:cashify/widgets/expense_tile_widget.dart';
-import 'package:cashify/widgets/modal_widget.dart';
-import 'package:cashify/widgets/text_button_widget.dart';
-import 'package:country_currency_pickers/country.dart';
-import 'package:country_currency_pickers/country_picker_dropdown.dart';
-import 'package:country_currency_pickers/utils/utils.dart';
+import 'package:cashify/widgets/new_expense.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_animated_icons/icons8.dart';
+import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:mrx_charts/mrx_charts.dart';
+import 'package:shape_of_view_null_safe/shape_of_view_null_safe.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
 class HomeBody extends StatelessWidget {
   const HomeBody({super.key});
@@ -27,922 +23,686 @@ class HomeBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
-      body: GetBuilder<HomeController>(
-        init: Get.find<HomeController>(),
-        builder: (controller) => LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            double width = constraints.maxWidth;
-            return SingleChildScrollView(
+      backgroundColor: whiteColor,
+      body: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          double width = constraints.maxWidth;
+          double height = constraints.maxHeight;
+          return GetBuilder<HomeController>(
+            init: Get.find<HomeController>(),
+            builder: (controller) => SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Column(
                 children: [
-                  SizedBox(
-                    height: width * 0.06,
-                  ),
-                  SafeArea(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        SizedBox(
-                          width: width,
-                          child: SingleChildScrollView(
-                            physics: const BouncingScrollPhysics(),
-                            scrollDirection: Axis.horizontal,
-                            child: Skeletonizer(
-                              enabled: controller.loading,
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                    left: 8.0, right: 8.0),
-                                child: Row(
-                                  children: List.generate(
-                                    controller.loading
-                                        ? 10
-                                        : controller.monhtMap[
-                                                    controller.currentTime] ==
-                                                null
-                                            ? controller
-                                                .userModel.wallets.length
-                                            : controller
-                                                .monhtMap[
-                                                    controller.currentTime]!
-                                                .walletInfo
-                                                .length,
-                                    (index) {
-                                      return Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 0.0, horizontal: 4),
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            border: Border.all(
-                                              color: controller.loading
-                                                  ? backgroundColor
-                                                  : mainColor.withOpacity(0.5),
-                                            ),
-                                            color: Colors.grey.shade300,
-                                            borderRadius:
-                                                const BorderRadius.all(
-                                              Radius.circular(10),
-                                            ),
-                                          ),
-                                          alignment: Alignment.center,
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: CustomText(
-                                                // make better
-                                                text: controller.loading
-                                                    ? 'Loading    '
-                                                    : controller.monhtMap[controller
-                                                                .currentTime] ==
-                                                            null
-                                                        ? '${controller.userModel.wallets[index].name} : ${controller.walletAmount(amount: controller.userModel.wallets[index].amount)} ${controller.userModel.wallets[index].currency}'
-                                                        : '${controller.monhtMap[controller.currentTime]!.walletInfo[index].wallet} : ${controller.walletAmount(amount: controller.monhtMap[controller.currentTime]!.walletInfo[index].start + controller.monhtMap[controller.currentTime]!.walletInfo[index].opSum)} ${controller.monhtMap[controller.currentTime]!.walletInfo[index].currency}'),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 24,
-                      horizontal: 12,
-                    ),
-                    child: Container(
-                      width: width,
-                      decoration: BoxDecoration(
-                        boxShadow: [
-                          BoxShadow(
-                            color: shadowColor,
-                            offset: const Offset(0, 0),
-                            blurRadius: 5,
-                          )
-                        ],
-                        color: forgroundColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Column(
-                        children: [
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 12.0),
-                            child: Skeletonizer(
-                              enabled: controller.loading,
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  CustomText(
-                                    color: mainColor,
-                                    size: 14,
-                                    text: controller.chosenTime,
-                                  ),
-                                  Row(
-                                    children: [
-                                      AnimatedContainer(
-                                        curve: Curves.fastEaseInToSlowEaseOut,
-                                        height: controller.pieChart
-                                            ? width * 0.065
-                                            : width * 0.04,
-                                        width: controller.pieChart
-                                            ? width * 0.065
-                                            : width * 0.04,
-                                        duration:
-                                            const Duration(milliseconds: 200),
-                                        child: FittedBox(
-                                          child: GestureDetector(
-                                            onTap: () => controller.chartSwitch(
-                                                pie: true),
-                                            child: FaIcon(
-                                              FontAwesomeIcons.chartPie,
-                                              color: controller.pieChart
-                                                  ? mainColor
-                                                  : Colors.grey.shade300,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: width * 0.05,
-                                      ),
-                                      AnimatedContainer(
-                                        curve: Curves.fastEaseInToSlowEaseOut,
-                                        height: !controller.pieChart
-                                            ? width * 0.065
-                                            : width * 0.04,
-                                        width: !controller.pieChart
-                                            ? width * 0.065
-                                            : width * 0.04,
-                                        duration:
-                                            const Duration(milliseconds: 200),
-                                        child: FittedBox(
-                                          child: GestureDetector(
-                                            onTap: () => controller.chartSwitch(
-                                                pie: false),
-                                            child: FaIcon(
-                                              FontAwesomeIcons.chartLine,
-                                              color: controller.pieChart
-                                                  ? Colors.grey.shade300
-                                                  : mainColor,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  PopupMenuButton<String>(
-                                    splashRadius: 10,
-                                    icon: FaIcon(
-                                      FontAwesomeIcons.ellipsisVertical,
-                                      color: mainColor,
-                                    ),
-                                    onSelected: (val) =>
-                                        controller.changeTimePeriod(
-                                            context: context, time: val),
-                                    itemBuilder: (BuildContext context) {
-                                      return [
-                                        'thismnth'.tr,
-                                        'lastmnth'.tr,
-                                        'thisyear'.tr,
-                                        'custom'.tr
-                                      ].map(
-                                        (String choice) {
-                                          return PopupMenuItem<String>(
-                                            value: choice,
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                CustomText(
-                                                  color: mainColor,
-                                                  text: choice,
-                                                  size: 14,
-                                                ),
-                                                if (controller.track[choice] ==
-                                                    controller.trackNum) ...[
-                                                  FaIcon(
-                                                    FontAwesomeIcons.check,
-                                                    size: 18,
-                                                    color: mainColor,
-                                                  )
-                                                ]
-                                              ],
-                                            ),
-                                          );
-                                        },
-                                      ).toList();
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          if (controller.pieChart) ...[
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  height: width * 0.45,
-                                  width: width * 0.45,
-                                  child: controller.loading
-                                      ? IconAnimated(
-                                          name: Icons8.circles_menu_1_iOS,
-                                          controller:
-                                              controller.loadingController,
-                                          color: mainColor,
-                                        )
-                                      : Stack(
-                                          children: [
-                                            Chart(
-                                              layers: [
-                                                ChartGroupPieLayer(
-                                                  items: [
-                                                    List.generate(
-                                                      controller.showIncome
-                                                          ? controller
-                                                              .valsUp.length
-                                                          : controller
-                                                              .valsDown.length,
-                                                      (index) => ChartGroupPieDataItem(
-                                                          amount: controller
-                                                                  .showIncome
-                                                              ? controller
-                                                                  .valsUp.values
-                                                                  .elementAt(
-                                                                      index)
-                                                              : controller
-                                                                  .valsDown
-                                                                  .values
-                                                                  .elementAt(
-                                                                      index),
-                                                          color: controller
-                                                              .catList
-                                                              .firstWhere((catagory) => controller
-                                                                      .showIncome
-                                                                  ? catagory.name ==
-                                                                      controller
-                                                                          .valsUp
-                                                                          .keys
-                                                                          .elementAt(index)
-                                                                  : catagory.name == controller.valsDown.keys.elementAt(index))
-                                                              .color,
-                                                          label: 'thing'),
-                                                    ),
-                                                  ],
-                                                  settings:
-                                                      const ChartGroupPieSettings(),
-                                                ),
-                                              ],
-                                            ),
-                                            Center(
-                                              child: Skeletonizer(
-                                                enabled: controller.loading,
-                                                child: ButtonWidget(
-                                                  isIos: controller.isIos,
-                                                  textSize: 16,
-                                                  type: ButtonType.text,
-                                                  onClick: () =>
-                                                      controller.openDialog(
-                                                    widget: GetBuilder<
-                                                        HomeController>(
-                                                      init: Get.find<
-                                                          HomeController>(),
-                                                      builder: (controller) =>
-                                                          AlertDialog(
-                                                        content: Row(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          children: [
-                                                            CustomText(
-                                                              text: controller
-                                                                  .walletAmount(
-                                                                amount: controller.totalchanged
-                                                                    ? controller
-                                                                        .moneyTrans
-                                                                    : controller
-                                                                        .moneyTotal,
-                                                              ),
-                                                            ),
-                                                            CountryPickerDropdown(
-                                                              initialValue:
-                                                                  CountryPickerUtils
-                                                                      .getCountryByCurrencyCode(
-                                                                controller
-                                                                    .userModel
-                                                                    .defaultCurrency,
-                                                              ).isoCode,
-                                                              itemBuilder: (Country
-                                                                      country) =>
-                                                                  SizedBox(
-                                                                height: width *
-                                                                    0.14,
-                                                                width: (width -
-                                                                        24) *
-                                                                    0.2,
-                                                                child:
-                                                                    FittedBox(
-                                                                  child: Row(
-                                                                    children: <Widget>[
-                                                                      CountryPickerUtils
-                                                                          .getDefaultFlagImage(
-                                                                              country),
-                                                                      const SizedBox(
-                                                                        width:
-                                                                            8.0,
-                                                                      ),
-                                                                      Text(
-                                                                        country
-                                                                            .currencyCode
-                                                                            .toString(),
-                                                                      ),
-                                                                    ],
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                              onValuePicked: (Country? country) => controller.currencyExchange(
-                                                                  base: controller
-                                                                      .userModel
-                                                                      .defaultCurrency,
-                                                                  to: country !=
-                                                                          null
-                                                                      ? country
-                                                                              .currencyCode ??
-                                                                          ''
-                                                                      : '',
-                                                                  amount: controller
-                                                                      .moneyTotal),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  text: controller.humanFormat(
-                                                      controller.moneyTotal),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                ),
-                                if (controller.loading == false) ...[
-                                  Column(
-                                    children: [
-                                      GestureDetector(
-                                        onTap: () =>
-                                            controller.chartFlip(income: true),
-                                        child: Container(
-                                          height: width * 0.1,
-                                          width: width * 0.1,
-                                          decoration: BoxDecoration(
-                                              border: Border.all(
-                                                  color: Colors.green),
-                                              borderRadius:
-                                                  const BorderRadius.all(
-                                                Radius.circular(5),
-                                              ),
-                                              color: controller.showIncome
-                                                  ? Colors.green
-                                                  : forgroundColor),
-                                          child: Center(
-                                            child: FaIcon(
-                                              FontAwesomeIcons.arrowUp,
-                                              color: controller.showIncome
-                                                  ? forgroundColor
-                                                  : Colors.green,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: width * 0.05,
-                                      ),
-                                      GestureDetector(
-                                        onTap: () =>
-                                            controller.chartFlip(income: false),
-                                        child: Container(
-                                          height: width * 0.1,
-                                          width: width * 0.1,
-                                          decoration: BoxDecoration(
-                                              border:
-                                                  Border.all(color: Colors.red),
-                                              borderRadius:
-                                                  const BorderRadius.all(
-                                                Radius.circular(5),
-                                              ),
-                                              color: !controller.showIncome
-                                                  ? Colors.red
-                                                  : forgroundColor),
-                                          child: Center(
-                                            child: FaIcon(
-                                              FontAwesomeIcons.arrowDown,
-                                              color: !controller.showIncome
-                                                  ? forgroundColor
-                                                  : Colors.red,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                ]
-                              ],
-                            ),
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              physics: const BouncingScrollPhysics(),
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 8.0),
-                                child: Row(
-                                  children: List.generate(
-                                      controller.loading
-                                          ? 5
-                                          : controller.showIncome
-                                              ? controller.valsUp.length
-                                              : controller.valsDown.length,
-                                      (index) {
-                                    return Skeletonizer(
-                                      enabled: controller.loading,
-                                      child: CatagoryIndicator(
-                                          scrolable: true,
-                                          loading: false,
-                                          width: width,
-                                          color: controller.loading
-                                              ? Colors.grey.shade300
-                                              : controller.catList
-                                                  .firstWhere((catagory) =>
-                                                      controller.showIncome
-                                                          ? catagory.name ==
-                                                              controller
-                                                                  .valsUp.keys
-                                                                  .elementAt(
-                                                                      index)
-                                                          : catagory.name ==
-                                                              controller
-                                                                  .valsDown.keys
-                                                                  .elementAt(
-                                                                      index))
-                                                  .color,
-                                          catagory: controller.loading
-                                              ? 'Loading'
-                                              : controller.showIncome
-                                                  ? controller.valsUp.keys
-                                                      .elementAt(index)
-                                                  : controller.valsDown.keys
-                                                      .elementAt(index)),
-                                    );
-                                  }),
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Divider(
-                                color: mainColor,
-                                height: 3,
-                              ),
-                            ),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Skeletonizer(
-                                    enabled: controller.loading,
-                                    child: CatagoryIndicator(
-                                      scrolable: controller.loading,
-                                      loading: false,
-                                      adjustedWidth: width * 0.25,
-                                      width: width,
-                                      color: controller.loading
-                                          ? Colors.grey.shade300
-                                          : Colors.green.withOpacity(0.75),
-                                      catagory:
-                                          '${'income'.tr} : ${controller.humanFormat(controller.income)}',
-                                    ),
-                                  ),
-                                  Skeletonizer(
-                                    enabled: controller.loading,
-                                    child: CatagoryIndicator(
-                                        scrolable: false,
-                                        adjustedWidth: width * 0.25,
-                                        loading: false,
-                                        width: width,
-                                        color: controller.loading
-                                            ? Colors.grey.shade300
-                                            : Colors.red.withOpacity(0.75),
-                                        catagory:
-                                            '${'expence'.tr} : ${controller.humanFormat(controller.expense == 0 ? controller.expense : controller.expense * -1)}'),
-                                  ),
-                                  Skeletonizer(
-                                    enabled: controller.loading,
-                                    child: CatagoryIndicator(
-                                        scrolable: false,
-                                        adjustedWidth: width * 0.25,
-                                        loading: false,
-                                        width: width,
-                                        color: controller.loading
-                                            ? Colors.grey.shade300
-                                            : Colors.blue.withOpacity(0.75),
-                                        catagory:
-                                            '${'total'.tr} : ${controller.humanFormat(controller.income + controller.expense)}'),
-                                  )
-                                ],
-                              ),
-                            ),
-                          ],
-                          if (!controller.pieChart) ...[
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 12.0),
-                              child: SizedBox(
-                                height: width * 0.45,
+                  Stack(
+                    children: [
+                      Container(
+                        height: height * 0.38,
+                        color: mainColor,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            SizedBox(
+                              width: width,
+                              child: ShapeOfView(
+                                elevation: 0,
+                                height: (height * 0.35) * 0.38,
                                 width: width,
-                                child: Chart(
-                                  layers: [
-                                    ChartAxisLayer(
-                                      settings: ChartAxisSettings(
-                                        x: ChartAxisSettingsAxis(
-                                          frequency: (controller.endTime
-                                                      .millisecondsSinceEpoch -
-                                                  controller.startTime
-                                                      .millisecondsSinceEpoch) /
-                                              4.toDouble(),
-                                          max: controller
-                                              .endTime.millisecondsSinceEpoch
-                                              .toDouble(),
-                                          min: controller
-                                              .startTime.millisecondsSinceEpoch
-                                              .toDouble(),
-                                          textStyle: TextStyle(
-                                            color:
-                                                Colors.green.withOpacity(0.6),
-                                            fontSize: 10.0,
-                                          ),
-                                        ),
-                                        y: ChartAxisSettingsAxis(
-                                          frequency: (controller.chartHigh -
-                                                  controller.chartLow) *
-                                              0.1,
-                                          max: controller.chartHigh,
-                                          min: controller.chartLow,
-                                          textStyle: TextStyle(
-                                            color: Colors.red.withOpacity(0.6),
-                                            fontSize: 10.0,
-                                          ),
-                                        ),
-                                      ),
-                                      labelX: (value) => DateFormat.d().format(
-                                          DateTime.fromMillisecondsSinceEpoch(
-                                              value.toInt())),
-                                      labelY: (value) =>
-                                          value.toInt().toString(),
-                                    ),
-                                    ChartLineLayer(
-                                      items: List.generate(
-                                        controller.vals.length,
-                                        (index) => ChartLineDataItem(
-                                          x: (index *
-                                                  (controller.endTime
-                                                          .millisecondsSinceEpoch -
-                                                      controller.startTime
-                                                          .millisecondsSinceEpoch) /
-                                                  3.0) +
-                                              controller.startTime
-                                                  .millisecondsSinceEpoch,
-                                          value: controller.vals.values
-                                              .elementAt(index),
-                                        ),
-                                      ),
-                                      settings: ChartLineSettings(
-                                        color: mainColor,
-                                        thickness: 3.0,
-                                      ),
-                                    )
-                                  ],
-                                  padding: const EdgeInsets.symmetric(
-                                          horizontal: 30.0)
-                                      .copyWith(
-                                    bottom: 12.0,
+                                shape: RoundRectShape(
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(10),
+                                    topRight: Radius.circular(10),
                                   ),
                                 ),
                               ),
                             )
-                          ]
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ),
-                  Column(
-                    children: List.generate(
-                      controller.loading ? 10 : controller.catList.length,
-                      (index) => GestureDetector(
-                        onTap: () {
-                          if (controller.loading == false) {
-                            controller.calculateSubcategories(
-                                transactions: controller.catList[index]
-                                    .transactions as List<TransactionModel>);
-                            WoltModalSheet.show(
-                              context: context,
-                              pageListBuilder: (modalSheetContext) {
-                                return [
-                                  modalPage(
-                                      context: context,
-                                      title: controller.catList[index].name,
-                                      child: GetBuilder<HomeController>(
-                                        init: Get.find<HomeController>(),
-                                        builder: (controller) => Column(
-                                          children: [
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 12.0),
-                                              child: SizedBox(
-                                                width: width,
-                                                height: width * 0.135,
-                                                child: Row(
-                                                  children: [
-                                                    GestureDetector(
-                                                      onTap: () => controller
-                                                          .mainSubFlip(
-                                                              all: false),
-                                                      child: Column(
-                                                        children: [
-                                                          SizedBox(
-                                                            width: (width / 2) -
-                                                                12,
-                                                            height: (width *
-                                                                    0.135) *
-                                                                0.95,
-                                                            child: Center(
-                                                              child: CustomText(
-                                                                text:
-                                                                    'calced'.tr,
-                                                                color: controller
-                                                                        .mainSubAll
-                                                                    ? mainColor
-                                                                        .withOpacity(
-                                                                            0.5)
-                                                                    : mainColor,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          Container(
-                                                            width: (width / 2) -
-                                                                12,
-                                                            height: (width *
-                                                                    0.135) *
-                                                                0.05,
-                                                            color: controller
-                                                                    .mainSubAll
-                                                                ? mainColor
-                                                                    .withOpacity(
-                                                                        0.5)
-                                                                : mainColor,
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                    GestureDetector(
-                                                      onTap: () => controller
-                                                          .mainSubFlip(
-                                                              all: true),
-                                                      child: Column(
-                                                        children: [
-                                                          SizedBox(
-                                                            width: (width / 2) -
-                                                                12,
-                                                            height: (width *
-                                                                    0.135) *
-                                                                0.95,
-                                                            child: Center(
-                                                              child: CustomText(
-                                                                text:
-                                                                    'totals'.tr,
-                                                                color: controller
-                                                                        .mainSubAll
-                                                                    ? mainColor
-                                                                    : mainColor
-                                                                        .withOpacity(
-                                                                            0.5),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          Container(
-                                                            width: (width / 2) -
-                                                                12,
-                                                            height: (width *
-                                                                    0.135) *
-                                                                0.05,
-                                                            color: controller
-                                                                    .mainSubAll
-                                                                ? mainColor
-                                                                : mainColor
-                                                                    .withOpacity(
-                                                                        0.5),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                            SingleChildScrollView(
-                                              physics:
-                                                  const BouncingScrollPhysics(),
-                                              child: Column(
-                                                children: List.generate(
-                                                  controller.mainSubAll
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        left: 0,
+                        child: Padding(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: width * 0.04),
+                          child: Container(
+                            width: width * 0.95,
+                            height: height * 0.23,
+                            decoration: BoxDecoration(
+                              color: oilColor,
+                              borderRadius:
+                                  const BorderRadius.all(Radius.circular(10)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: shadowColor,
+                                  blurRadius: 5,
+                                  offset: const Offset(1, 1),
+                                )
+                              ],
+                            ),
+                            child: Stack(
+                              children: [
+                                Positioned(
+                                  top: 80,
+                                  left: -50,
+                                  child: Container(
+                                    height: 150,
+                                    width: 150,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          blurRadius: 15,
+                                          spreadRadius: 8,
+                                          color: mainColor.withOpacity(0.2),
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: -40,
+                                  right: -40,
+                                  child: Container(
+                                    height: 160,
+                                    width: 160,
+                                    decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            blurRadius: 15,
+                                            spreadRadius: 8,
+                                            color: mainColor.withOpacity(0.2),
+                                          )
+                                        ]),
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: -50,
+                                  left: 0,
+                                  right: 0,
+                                  child: Container(
+                                    height: 180,
+                                    width: 180,
+                                    decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            blurRadius: 15,
+                                            spreadRadius: 8,
+                                            color: whiteColor.withOpacity(0.2),
+                                          )
+                                        ]),
+                                  ),
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                      width: width * 0.95,
+                                      height: controller.loading == false &&
+                                              controller
+                                                  .monthSettingMap[
+                                                      controller.currentTime]!
+                                                  .walletInfo
+                                                  .isEmpty &&
+                                              controller
+                                                  .userModel.wallets.isEmpty
+                                          ? width * 0.15
+                                          : null,
+                                      child: SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        physics: const BouncingScrollPhysics(),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8.0),
+                                          child: Row(
+                                            children: List.generate(
+                                              controller.loading
+                                                  ? 10
+                                                  : controller
+                                                          .monthSettingMap[
+                                                              controller
+                                                                  .currentTime]!
+                                                          .walletInfo
+                                                          .isNotEmpty
                                                       ? controller
-                                                          .catList[index]
-                                                          .transactions!
+                                                          .monthSettingMap[
+                                                              controller
+                                                                  .currentTime]!
+                                                          .walletInfo
                                                           .length
-                                                      : controller
-                                                          .mainSub.length,
-                                                  (i) {
-                                                    String cat = controller
-                                                            .mainSubAll
-                                                        ? controller
-                                                            .catList[index]
-                                                            .transactions![i]
-                                                            .catagory
-                                                        : controller
-                                                            .mainSub[controller
-                                                                .mainSub.keys
-                                                                .elementAt(i)]!
-                                                            .cat;
-
-                                                    Color transColor =
-                                                        controller.userModel
-                                                            .catagories
-                                                            .firstWhere(
-                                                                (element) =>
-                                                                    element
-                                                                        .name ==
-                                                                    cat)
-                                                            .color;
-
-                                                    IconData iconDat =
-                                                        controller.userModel
-                                                            .catagories
-                                                            .firstWhere(
-                                                                (element) =>
-                                                                    element
-                                                                        .name ==
-                                                                    cat)
-                                                            .icon;
-                                                    TransactionModel
-                                                        chosenTransaction =
-                                                        controller.mainSubAll
-                                                            ? controller
-                                                                .catList[index]
-                                                                .transactions![i]
-                                                            : TransactionModel(
-                                                                catagory:
-                                                                    'catagory',
-                                                                subCatagory:
-                                                                    'subCatagory',
-                                                                currency:
-                                                                    currency,
-                                                                amount: 0,
-                                                                note: 'note',
-                                                                date: DateTime
-                                                                    .now(),
-                                                                wallet:
-                                                                    'wallet',
-                                                                fromWallet:
-                                                                    'fromWallet',
-                                                                toWallet:
-                                                                    'toWallet',
-                                                                type: TransactionType
-                                                                    .transfer,
-                                                              );
-                                                    return ExpenceTile(
-                                                      width: width,
-                                                      color: transColor,
-                                                      title: controller
-                                                              .mainSubAll
-                                                          ? chosenTransaction
-                                                              .catagory
-                                                          : controller
-                                                              .mainSub.keys
-                                                              .elementAt(i),
-                                                      subtitle: controller
-                                                              .mainSubAll
-                                                          ? DateFormat.yMd()
-                                                              .format(
-                                                                  chosenTransaction
-                                                                      .date)
-                                                          : '',
-                                                      amount: controller
-                                                              .mainSubAll
-                                                          ? controller.walletAmount(
-                                                              amount:
-                                                                  chosenTransaction
-                                                                      .amount)
-                                                          : controller.walletAmount(
-                                                              amount: controller
-                                                                  .mainSub
-                                                                  .values
-                                                                  .elementAt(i)
-                                                                  .amount),
-                                                      budget: false,
-                                                      icon: iconDat,
-                                                      ave: controller.mainSubAll
-                                                          ? chosenTransaction
-                                                                      .subCatagory ==
-                                                                  ''
-                                                              ? 'noavailable'.tr
-                                                              : chosenTransaction
-                                                                  .subCatagory
-                                                          : ' ',
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              8),
-                                                      loading:
-                                                          controller.loading,
-                                                    );
-                                                  },
-                                                ),
-                                              ),
+                                                      : controller.userModel
+                                                          .wallets.length,
+                                              (index) {
+                                                String amount = controller
+                                                        .loading
+                                                    ? ''
+                                                    : zerosConvert(
+                                                        val: controller
+                                                                .monthSettingMap[
+                                                                    controller
+                                                                        .currentTime]!
+                                                                .walletInfo
+                                                                .isNotEmpty
+                                                            ? (controller
+                                                                    .monthSettingMap[
+                                                                        controller
+                                                                            .currentTime]!
+                                                                    .walletInfo[
+                                                                        index]
+                                                                    .start +
+                                                                controller
+                                                                    .monthSettingMap[
+                                                                        controller
+                                                                            .currentTime]!
+                                                                    .walletInfo[
+                                                                        index]
+                                                                    .opSum)
+                                                            : controller
+                                                                .userModel
+                                                                .wallets[index]
+                                                                .amount);
+                                                return Skeletonizer(
+                                                  enabled: controller.loading,
+                                                  child: Padding(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 4.0,
+                                                        vertical: 12),
+                                                    child: Container(
+                                                      decoration: BoxDecoration(
+                                                        border: Border.all(
+                                                            color: mainColor,
+                                                            width: 0.5),
+                                                        color: whiteColor
+                                                            .withOpacity(0.7),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(10),
+                                                      ),
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                                horizontal:
+                                                                    12.0,
+                                                                vertical: 10),
+                                                        child: CustomText(
+                                                          text: controller
+                                                                  .loading
+                                                              ? 'loading data'
+                                                              : controller
+                                                                      .monthSettingMap[
+                                                                          controller
+                                                                              .currentTime]!
+                                                                      .walletInfo
+                                                                      .isNotEmpty
+                                                                  ? '${controller.monthSettingMap[controller.currentTime]!.walletInfo[index].wallet} $amount ${controller.monthSettingMap[controller.currentTime]!.walletInfo[index].currency}'
+                                                                  : '${controller.userModel.wallets[index].name} $amount ${controller.userModel.wallets[index].currency}',
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                );
+                                              },
                                             ),
-                                          ],
+                                          ),
                                         ),
                                       ),
-                                      icon: FaIcon(
-                                        FontAwesomeIcons.xmark,
-                                        color: mainColor,
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 14.0),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          SingleChildScrollView(
+                                            physics:
+                                                const BouncingScrollPhysics(),
+                                            scrollDirection: Axis.horizontal,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.start,
+                                              children: [
+                                                CustomText(
+                                                  text: 'balance'.tr,
+                                                  color: whiteColor
+                                                      .withOpacity(0.8),
+                                                  size: 14,
+                                                ),
+                                                Padding(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 8.0),
+                                                  child: DropdownButton(
+                                                    menuMaxHeight: height * 0.8,
+                                                    value: controller.loading
+                                                        ? 'SAR'
+                                                        : controller
+                                                            .transactionCurrency,
+                                                    items: List.generate(
+                                                      codes.length,
+                                                      (index) {
+                                                        String name = countries[
+                                                                    codes[
+                                                                        index]]![
+                                                                'name']
+                                                            .toString();
+                                                        return DropdownMenuItem<
+                                                            String>(
+                                                          value: codes[index],
+                                                          child: CustomText(
+                                                            text: name,
+                                                            color: mainColor,
+                                                          ),
+                                                        );
+                                                      },
+                                                    ),
+                                                    underline: Container(),
+                                                    icon: FaIcon(
+                                                      FontAwesomeIcons
+                                                          .chevronDown,
+                                                      color: mainColor,
+                                                      size: 14,
+                                                    ),
+                                                    onChanged: (thing) =>
+                                                        controller
+                                                            .changeCurrancy(
+                                                                currency:
+                                                                    thing ??
+                                                                        ''),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Skeletonizer(
+                                            enabled: controller.loading,
+                                            child: Row(
+                                              children: [
+                                                CustomText(
+                                                  text:
+                                                      '234,233,234 ${countries[codes[codes.indexWhere((element) => element == controller.transactionCurrency)]]!['symbolNative']}',
+                                                  maxline: 1,
+                                                  color: whiteColor,
+                                                  size: 24,
+                                                  weight: FontWeight.bold,
+                                                ),
+                                              ],
+                                            ),
+                                          )
+                                        ],
                                       ),
-                                      leadingButtonFunction: () {},
-                                      button: Container())
-                                ];
-                              },
-                            );
-                          }
-                        },
-                        child: Skeletonizer(
-                          enabled: controller.loading,
-                          child: ExpenceTile(
-                            loading: false,
-                            budgetPercent: 0.5,
-                            width: width,
-                            color: controller.loading
-                                ? Colors.grey.shade300
-                                : controller.catList[index].color,
-                            title: controller.loading
-                                ? ''
-                                : controller.catList[index].name,
-                            subtitle: controller.loading
-                                ? ''
-                                : '${controller.catList[index].transactions!.length} transactions',
-                            amount: controller.loading
-                                ? '0'
-                                : controller.humanFormat(controller
-                                        .vals[controller.catList[index].name]
-                                    as double),
-                            ave: controller.loading
-                                ? '0'
-                                : '${'ave'.tr} ${(controller.aveCalc(
-                                    amount: controller.vals[controller
-                                        .catList[index].name] as double,
-                                  )).toStringAsFixed(2)}',
-                            budget: false,
-                            icon: controller.loading
-                                ? Icons.add
-                                : controller.catList[index].icon,
-                            padding: const EdgeInsets.only(
-                              right: 12,
-                              left: 12,
-                              bottom: 16,
+                                    )
+                                  ],
+                                )
+                              ],
                             ),
-                            budgetKeeping: '50/100',
                           ),
                         ),
                       ),
-                    )
-                        .animate(interval: 250.ms)
-                        .moveX(duration: 250.ms)
-                        .fadeIn(duration: 250.ms),
+                      SafeArea(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Row(
+                            children: [
+                              Avatar(
+                                borderColor: oilColor,
+                                type: controller.userModel.localImage
+                                    ? controller.imageExists(
+                                        link: controller.userModel.localPath,
+                                      )
+                                        ? AvatarType.local
+                                        : AvatarType.none
+                                    : controller.userModel.onlinePath == ''
+                                        ? AvatarType.none
+                                        : AvatarType.online,
+                                height: width * 0.135,
+                                width: width * 0.135,
+                                link: controller.userModel.localImage
+                                    ? controller.userModel.localPath
+                                    : controller.userModel.onlinePath,
+                                border: true,
+                                shadow: false,
+                              ),
+                              SizedBox(
+                                height: width * 0.12,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      CustomText(
+                                        text: 'welcome'.tr,
+                                        color: whiteColor.withOpacity(0.7),
+                                      ),
+                                      CustomText(
+                                        text: controller.userModel.username,
+                                        color: whiteColor,
+                                        weight: FontWeight.bold,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    width: width,
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        top: 26,
+                        right: 16,
+                        left: 16,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const CustomText(
+                                text: 'Analytics',
+                                size: 16,
+                                weight: FontWeight.bold,
+                              ),
+                              DropdownButton<String>(
+                                selectedItemBuilder: (context) {
+                                  Times time = controller.chosenTimeType;
+                                  String display = time == Times.thisMonth ||
+                                          time == Times.lastMonth
+                                      ? '${controller.chosenTimePeriod.start.year}/${controller.chosenTimePeriod.start.month}'
+                                      : '${controller.chosenTimePeriod.start.year}/${controller.chosenTimePeriod.start.month}/${controller.chosenTimePeriod.start.day} - ${controller.chosenTimePeriod.end.year}/${controller.chosenTimePeriod.end.month}/${controller.chosenTimePeriod.end.day}';
+                                  return List.generate(
+                                    controller.timesToChose.length,
+                                    (index) => Container(
+                                      decoration: BoxDecoration(
+                                        color: mainColor.withOpacity(0.3),
+                                        borderRadius: BorderRadius.circular(5),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8.0, vertical: 0),
+                                        child: Row(
+                                          children: [
+                                            CustomText(
+                                              text: display,
+                                              color: mainColor,
+                                            ),
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 4.0),
+                                              child: FaIcon(
+                                                FontAwesomeIcons.chevronDown,
+                                                color: mainColor,
+                                                size: 14,
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                isExpanded: false,
+                                value: controller.chosenTime,
+                                items: List.generate(
+                                  controller.timesToChose.length,
+                                  (index) => DropdownMenuItem<String>(
+                                    value: controller.timesToChose[index],
+                                    child: CustomText(
+                                      text: controller.timesToChose[index],
+                                      color: mainColor,
+                                    ),
+                                  ),
+                                ),
+                                underline: Container(),
+                                icon: Container(),
+                                onChanged: (thing) => controller.timeChange(
+                                  time: thing,
+                                  context: context,
+                                  times: controller.timesList[
+                                      controller.timesToChose.indexOf(
+                                    thing.toString(),
+                                  )],
+                                ),
+                              ),
+                            ],
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Column(
+                              children: [
+                                SizedBox(
+                                  width: width,
+                                  height: width * 0.55,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(5),
+                                      color: mainColor.withOpacity(0.08),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12.0),
+                                      child: LineChart(
+                                        duration:
+                                            const Duration(milliseconds: 500),
+                                        LineChartData(
+                                          lineTouchData: LineTouchData(
+                                            handleBuiltInTouches: true,
+                                            touchTooltipData:
+                                                LineTouchTooltipData(
+                                              getTooltipColor: (touchedSpot) =>
+                                                  mainColor.withOpacity(0.7),
+                                            ),
+                                          ),
+                                          gridData:
+                                              const FlGridData(show: false),
+                                          titlesData: FlTitlesData(
+                                            bottomTitles: AxisTitles(
+                                              sideTitles: SideTitles(
+                                                showTitles: true,
+                                                reservedSize: 32,
+                                                interval: 5,
+                                                getTitlesWidget: (double value,
+                                                    TitleMeta meta) {
+                                                  const style = TextStyle(
+                                                    fontSize: 12,
+                                                  );
+                                                  String text =
+                                                      value.toStringAsFixed(0);
+                                                  return Text(text,
+                                                      style: style,
+                                                      textAlign:
+                                                          TextAlign.start);
+                                                },
+                                              ),
+                                            ),
+                                            rightTitles: const AxisTitles(
+                                              sideTitles:
+                                                  SideTitles(showTitles: false),
+                                            ),
+                                            topTitles: const AxisTitles(
+                                              sideTitles:
+                                                  SideTitles(showTitles: false),
+                                            ),
+                                            leftTitles: AxisTitles(
+                                              sideTitles: SideTitles(
+                                                reservedSize: 32,
+                                                getTitlesWidget: (double value,
+                                                    TitleMeta meta) {
+                                                  String text =
+                                                      value.toStringAsFixed(0);
+
+                                                  return CustomText(
+                                                    text: text,
+                                                    size: 12,
+                                                  );
+                                                },
+                                                showTitles: true,
+                                                interval: 10,
+                                              ),
+                                            ),
+                                          ),
+                                          borderData: FlBorderData(
+                                            show: false,
+                                          ),
+                                          lineBarsData: [
+                                            LineChartBarData(
+                                              isCurved: true,
+                                              color:
+                                                  mainColor.withOpacity(0.75),
+                                              barWidth: 4,
+                                              isStrokeCapRound: true,
+                                              dotData:
+                                                  const FlDotData(show: false),
+                                              belowBarData:
+                                                  BarAreaData(show: false),
+                                              spots: const [
+                                                FlSpot(-30, 10),
+                                                FlSpot(-10, -10),
+                                                FlSpot(5, 23),
+                                                // FlSpot(7, 3.4),
+                                                // FlSpot(10, 2),
+                                                FlSpot(12, 45),
+                                                FlSpot(13, -20),
+                                              ],
+                                            )
+                                          ],
+                                          minX: -30,
+                                          maxX: 20,
+                                          maxY: 50,
+                                          minY: -20,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: SizedBox(
+                              width: width,
+                              height: width * 0.1,
+                              child: SingleChildScrollView(
+                                physics: const BouncingScrollPhysics(),
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  children: List.generate(
+                                    controller.userModel.catagories.length,
+                                    (index) => Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 4.0),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: index == 0
+                                              ? mainColor
+                                              : Colors.grey.shade300,
+                                          borderRadius:
+                                              BorderRadius.circular(7),
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(12.0),
+                                          child: CustomText(
+                                            text: controller.userModel
+                                                .catagories[index].name,
+                                            color: index == 0
+                                                ? whiteColor
+                                                : Colors.black,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Column(
+                            children: List.generate(
+                              controller.loading
+                                  ? 10
+                                  : controller.catList.length,
+                              (index) => Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 6.0),
+                                child: GestureDetector(
+                                  child: ExpenceTileNew(
+                                      type: controller.loading
+                                          ? ExpenseTile.loading
+                                          : ExpenseTile.category,
+                                      sign: '\$',
+                                      ave: -6.9,
+                                      count: controller.loading
+                                          ? 0
+                                          : controller.catList[index]
+                                              .transactions!.length,
+                                      budget: false,
+                                      budgetNum: index * 22,
+                                      width: width,
+                                      title: controller.loading
+                                          ? 'Loading...'
+                                          : controller.catList[index].name,
+                                      date: DateTime.now(),
+                                      amount: controller.loading
+                                          ? 0.0
+                                          : controller.vals[controller
+                                              .catList[index].name] as double,
+                                      color: controller.loading
+                                          ? Colors.transparent
+                                          : colorConvert(
+                                              code: controller
+                                                  .catList[index].color),
+                                      //  [
+                                      //   Colors.red,
+                                      //   Colors.green,
+                                      //   Colors.blue,
+                                      //   Colors.yellowAccent,
+                                      //   Colors.pink,
+                                      //   Colors.deepOrange,
+                                      //   Colors.tealAccent
+                                      // ][index],
+                                      icon: controller.loading
+                                          ? Icons.add
+                                          : iconConvert(
+                                              code: controller
+                                                  .catList[index].icon)
+                                      //  [
+                                      //   FontAwesomeIcons.airbnb,
+                                      //   FontAwesomeIcons.userTag,
+                                      //   FontAwesomeIcons.algolia,
+                                      //   FontAwesomeIcons.arrowRightLong,
+                                      //   FontAwesomeIcons.audioDescription,
+                                      //   FontAwesomeIcons.arrowRightArrowLeft,
+                                      //   FontAwesomeIcons.broom
+                                      // ][index],
+                                      ),
+                                ),
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
                   )
                 ],
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }

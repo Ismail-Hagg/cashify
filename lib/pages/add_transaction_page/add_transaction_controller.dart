@@ -1,10 +1,15 @@
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
+import 'package:cashify/data_models/export.dart';
+import 'package:cashify/data_models/transaction_data_model.dart';
+import 'package:cashify/data_models/user_data_model.dart';
+import 'package:cashify/data_models/wallet_data_model.dart';
 import 'package:cashify/gloable_controllers/auth_controller.dart';
 import 'package:cashify/models/catagory_model.dart';
 import 'package:cashify/models/month_setting_model.dart';
 import 'package:cashify/models/transaction_model.dart';
 import 'package:cashify/models/user_model.dart';
 import 'package:cashify/models/wallet_model.dart';
+import 'package:cashify/pages/add_transaction_page/repository.dart';
 import 'package:cashify/pages/all_transactions_page/all_transactoins_controller.dart';
 import 'package:cashify/pages/home_page/home_controller.dart';
 import 'package:cashify/services/firebase_service.dart';
@@ -18,14 +23,16 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_iconpicker/flutter_iconpicker.dart';
 import 'package:get/get.dart';
 import 'package:toastification/toastification.dart';
+import 'package:uuid/uuid.dart';
 
 class AddTransactionController extends GetxController {
-  final FirebaseService _firebaseService = FirebaseService();
-  late UserModel _userModel;
-  UserModel get userModel => _userModel;
+  final AddTransactionRepository _repo = AddTransactionRepository();
 
-  late TransactionModel? _transaction;
-  TransactionModel? get transaction => _transaction;
+  late UserDataModel _userModel;
+  UserDataModel get userModel => _userModel;
+
+  late TransactionDataModel? _transaction;
+  TransactionDataModel? get transaction => _transaction;
 
   late String? _transactionId;
   String? get transactionId => _transactionId;
@@ -140,8 +147,7 @@ class AddTransactionController extends GetxController {
   void onInit() {
     super.onInit();
     _transaction = Get.arguments == null ? null : Get.arguments['model'];
-    _transactionId = Get.arguments == null ? null : Get.arguments['id'];
-    _userModel = Get.find<GloableAuthController>().userModel;
+    _userModel = Get.find<HomeController>().userModel;
     _walletCurrency = _userModel.defaultCurrency;
 
     initTransaction();
@@ -184,7 +190,8 @@ class AddTransactionController extends GetxController {
         isEng: _userModel.language == 'en_US',
       );
     } else {
-      TransactionModel model = TransactionModel(
+      TransactionDataModel model = TransactionDataModel(
+        id: const Uuid().v4(),
         catagory: _catController.text.trim(),
         subCatagory: _subcatController.text.trim(),
         currency: _transactionCurrency,
@@ -196,169 +203,170 @@ class AddTransactionController extends GetxController {
         toWallet: _toWalletTransaction.text.trim(),
         type: _transactionType,
       );
-      update
-          ? updateTransactioin(transaction: model, recId: _transactionId ?? '')
-          : Get.find<HomeController>().addTransaction(transaction: model);
+      Get.find<HomeController>().addTransaction(transaction: model);
+      // update
+      //     ? updateTransactioin(transaction: model, recId: _transactionId ?? '')
+      //     : Get.find<HomeController>().addTransaction(transaction: model);
       // addTransactioin(transaction: model);
       Get.back();
     }
   }
 
-  // wallet operations
-  void walletOperations(
-      {required bool transfer,
-      required String wallet,
-      String? toWallet,
-      required BuildContext context,
-      required double amuont}) async {
-    int walletMain =
-        _userModel.wallets.indexWhere((element) => element.name == wallet);
-    int? walletTo = toWallet != null
-        ? _userModel.wallets.indexWhere((element) => element.name == toWallet)
-        : null;
-    if (transfer) {
-      double newAmountFrom = _userModel.wallets[walletMain].amount - amuont;
-      double newAmountTo = _userModel.wallets[walletTo as int].amount + amuont;
-      _userModel.wallets[walletMain].amount = newAmountFrom;
-      _userModel.wallets[walletTo].amount = newAmountTo;
-    } else {
-      _userModel.wallets[walletMain].amount =
-          _userModel.wallets[walletMain].amount + amuont;
-    }
-    await updateUser(model: _userModel).then(
-      (value) async {
-        await updateUserFire(model: _userModel);
-      },
-    );
-  }
+//   // wallet operations
+//   void walletOperations(
+//       {required bool transfer,
+//       required String wallet,
+//       String? toWallet,
+//       required BuildContext context,
+//       required double amuont}) async {
+//     // int walletMain =
+//     //     _userModel.wallets.indexWhere((element) => element.name == wallet);
+//     // int? walletTo = toWallet != null
+//     //     ? _userModel.wallets.indexWhere((element) => element.name == toWallet)
+//     //     : null;
+//     // if (transfer) {
+//     //   double newAmountFrom = _userModel.wallets[walletMain].amount - amuont;
+//     //   double newAmountTo = _userModel.wallets[walletTo as int].amount + amuont;
+//     //   _userModel.wallets[walletMain].amount = newAmountFrom;
+//     //   _userModel.wallets[walletTo].amount = newAmountTo;
+//     // } else {
+//     //   _userModel.wallets[walletMain].amount =
+//     //       _userModel.wallets[walletMain].amount + amuont;
+//     // }
+//     // await updateUser(model: _userModel).then(
+//     //   (value) async {
+//     //     await updateUserFire(model: _userModel);
+//     //   },
+//     // );
+//   }
 
-  // adding transaction
-  void addTransactioin({required TransactionModel transaction}) async {
-    if (transaction.type == TransactionType.moneyOut &&
-        transaction.amount > 0) {
-      transaction.amount = transaction.amount * -1;
-    }
-    if (transaction.type == TransactionType.moneyIn && transaction.amount < 0) {
-      transaction.amount = transaction.amount * -1;
-    }
+//   // adding transaction
+//   void addTransactioin({required TransactionModel transaction}) async {
+//     if (transaction.type == TransactionType.moneyOut &&
+//         transaction.amount > 0) {
+//       transaction.amount = transaction.amount * -1;
+//     }
+//     if (transaction.type == TransactionType.moneyIn && transaction.amount < 0) {
+//       transaction.amount = transaction.amount * -1;
+//     }
 
-    // break the note into a list of words to help with searching
-    Map<String, dynamic> map = transaction.toMap();
-    map['notes'] = transaction.note.split(' ');
+//     // break the note into a list of words to help with searching
+//     Map<String, dynamic> map = transaction.toMap();
+//     map['notes'] = transaction.note.split(' ');
 
-    if (Get.isRegistered<AllTransactionsController>()) {
-      Get.find<AllTransactionsController>()
-          .transactionAdd(model: TransactionModel.fromMap(map), id: '');
-    }
-    await updateMonthSettingAdding(
-            transaction: transaction,
-            time: '${transaction.date.year}-${transaction.date.month}')
-        .then((value) async {
-      await _firebaseService.addRecord(
-        path: FirebasePaths.transactions.name,
-        userId: _userModel.userId,
-        map: map,
-      );
-    });
-  }
+//     if (Get.isRegistered<AllTransactionsController>()) {
+//       Get.find<AllTransactionsController>()
+//           .transactionAdd(model: TransactionModel.fromMap(map), id: '');
+//     }
+//     await updateMonthSettingAdding(
+//             transaction: transaction,
+//             time: '${transaction.date.year}-${transaction.date.month}')
+//         .then((value) async {
+//       await _firebaseService.addRecord(
+//         path: FirebasePaths.transactions.name,
+//         userId: _userModel.userId,
+//         map: map,
+//       );
+//     });
+//   }
 
-  // update month setting on adding transaction
-  Future<void> updateMonthSettingAdding(
-      {required String time, required TransactionModel transaction}) async {
-    await Get.find<HomeController>()
-        .getMonthSetting(
-      date: time,
-    )
-        .then(
-      (_) async {
-        Map<String, MonthSettingModel> monthSetting =
-            Get.find<HomeController>().monhtMap;
-        if (monthSetting[time] != null) {
-          int index = monthSetting[time]!.walletInfo.indexWhere(
-                (element) => element.wallet == transaction.wallet,
-              );
-          if (index != -1) {
-            monthSetting[time]!.walletInfo[index].opSum += transaction.amount;
-          } else {
-            WalletInfo walet = WalletInfo(
-              wallet: transaction.wallet,
-              start: 0,
-              currency: _userModel.wallets
-                  .firstWhere((element) => element.name == transaction.wallet)
-                  .currency,
-              end: 0,
-              opSum: transaction.amount,
-            );
-            monthSetting[time]!.walletInfo.add(walet);
-          }
-        } else {
-          WalletInfo walet = WalletInfo(
-              wallet: transaction.wallet,
-              start: 0,
-              currency: transaction.currency,
-              end: 0,
-              opSum: transaction.amount);
-          MonthSettingModel model = MonthSettingModel(
-            walletInfo: [walet],
-            budgetCat: [],
-            budgetVal: [],
-            year: transaction.date.year,
-            month: transaction.date.month,
-            catagory: [],
-          );
-          monthSetting[time] = model;
-        }
-        await postMonthSetting(
-            time: time, model: monthSetting[time]!, transaction: transaction);
-      },
-    );
-  }
+//   // update month setting on adding transaction
+//   Future<void> updateMonthSettingAdding(
+//       {required String time, required TransactionModel transaction}) async {
+//     await Get.find<HomeController>()
+//         .getMonthSetting(
+//       date: time,
+//     )
+//         .then(
+//       (_) async {
+//         Map<String, MonthSettingModel> monthSetting =
+//             Get.find<HomeController>().monhtMap;
+//         if (monthSetting[time] != null) {
+//           int index = monthSetting[time]!.walletInfo.indexWhere(
+//                 (element) => element.wallet == transaction.wallet,
+//               );
+//           if (index != -1) {
+//             monthSetting[time]!.walletInfo[index].opSum += transaction.amount;
+//           } else {
+//             WalletInfo walet = WalletInfo(
+//               wallet: transaction.wallet,
+//               start: 0,
+//               currency: _userModel.wallets
+//                   .firstWhere((element) => element.name == transaction.wallet)
+//                   .currency,
+//               end: 0,
+//               opSum: transaction.amount,
+//             );
+//             monthSetting[time]!.walletInfo.add(walet);
+//           }
+//         } else {
+//           WalletInfo walet = WalletInfo(
+//               wallet: transaction.wallet,
+//               start: 0,
+//               currency: transaction.currency,
+//               end: 0,
+//               opSum: transaction.amount);
+//           MonthSettingModel model = MonthSettingModel(
+//             walletInfo: [walet],
+//             budgetCat: [],
+//             budgetVal: [],
+//             year: transaction.date.year,
+//             month: transaction.date.month,
+//             catagory: [],
+//           );
+//           monthSetting[time] = model;
+//         }
+//         await postMonthSetting(
+//             time: time, model: monthSetting[time]!, transaction: transaction);
+//       },
+//     );
+//   }
 
-  // post monthsetting update
-  Future<void> postMonthSetting(
-      {required String time,
-      required MonthSettingModel model,
-      required TransactionModel transaction}) async {
-    Get.find<HomeController>().monhtMap[time] = model;
-    await Get.find<HomeController>().moneyNow().then(
-      (_) async {
-        Get.find<HomeController>()
-            .addTransactionUpdate(transaction: transaction, amount: 0);
-        await _firebaseService.addRecord(
-          docPath: time,
-          path: FirebasePaths.monthSetting.name,
-          userId: _userModel.userId,
-          map: model.toMap(),
-        );
-      },
-    );
-  }
+//   // post monthsetting update
+//   Future<void> postMonthSetting(
+//       {required String time,
+//       required MonthSettingModel model,
+//       required TransactionModel transaction}) async {
+//     Get.find<HomeController>().monhtMap[time] = model;
+//     await Get.find<HomeController>().moneyNow().then(
+//       (_) async {
+//         Get.find<HomeController>()
+//             .addTransactionUpdate(transaction: transaction, amount: 0);
+//         await _firebaseService.addRecord(
+//           docPath: time,
+//           path: FirebasePaths.monthSetting.name,
+//           userId: _userModel.userId,
+//           map: model.toMap(),
+//         );
+//       },
+//     );
+//   }
 
-  // update transaction
-  void updateTransactioin(
-      {required TransactionModel transaction, required String recId}) async {
-    if (transaction.type == TransactionType.moneyOut &&
-        transaction.amount > 0) {
-      transaction.amount = transaction.amount * -1;
-    }
-    if (transaction.type == TransactionType.moneyIn && transaction.amount < 0) {
-      transaction.amount = transaction.amount * -1;
-    }
-    Map<String, dynamic> map = transaction.toMap();
-    map['notes'] = transaction.note.split(' ');
-    if (Get.isRegistered<AllTransactionsController>()) {
-      Get.find<AllTransactionsController>().updateTransaction(
-          model: TransactionModel.fromMap(map), id: recId, change: true);
-    }
-    await _firebaseService.updateRecord(
-      path: FirebasePaths.transactions.name,
-      recId: recId,
-      userId: _userModel.userId,
-      map: map,
-    );
-  }
+//   // update transaction
+//   void updateTransactioin(
+//       {required TransactionModel transaction, required String recId}) async {
+//     if (transaction.type == TransactionType.moneyOut &&
+//         transaction.amount > 0) {
+//       transaction.amount = transaction.amount * -1;
+//     }
+//     if (transaction.type == TransactionType.moneyIn && transaction.amount < 0) {
+//       transaction.amount = transaction.amount * -1;
+//     }
+//     Map<String, dynamic> map = transaction.toMap();
+//     map['notes'] = transaction.note.split(' ');
+//     if (Get.isRegistered<AllTransactionsController>()) {
+//       Get.find<AllTransactionsController>().updateTransaction(
+//           model: TransactionModel.fromMap(map), id: recId, change: true);
+//     }
+//     await _firebaseService.updateRecord(
+//       path: FirebasePaths.transactions.name,
+//       recId: recId,
+//       userId: _userModel.userId,
+//       map: map,
+//     );
+//   }
 
-  // decide if new transaction or editing existing transaction
+//   // decide if new transaction or editing existing transaction
   void initTransaction() {
     _newTransaction = _transaction == null;
     _walletAmountController.text = '0';
@@ -380,7 +388,7 @@ class AddTransactionController extends GetxController {
     }
   }
 
-  // add a wallet
+//   // add a wallet
   void addWallet({required BuildContext context}) async {
     if (_walletNameController.text.trim() == '' ||
         _walletAmountController.text.trim() == '') {
@@ -391,33 +399,49 @@ class AddTransactionController extends GetxController {
         isEng: _userModel.language == 'en_US',
       );
     } else {
-      Wallet wallet = Wallet(
+      WalletModel wallet = WalletModel(
           name: _walletNameController.text.trim(),
           amount: double.parse(_walletAmountController.text.trim()),
           currency: _walletCurrency);
       _userModel.wallets.add(wallet);
       resetWalletModel(back: true);
-      Get.find<HomeController>().update();
-      // update user data locally
-      await updateUser(model: _userModel).then(
-        (value) async {
-          if (value) {
-            // update user data in backend
-            await updateUserFire(model: _userModel);
-          }
-        },
-      );
+      update();
+      Get.find<HomeController>()
+        ..userModel.wallets = _userModel.wallets
+        ..update();
+      await _repo.saveAllData(user: _userModel);
     }
   }
 
-  // set wallet ccurrency
+  // delete wallet
+  void deleteWallet(
+      {required WalletModel wallet, required BuildContext context}) async {
+    if (wallet.amount != 0.0) {
+      showToast(
+        title: CustomText(text: 'wallmpt'.tr),
+        context: context,
+        type: ToastificationType.error,
+        isEng: _userModel.language == 'en_US',
+      );
+      return;
+    }
+
+    _userModel.wallets.remove(wallet);
+    update();
+    Get.find<HomeController>()
+      ..userModel.wallets = _userModel.wallets
+      ..update();
+    await _repo.saveAllData(user: _userModel);
+  }
+
+//   // set wallet ccurrency
   void setWalletCurrency({required String currency}) {
     if (currency.trim() != '') {
       _walletCurrency = currency.trim();
     }
   }
 
-  // wallet modal reset
+//   // wallet modal reset
   void resetWalletModel({bool? back}) {
     back != null ? Get.back() : null;
     _walletNameController.clear();
@@ -426,12 +450,12 @@ class AddTransactionController extends GetxController {
   }
 
   // set catagory
-  void setCatagory({required Catagory cat}) {
+  void setCatagory({required CatagoryModel cat}) {
     for (var i = 0; i < cat.subCatagories.length; i++) {
       _subcats.add(cat.subCatagories[i]);
     }
-    _catIcon = cat.icon;
-    _catColor = cat.color;
+    _catIcon = iconConvert(code: cat.icon);
+    _catColor = colorConvert(code: cat.color);
     _catAddController.text = cat.name;
     update();
   }
@@ -450,6 +474,8 @@ class AddTransactionController extends GetxController {
 
   // add catagory button
   void addCatagoryButton({
+    required bool isUpdate,
+    required int index,
     required BuildContext context,
   }) async {
     if (_catAddController.text.trim() == '' ||
@@ -461,101 +487,63 @@ class AddTransactionController extends GetxController {
           type: ToastificationType.error,
           isEng: _userModel.language == 'en_US');
     } else {
-      Catagory newCat = Catagory(
+      CatagoryModel newCat = CatagoryModel(
         name: _catAddController.text.trim(),
         subCatagories: _subcats,
-        icon: _catIcon as IconData,
-        color: _catColor,
+        icon: '${_catIcon!.codePoint}-${_catIcon!.fontFamily}',
+        color: _catColor.value,
       );
-      _userModel.catagories.add(newCat);
+      if (isUpdate) {
+        _userModel.catagories[index] = newCat;
+      } else {
+        _userModel.catagories.add(newCat);
+      }
+      Get.find<HomeController>().update();
 
-      resetModal(back: true);
       update();
-
-      // update user data locally
-      await updateUser(model: _userModel).then(
-        (value) async {
-          if (value) {
-            // update user data in backend
-            await updateUserFire(model: _userModel);
-          }
-        },
-      );
-    }
-  }
-
-  // update catagory
-  // apply dry principle later
-  void updateCategory(
-      {required BuildContext context, required int index}) async {
-    if (_catAddController.text.trim() == '' ||
-        _catIcon == null ||
-        _catColor == backgroundColor) {
-      showToast(
-          title: CustomText(text: 'infoadd'.tr),
-          context: context,
-          type: ToastificationType.error,
-          isEng: _userModel.language == 'en_US');
-    } else {
-      Catagory newCat = Catagory(
-          name: _catAddController.text.trim(),
-          subCatagories: _subcats,
-          icon: _catIcon as IconData,
-          color: _catColor);
-      _userModel.catagories[index] = newCat;
-
       resetModal(back: true);
-      update();
 
-      // update user data locally
-      await updateUser(model: _userModel).then(
-        (value) async {
-          if (value) {
-            // update user data in backend
-            await updateUserFire(model: _userModel);
-          }
-        },
-      );
+      await _repo.saveAllData(user: _userModel);
     }
   }
 
-  // delete category
-  void deleteCategory({required int index, required String catNAme}) async {
-    Get.back();
-    if (_catController.text.trim() == catNAme) {
-      _catController.text = '';
-    }
-    _userModel.catagories.removeAt(index);
-    resetModal(back: true);
-    update();
+//   // delete category
+//   void deleteCategory({required int index, required String catNAme}) async {
+//     Get.back();
+//     if (_catController.text.trim() == catNAme) {
+//       _catController.text = '';
+//     }
+//     _userModel.catagories.removeAt(index);
+//     resetModal(back: true);
+//     update();
 
-    // update user data locally
-    await updateUser(model: _userModel).then(
-      (value) async {
-        if (value) {
-          // update user data in backend
-          await updateUserFire(model: _userModel);
-        }
-      },
-    );
-  }
+//     // update user data locally
+//     await updateUser(model: _userModel).then(
+//       (value) async {
+//         if (value) {
+//           // update user data in backend
+//           await updateUserFire(model: _userModel);
+//         }
+//       },
+//     );
+//   }
 
-  // catagory delete check
-  void catagoryDeleteCheck({required Widget widget}) {
-    Get.dialog(widget);
-  }
+//   // catagory delete check
+//   void catagoryDeleteCheck({required Widget widget}) {
+//     Get.dialog(widget);
+//   }
 
-  // update user locally
-  Future<bool> updateUser({required UserModel model}) {
-    return Get.find<GloableAuthController>().userChange(model: model);
-  }
+//   // update user locally
+//   Future<bool> updateUser({required UserModel model}) {
+//     return Get.find<GloableAuthController>().userChange(model: model);
+//   }
 
-  // update user in backend
-  Future<void> updateUserFire({required UserModel model}) {
-    return _firebaseService.updateUsers(model: model);
-  }
+//   // update user in backend
+//   Future<void> updateUserFire({required UserModel model}) {
+//     return _firebaseService.updateUsers(model: model);
+//   }
 
-  // reset modal
+//   // reset modal
   void resetModal({bool? back}) {
     back != null ? Get.back() : null;
 
@@ -622,7 +610,7 @@ class AddTransactionController extends GetxController {
     _subcatController.dispose();
   }
 
-  // pick time for transaction
+//   // pick time for transaction
   void transactionTime({required BuildContext context}) async {
     await showCalendarDatePicker2Dialog(
       context: context,
@@ -642,7 +630,7 @@ class AddTransactionController extends GetxController {
     );
   }
 
-  // set transaction type
+//   // set transaction type
   void setTransactionType({required TransactionType type}) {
     if (type != _transactionType) {
       _transactionType = type;
@@ -655,7 +643,7 @@ class AddTransactionController extends GetxController {
     update();
   }
 
-  // set listeners
+//   // set listeners
   void setListeners() {
     _transactionAddNode.addListener(() {
       _isActive = _transactionAddNode.hasFocus;
@@ -687,7 +675,7 @@ class AddTransactionController extends GetxController {
     });
   }
 
-  // set transaction currencey
+//   // set transaction currencey
   void setTransactionCurrencey({required String currencey}) {
     if (currencey != '') {
       _transactionCurrency = currencey;

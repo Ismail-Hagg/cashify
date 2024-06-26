@@ -1,9 +1,9 @@
+import 'package:cashify/data_models/category_data_model.dart';
 import 'package:cashify/models/catagory_model.dart';
 import 'package:cashify/pages/add_transaction_page/add_transaction_controller.dart';
 import 'package:cashify/utils/constants.dart';
 import 'package:cashify/utils/enums.dart';
-import 'package:cashify/widgets/add_category_widget.dart';
-import 'package:cashify/widgets/add_wallet_widget.dart';
+import 'package:cashify/utils/util_functions.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';
 import 'package:cashify/widgets/icon_button.dart';
 import 'package:cashify/widgets/input_widget.dart';
@@ -18,9 +18,10 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
-class AddTRansactionView extends StatelessWidget {
-  const AddTRansactionView({super.key});
+class AddTransactionView extends StatelessWidget {
+  const AddTransactionView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -98,7 +99,8 @@ class AddTRansactionView extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(vertical: 8.0),
                             child: GestureDetector(
                               onTap: () => controller.setTransactionType(
-                                  type: TransactionType.values[index]),
+                                type: TransactionType.values[index],
+                              ),
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: controller.transactionType ==
@@ -163,7 +165,9 @@ class AddTRansactionView extends StatelessWidget {
                                     const SizedBox(
                                       width: 8.0,
                                     ),
-                                    Text(country.currencyCode.toString()),
+                                    CustomText(
+                                      text: country.currencyCode.toString(),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -188,54 +192,156 @@ class AddTRansactionView extends StatelessWidget {
                               isIos: controller.isIos,
                               icon: FontAwesomeIcons.plus,
                               color: Colors.grey.shade600,
-                              click: () {
-                                WoltModalSheet.show(
-                                  onModalDismissedWithBarrierTap: () =>
-                                      controller.resetModal(back: true),
-                                  onModalDismissedWithDrag: () =>
-                                      controller.resetModal(),
-                                  context: context,
-                                  modalTypeBuilder: (context) =>
-                                      WoltModalType.bottomSheet,
-                                  pageListBuilder: (modalSheetContext) {
-                                    return [
-                                      modalPage(
-                                        icon: const FaIcon(
-                                            FontAwesomeIcons.xmark),
-                                        leadingButtonFunction: () =>
-                                            controller.resetModal(back: true),
-                                        context: modalSheetContext,
-                                        title: 'addcat'.tr,
-                                        child: AddCategory(
+                              click: () => showModal(
+                                dissBarr: () =>
+                                    controller.resetModal(back: true),
+                                dissDrag: () => controller.resetModal(),
+                                xFunction: () =>
+                                    controller.resetModal(back: true),
+                                context: context,
+                                title: 'addcat'.tr,
+                                // add category modal
+                                child: GetBuilder<AddTransactionController>(
+                                  init: Get.find<AddTransactionController>(),
+                                  builder: (controller) => Column(
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.all(12.0),
+                                        child: InputWidget(
+                                          height: width * 0.15,
                                           width: width,
+                                          active: controller.catNameActive,
+                                          controller:
+                                              controller.catAddController,
+                                          node: controller.catAddNode,
+                                          hint: 'category'.tr,
+                                          action: TextInputAction.next,
                                         ),
-                                        button: Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: ButtonWidget(
-                                            isIos: controller.isIos,
-                                            textSize: 16,
-                                            type: ButtonType.raised,
-                                            onClick: () =>
-                                                controller.addCatagoryButton(
-                                                    context: context),
-                                            color: mainColor,
-                                            height:
-                                                MediaQuery.of(modalSheetContext)
-                                                        .size
-                                                        .width *
-                                                    0.125,
-                                            width:
-                                                MediaQuery.of(modalSheetContext)
-                                                    .size
-                                                    .width,
-                                            text: 'addcat'.tr,
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(12.0),
+                                        child: InputWidget(
+                                          height: width * 0.15,
+                                          width: width,
+                                          active: controller.subCatActive,
+                                          controller:
+                                              controller.subCatAddController,
+                                          node: controller.subCatNode,
+                                          hint: 'subcat'.tr,
+                                          maxLines: 1,
+                                          onSub: (str) => controller
+                                              .subCategorySubmit(sub: str),
+                                        ),
+                                      ),
+                                      SingleChildScrollView(
+                                        physics: const BouncingScrollPhysics(),
+                                        scrollDirection: Axis.horizontal,
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          children: List.generate(
+                                            controller.subcats.length,
+                                            (index) => Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 12.0),
+                                              child: Chip(
+                                                onDeleted: () => controller
+                                                    .subDelete(index: index),
+                                                label: CustomText(
+                                                    text: controller
+                                                        .subcats[index]),
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ];
-                                  },
-                                );
-                              },
+                                      Padding(
+                                        padding: const EdgeInsets.all(12.0),
+                                        child: Row(
+                                          children: [
+                                            ButtonWidget(
+                                              isIos: controller.isIos,
+                                              textSize: 16,
+                                              type: ButtonType.text,
+                                              onClick: () => controller
+                                                  .pickIcon(context: context),
+                                              text: '${'icon'.tr} : ',
+                                            ),
+                                            controller.catIcon != null
+                                                ? Icon(controller.catIcon,
+                                                    size: 30)
+                                                : Container()
+                                          ],
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(12.0),
+                                        child: Row(
+                                          children: [
+                                            ButtonWidget(
+                                              isIos: controller.isIos,
+                                              textSize: 16,
+                                              type: ButtonType.text,
+                                              onClick: () =>
+                                                  controller.pickColor(
+                                                widget: AlertDialog(
+                                                  title: Text('catcolor'.tr),
+                                                  content:
+                                                      SingleChildScrollView(
+                                                    child: ColorPicker(
+                                                      pickerColor: Colors.red,
+                                                      onColorChanged: (col) =>
+                                                          controller
+                                                              .changeColor(
+                                                                  color: col),
+                                                    ),
+                                                  ),
+                                                  actions: <Widget>[
+                                                    ButtonWidget(
+                                                      type: ButtonType.text,
+                                                      textSize: 12,
+                                                      isIos: controller.isIos,
+                                                      text: 'ok'.tr,
+                                                      onClick: () => controller
+                                                          .closeColorPicker(),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              text: '${'color'.tr} : ',
+                                            ),
+                                            Container(
+                                              height: width * 0.1,
+                                              width: width * 0.1,
+                                              decoration: BoxDecoration(
+                                                color: controller.catColor,
+                                                shape: BoxShape.circle,
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                button: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: ButtonWidget(
+                                    isIos: controller.isIos,
+                                    textSize: 16,
+                                    type: ButtonType.raised,
+                                    onClick: () => controller.addCatagoryButton(
+                                        isUpdate: false,
+                                        index: 0,
+                                        context: context),
+                                    color: mainColor,
+                                    height: width * 0.125,
+                                    width: width,
+                                    text: 'addcat'.tr,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                           menuHeight: width * 0.75,
@@ -256,83 +362,180 @@ class AddTRansactionView extends StatelessWidget {
                                           cat: controller
                                               .userModel.catagories[index]);
 
-                                      WoltModalSheet.show(
-                                        onModalDismissedWithBarrierTap: () =>
+                                      showModal(
+                                        dissBarr: () =>
                                             controller.resetModal(back: true),
-                                        onModalDismissedWithDrag: () =>
-                                            controller.resetModal(),
+                                        dissDrag: () => controller.resetModal(),
+                                        xFunction: () =>
+                                            controller.resetModal(back: true),
                                         context: context,
-                                        modalTypeBuilder: (context) =>
-                                            WoltModalType.bottomSheet,
-                                        pageListBuilder: (modalSheetContext) {
-                                          return [
-                                            modalPage(
-                                              trailing: true,
-                                              trailDel: () => controller
-                                                  .catagoryDeleteCheck(
-                                                widget: AlertDialog(
-                                                  actions: [
-                                                    ButtonWidget(
-                                                      isIos: controller.isIos,
-                                                      textSize: 12,
-                                                      type: ButtonType.text,
-                                                      onClick: () => controller
-                                                          .deleteCategory(
-                                                        catNAme: controller
-                                                            .userModel
-                                                            .catagories[index]
-                                                            .name,
-                                                        index: index,
+                                        title: 'addcat'.tr,
+                                        // add category modal
+                                        child: GetBuilder<
+                                            AddTransactionController>(
+                                          init: Get.find<
+                                              AddTransactionController>(),
+                                          builder: (controller) => Column(
+                                            children: [
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.all(12.0),
+                                                child: InputWidget(
+                                                  height: width * 0.15,
+                                                  width: width,
+                                                  active:
+                                                      controller.catNameActive,
+                                                  controller: controller
+                                                      .catAddController,
+                                                  node: controller.catAddNode,
+                                                  hint: 'category'.tr,
+                                                  action: TextInputAction.next,
+                                                ),
+                                              ),
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.all(12.0),
+                                                child: InputWidget(
+                                                  height: width * 0.15,
+                                                  width: width,
+                                                  active:
+                                                      controller.subCatActive,
+                                                  controller: controller
+                                                      .subCatAddController,
+                                                  node: controller.subCatNode,
+                                                  hint: 'subcat'.tr,
+                                                  maxLines: 1,
+                                                  onSub: (str) => controller
+                                                      .subCategorySubmit(
+                                                          sub: str),
+                                                ),
+                                              ),
+                                              SingleChildScrollView(
+                                                physics:
+                                                    const BouncingScrollPhysics(),
+                                                scrollDirection:
+                                                    Axis.horizontal,
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.start,
+                                                  children: List.generate(
+                                                    controller.subcats.length,
+                                                    (index) => Padding(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 12.0),
+                                                      child: Chip(
+                                                        onDeleted: () =>
+                                                            controller
+                                                                .subDelete(
+                                                                    index:
+                                                                        index),
+                                                        label: CustomText(
+                                                            text: controller
+                                                                    .subcats[
+                                                                index]),
                                                       ),
-                                                      text: 'ok'.tr,
-                                                    )
-                                                  ],
-                                                  title: CustomText(
-                                                    size: 14,
-                                                    text:
-                                                        '${'catdel'.tr} ${controller.userModel.catagories[index].name}',
+                                                    ),
                                                   ),
                                                 ),
                                               ),
-                                              delIcon: const FaIcon(
-                                                  FontAwesomeIcons.trash),
-                                              icon: const FaIcon(
-                                                  FontAwesomeIcons.xmark),
-                                              leadingButtonFunction: () =>
-                                                  controller.resetModal(
-                                                      back: true),
-                                              context: modalSheetContext,
-                                              title: 'editcat'.tr,
-                                              child: AddCategory(
-                                                width: width,
-                                              ),
-                                              button: Padding(
+                                              Padding(
                                                 padding:
-                                                    const EdgeInsets.all(16.0),
-                                                child: ButtonWidget(
-                                                  isIos: controller.isIos,
-                                                  textSize: 16,
-                                                  type: ButtonType.raised,
-                                                  onClick: () =>
-                                                      controller.updateCategory(
-                                                          context: context,
-                                                          index: index),
-                                                  color: mainColor,
-                                                  height: MediaQuery.of(
-                                                              modalSheetContext)
-                                                          .size
-                                                          .width *
-                                                      0.125,
-                                                  width: MediaQuery.of(
-                                                          modalSheetContext)
-                                                      .size
-                                                      .width,
-                                                  text: 'editcat'.tr,
+                                                    const EdgeInsets.all(12.0),
+                                                child: Row(
+                                                  children: [
+                                                    ButtonWidget(
+                                                      isIos: controller.isIos,
+                                                      textSize: 16,
+                                                      type: ButtonType.text,
+                                                      onClick: () =>
+                                                          controller.pickIcon(
+                                                              context: context),
+                                                      text: '${'icon'.tr} : ',
+                                                    ),
+                                                    controller.catIcon != null
+                                                        ? Icon(
+                                                            controller.catIcon,
+                                                            size: 30)
+                                                        : Container()
+                                                  ],
                                                 ),
                                               ),
-                                            ),
-                                          ];
-                                        },
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.all(12.0),
+                                                child: Row(
+                                                  children: [
+                                                    ButtonWidget(
+                                                      isIos: controller.isIos,
+                                                      textSize: 16,
+                                                      type: ButtonType.text,
+                                                      onClick: () =>
+                                                          controller.pickColor(
+                                                        widget: AlertDialog(
+                                                          title: Text(
+                                                              'catcolor'.tr),
+                                                          content:
+                                                              SingleChildScrollView(
+                                                            child: ColorPicker(
+                                                              pickerColor:
+                                                                  Colors.red,
+                                                              onColorChanged:
+                                                                  (col) => controller
+                                                                      .changeColor(
+                                                                          color:
+                                                                              col),
+                                                            ),
+                                                          ),
+                                                          actions: <Widget>[
+                                                            ButtonWidget(
+                                                              type: ButtonType
+                                                                  .text,
+                                                              textSize: 12,
+                                                              isIos: controller
+                                                                  .isIos,
+                                                              text: 'ok'.tr,
+                                                              onClick: () =>
+                                                                  controller
+                                                                      .closeColorPicker(),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      text: '${'color'.tr} : ',
+                                                    ),
+                                                    Container(
+                                                      height: width * 0.1,
+                                                      width: width * 0.1,
+                                                      decoration: BoxDecoration(
+                                                        color:
+                                                            controller.catColor,
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                    )
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        button: Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: ButtonWidget(
+                                            isIos: controller.isIos,
+                                            textSize: 16,
+                                            type: ButtonType.raised,
+                                            onClick: () =>
+                                                controller.addCatagoryButton(
+                                                    isUpdate: true,
+                                                    index: index,
+                                                    context: context),
+                                            color: mainColor,
+                                            height: width * 0.125,
+                                            width: width,
+                                            text: 'editcat'.tr,
+                                          ),
+                                        ),
                                       );
                                     },
                                   ),
@@ -361,18 +564,19 @@ class AddTRansactionView extends StatelessWidget {
                                       (element) =>
                                           element.name ==
                                           controller.catController.text,
-                                      orElse: () => Catagory(
+                                      orElse: () => CatagoryModel(
                                           name:
                                               '${controller.catController.text} - ${'notsaved'.tr}',
                                           subCatagories: [],
-                                          icon: Icons.add,
-                                          color: Colors.transparent),
+                                          icon:
+                                              '${Icons.add.codePoint}-${Icons.add.fontFamily}',
+                                          color: Colors.transparent.value),
                                     )
                                     .subCatagories
                                     .length
                                 : 0,
                             (index) {
-                              Catagory? catagory = controller
+                              CatagoryModel? catagory = controller
                                           .catController.text ==
                                       ''
                                   ? null
@@ -380,12 +584,14 @@ class AddTRansactionView extends StatelessWidget {
                                       (element) =>
                                           element.name ==
                                           controller.catController.text,
-                                      orElse: () => Catagory(
+                                      orElse: () => CatagoryModel(
                                           name:
                                               '${controller.catController.text} - ${'notsaved'.tr}',
                                           subCatagories: [],
-                                          icon: Icons.add,
-                                          color: Colors.transparent));
+                                          icon:
+                                              '${Icons.add.codePoint}-${Icons.add.fontFamily}',
+                                          color: Colors.transparent.value),
+                                    );
                               return DropdownMenuEntry(
                                 label: catagory!.subCatagories[index],
                                 value: catagory.subCatagories[index],
@@ -404,50 +610,116 @@ class AddTRansactionView extends StatelessWidget {
                               icon: FontAwesomeIcons.plus,
                               color: Colors.grey.shade600,
                               click: () {
-                                WoltModalSheet.show(
-                                  onModalDismissedWithBarrierTap: () =>
+                                showModal(
+                                  xFunction: () =>
                                       controller.resetWalletModel(back: true),
-                                  onModalDismissedWithDrag: () =>
-                                      controller.resetWalletModel(),
+                                  dissBarr: () =>
+                                      controller.resetWalletModel(back: true),
+                                  dissDrag: () =>
+                                      controller.resetWalletModel(back: true),
                                   context: context,
-                                  modalTypeBuilder: (context) =>
-                                      WoltModalType.bottomSheet,
-                                  pageListBuilder: (modalSheetContext) {
-                                    return [
-                                      modalPage(
-                                        icon: const FaIcon(
-                                            FontAwesomeIcons.xmark),
-                                        leadingButtonFunction: () => controller
-                                            .resetWalletModel(back: true),
-                                        context: modalSheetContext,
-                                        title: 'addwallet'.tr,
-                                        child: AddWallet(
-                                          width: width,
-                                        ),
-                                        button: Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: ButtonWidget(
-                                            isIos: controller.isIos,
-                                            textSize: 16,
-                                            type: ButtonType.raised,
-                                            onClick: () => controller.addWallet(
-                                                context: modalSheetContext),
-                                            color: mainColor,
-                                            height:
-                                                MediaQuery.of(modalSheetContext)
-                                                        .size
-                                                        .width *
-                                                    0.125,
-                                            width:
-                                                MediaQuery.of(modalSheetContext)
-                                                    .size
-                                                    .width,
-                                            text: 'addwallet'.tr,
+                                  title: 'addwallet'.tr,
+                                  child: GetBuilder<AddTransactionController>(
+                                    init: Get.find<AddTransactionController>(),
+                                    builder: (controller) => Column(
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.all(12.0),
+                                          child: InputWidget(
+                                            height: width * 0.15,
+                                            width: width,
+                                            active: controller.walletNameActive,
+                                            controller:
+                                                controller.walletNameController,
+                                            node: controller.walletNameNode,
+                                            hint: 'walletname'.tr,
+                                            action: TextInputAction.next,
                                           ),
                                         ),
-                                      ),
-                                    ];
-                                  },
+                                        Padding(
+                                          padding: const EdgeInsets.all(12.0),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              InputWidget(
+                                                formatter: [
+                                                  // Allow Decimal Number With Precision of 2 Only
+                                                  FilteringTextInputFormatter
+                                                      .allow(
+                                                    RegExp(r'^\d*\.?\d{0,2}'),
+                                                  ),
+                                                ],
+                                                type: const TextInputType
+                                                    .numberWithOptions(
+                                                    decimal: true),
+                                                height: width * 0.14,
+                                                width: (width - 24) * 0.7,
+                                                active: controller
+                                                    .walletAmountActive,
+                                                hint: 'amount'.tr,
+                                                node:
+                                                    controller.walletAmountNode,
+                                                controller: controller
+                                                    .walletAmountController,
+                                                enable: false,
+                                              ),
+                                              CountryPickerDropdown(
+                                                initialValue: CountryPickerUtils
+                                                    .getCountryByCurrencyCode(
+                                                  controller.walletCurrency,
+                                                ).isoCode,
+                                                itemBuilder:
+                                                    (Country country) =>
+                                                        SizedBox(
+                                                  height: width * 0.14,
+                                                  width: (width - 24) * 0.2,
+                                                  child: FittedBox(
+                                                    child: Row(
+                                                      children: <Widget>[
+                                                        CountryPickerUtils
+                                                            .getDefaultFlagImage(
+                                                                country),
+                                                        const SizedBox(
+                                                          width: 8.0,
+                                                        ),
+                                                        Text(country
+                                                            .currencyCode
+                                                            .toString()),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                                onValuePicked:
+                                                    (Country? country) =>
+                                                        controller
+                                                            .setWalletCurrency(
+                                                  currency: country != null
+                                                      ? country.currencyCode ??
+                                                          ''
+                                                      : '',
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  button: Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: ButtonWidget(
+                                      isIos: controller.isIos,
+                                      textSize: 16,
+                                      type: ButtonType.raised,
+                                      onClick: () => controller.addWallet(
+                                          context: context),
+                                      color: mainColor,
+                                      height: width * 0.125,
+                                      width: width,
+                                      text: 'addwallet'.tr,
+                                    ),
+                                  ),
                                 );
                               },
                             ),
@@ -461,6 +733,16 @@ class AddTRansactionView extends StatelessWidget {
                               return DropdownMenuEntry(
                                 label: controller.userModel.wallets[index].name,
                                 value: controller.userModel.wallets[index].name,
+                                trailingIcon: IconButtonPlatform(
+                                  isIos: controller.isIos,
+                                  icon: FontAwesomeIcons.trashCan,
+                                  size: 16,
+                                  color: mainColor,
+                                  click: () => controller.deleteWallet(
+                                      wallet:
+                                          controller.userModel.wallets[index],
+                                      context: context),
+                                ),
                               );
                             },
                           ),

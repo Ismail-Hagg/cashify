@@ -50,7 +50,7 @@ class ExpenceTile extends StatelessWidget {
               blurRadius: 5,
             )
           ],
-          color: forgroundColor,
+          color: whiteColor,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(

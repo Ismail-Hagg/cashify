@@ -1,14 +1,20 @@
+import 'dart:io';
+
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
+import 'package:cashify/data_models/category_data_model.dart';
+import 'package:cashify/data_models/export.dart';
+import 'package:cashify/data_models/filter_model.dart';
+import 'package:cashify/data_models/monthsetting_data_model.dart';
+import 'package:cashify/data_models/transaction_data_model.dart';
+import 'package:cashify/data_models/user_data_model.dart';
 import 'package:cashify/gloable_controllers/auth_controller.dart';
 import 'package:cashify/models/catagory_model.dart';
-import 'package:cashify/models/filter_model.dart';
 import 'package:cashify/models/month_setting_model.dart';
 import 'package:cashify/models/transaction_model.dart';
-import 'package:cashify/models/user_model.dart';
-import 'package:cashify/models/wallet_model.dart';
 import 'package:cashify/pages/all_transactions_page/all_transaction_view.dart';
 import 'package:cashify/pages/all_transactions_page/all_transactoins_controller.dart';
 import 'package:cashify/pages/home_page/home_body.dart';
+import 'package:cashify/pages/home_page/repository.dart';
 import 'package:cashify/pages/month_setting_page/month_setting_controller.dart';
 import 'package:cashify/pages/month_setting_page/month_setting_view.dart';
 import 'package:cashify/pages/settings_page/settings_controller.dart';
@@ -24,17 +30,47 @@ import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-class HomeController extends GetxController with GetTickerProviderStateMixin {
-  late UserModel _userModel;
-  UserModel get userModel => _userModel;
+class HomeController extends GetxController {
+  final HomeRepository _repo = HomeRepository();
+
+  UserDataModel _userModel = UserDataModel(
+      username: '',
+      email: '',
+      userId: '',
+      localImage: false,
+      localPath: '',
+      onlinePath: '',
+      language: '',
+      defaultCurrency: '',
+      messagingToken: '',
+      errorMessage: '',
+      phoneNumber: '',
+      wallets: [],
+      isError: true,
+      catagories: [],
+      isSynced: false);
+  UserDataModel get userModel => _userModel;
+
+  ({DateTime start, DateTime end}) _chosenTimePeriod =
+      (start: DateTime.now(), end: DateTime.now());
+  ({DateTime start, DateTime end}) get chosenTimePeriod => _chosenTimePeriod;
 
   final FirebaseService _firebaseService = FirebaseService();
 
   int _pageIndex = 0;
   int get pageIndex => _pageIndex;
 
+  int _analyticsPageIndex = 0;
+  int get analyticsPageIndex => _analyticsPageIndex;
+
   final Map<String, MonthSettingModel> _monhtMap = {};
   Map<String, MonthSettingModel> get monhtMap => _monhtMap;
+
+  Map<String, MonthSettingDataModel> _monthSettingMap = {};
+  Map<String, MonthSettingDataModel> get monthSettingMap => _monthSettingMap;
+
+  List<dynamic> _transactionList = [];
+  List<dynamic> get transactionList => _transactionList;
 
   final bool _isIos = Get.find<GloableAuthController>().isIos;
   bool get isIos => _isIos;
@@ -52,9 +88,6 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   DateTime get startTime => _startTime;
   late DateTime _endTime;
   DateTime get endTime => _endTime;
-
-  late AnimationController _loadingController;
-  AnimationController get loadingController => _loadingController;
 
   final List<Widget> _pages = const [
     HomeBody(),
@@ -78,8 +111,24 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   String _chosenTime = 'thismnth'.tr;
   String get chosenTime => _chosenTime;
 
-  List<Catagory> _catList = [];
-  List<Catagory> get catList => _catList;
+  final List<String> _timesToChose = [
+    'thismnth'.tr,
+    'lastmnth'.tr,
+    'thisyear'.tr,
+    'custom'.tr
+  ];
+  List<String> get timesToChose => _timesToChose;
+
+  List<Times> timesList = [
+    Times.thisMonth,
+    Times.lastMonth,
+    Times.thisYear,
+    Times.custom
+  ];
+  List<Times> get timesList1 => timesList;
+
+  List<CatagoryModel> _catList = [];
+  List<CatagoryModel> get catList => _catList;
 
   double _income = 0.0;
   double get income => _income;
@@ -140,7 +189,7 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   TransactionType _transactionType = TransactionType.moneyOut;
   TransactionType get transactionType => _transactionType;
 
-  String _transactionCurrency = '';
+  String _transactionCurrency = 'SAR';
   String get transactionCurrency => _transactionCurrency;
 
   String _chosenCategory = '';
@@ -164,21 +213,31 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   bool _mainSubAll = false;
   bool get mainSubAll => _mainSubAll;
 
+  final PageController _pageController = PageController(initialPage: 0);
+  PageController get pageController => _pageController;
+
+  Times _chosenTimeType = Times.thisMonth;
+  Times get chosenTimeType => _chosenTimeType;
+
   @override
-  void onInit() {
-    _userModel = Get.find<GloableAuthController>().userModel;
-    _loadingController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1400),
-    );
-    _transactionCurrency = _userModel.defaultCurrency;
+  void onInit() async {
+    // _userModel = await _repo.getUserData();
+    // _monthSettingMap = await _repo.getMonthSetting();
+    // _transactionList = await _repo.getTransactions();
+    // _chosenTimePeriod = await setTime();
+
+    // print(_monthSettingMap);
+    // print(_transactionList);
+    // print(_chosenTimePeriod);
+    // update();
+
     initAll();
     super.onInit();
   }
 
   @override
   void onClose() {
-    _loadingController.dispose();
+    _pageController.dispose();
     _transactionAddController.dispose();
     _transactionAddNode.dispose();
     _commentController.dispose();
@@ -193,38 +252,161 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   // initial function
   void initAll() async {
     loadinganimation(load: true);
-    await getMonthSetting(date: _currentTime).then((_) async {
-      await moneyNow().then((value) async {
-        await setTime().then((value) async {
-          await calculate(start: value.start, end: value.end).then((value) {
-            loadinganimation(load: false);
-          });
-        }).onError((error, stackTrace) {
-          print('===er $error');
-        });
-      }).onError((error, stackTrace) {
-        print('=== $error');
-      });
+    _userModel = await _repo.getUserData();
+    _monthSettingMap = await _repo.getMonthSetting();
+    _transactionList = await _repo.getTransactions();
+    _chosenTimePeriod = await setTime();
+    _transactionCurrency = _userModel.defaultCurrency;
+
+    await getDataOnline().then((_) async {
+      await calcLocal().then((_) => loadinganimation(load: false));
     });
+
+    // await getMonthSetting(date: _currentTime).then((_) async {
+    //   await moneyNow().then((value) async {
+    //     await setTime().then((value) async {
+    //       await calculate(start: value.start, end: value.end).then((value) {
+    //         loadinganimation(load: false);
+    //       });
+    //     }).onError((error, stackTrace) {
+    //       print('===er $error');
+    //     });
+    //   }).onError((error, stackTrace) {
+    //     print('=== $error');
+    //   });
+    // });
+  }
+
+  // change analysy view
+  void changeAnalysyView({required int index}) {
+    _analyticsPageIndex = index;
+    update();
+  }
+
+  // change currancy
+  void changeCurrancy({required String currency}) {
+    if (currency != '' && currency != _transactionCurrency) {
+      _transactionCurrency = currency;
+      update();
+    }
+  }
+
+  // stage one calculation
+  Future<void> calcBackend() async {
+    _income = 0;
+    _expense = 0;
+
+    _catList = [];
+    _vals = {};
+    await _repo
+        .getTransactionsOnline(
+      model: FilterModel(
+          userId: _userModel.userId,
+          path: FirebasePaths.transactions.name,
+          timeStart: Timestamp.fromDate(_chosenTimePeriod.start),
+          timeEnd: Timestamp.fromDate(
+            _chosenTimePeriod.end,
+          )),
+    )
+        .then(
+      (value) async {
+        if (value.docs.isNotEmpty) {
+          for (var i = 0; i < value.docs.length; i++) {
+            TransactionDataModel transaction = TransactionDataModel.fromMap(
+              value.docs[i].data() as Map<String, dynamic>,
+            );
+            await postCalc(transaction: transaction);
+          }
+        }
+      },
+    );
+  }
+
+  Future<void> calcLocal() async {
+    _income = 0;
+    _expense = 0;
+    _catList = [];
+    _vals = {};
+    for (var i = 0; i < _transactionList.length; i++) {
+      TransactionDataModel model = _transactionList[i];
+      await postCalc(transaction: model);
+    }
+  }
+
+  Future<void> postCalc({required TransactionDataModel transaction}) async {
+    CatagoryModel backup = CatagoryModel(
+      name: 'name',
+      subCatagories: [],
+      icon: '57415-MaterialIcons',
+      color: 4278190080,
+    );
+    CatagoryModel model = CatagoryModel(
+      name: transaction.catagory,
+      subCatagories: [transaction.subCatagory],
+      icon: _userModel.catagories
+          .firstWhere((element) => element.name == transaction.catagory,
+              orElse: () => backup)
+          .icon,
+      color: _userModel.catagories
+          .firstWhere((element) => element.name == transaction.catagory,
+              orElse: () => backup)
+          .color,
+      transactions: [transaction],
+    );
+
+    double amount = transaction.currency == _userModel.defaultCurrency
+        ? transaction.amount
+        : double.parse(await _repo.getCurrencySwap(
+            from: transaction.currency,
+            to: _userModel.defaultCurrency,
+            amount: transaction.amount));
+
+    _vals[transaction.catagory] = (_vals[transaction.catagory] ?? 0) + amount;
+
+    if (transaction.type == TransactionType.moneyIn) {
+      _income = _income + transaction.amount;
+    } else {
+      _expense = _expense + transaction.amount;
+    }
+
+    if (_catList.isEmpty) {
+      _catList.add(model);
+    } else {
+      int tracker = 0;
+      for (var i = 0; i < _catList.length; i++) {
+        if (_catList[i].name == transaction.catagory) {
+          _catList[i].transactions != null
+              ? _catList[i].transactions!.add(transaction)
+              : _catList[i].transactions = [transaction];
+          tracker = 1;
+        }
+      }
+      if (tracker == 0) {
+        _catList.add(model);
+      }
+    }
   }
 
   // calculate total of wallets aka money now
   Future<void> moneyNow() async {
-    if (_monhtMap[_currentTime] != null) {
+    if (_monthSettingMap[_currentTime] != null &&
+        _monthSettingMap[_currentTime]!.walletInfo.isNotEmpty) {
       _moneyTotal = 0.0;
-      for (var i = 0; i < _monhtMap[_currentTime]!.walletInfo.length; i++) {
-        if (_monhtMap[_currentTime]!.walletInfo[i].currency ==
+      for (var i = 0;
+          i < _monthSettingMap[_currentTime]!.walletInfo.length;
+          i++) {
+        if (_monthSettingMap[_currentTime]!.walletInfo[i].currency ==
             _userModel.defaultCurrency) {
           _moneyTotal = double.parse((_moneyTotal +
-                  (_monhtMap[_currentTime]!.walletInfo[i].start +
-                      _monhtMap[_currentTime]!.walletInfo[i].opSum))
+                  (_monthSettingMap[_currentTime]!.walletInfo[i].start +
+                      _monthSettingMap[_currentTime]!.walletInfo[i].opSum))
               .toStringAsFixed(2));
         } else {
           await currencySwapp(
-            base: _monhtMap[_currentTime]!.walletInfo[i].currency,
+            base: _monthSettingMap[_currentTime]!.walletInfo[i].currency,
             exTo: _userModel.defaultCurrency,
-            amount: (_monhtMap[_currentTime]!.walletInfo[i].start +
-                _monhtMap[_currentTime]!.walletInfo[i].opSum),
+            amount: (_monthSettingMap[_currentTime]!.walletInfo[i].start +
+                _monthSettingMap[_currentTime]!.walletInfo[i].opSum),
           ).then(
             (value) {
               if (value != '') {
@@ -246,12 +428,14 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
               userId: _userModel.userId,
               path: FirebasePaths.monthSetting.name,
               docId: date)
-          .then((value) async {
-        if (value.exists) {
-          _monhtMap[date] =
-              MonthSettingModel.fromMap(value.data() as Map<String, dynamic>);
-        }
-      });
+          .then(
+        (value) async {
+          if (value.exists) {
+            _monhtMap[date] =
+                MonthSettingModel.fromMap(value.data() as Map<String, dynamic>);
+          }
+        },
+      );
     }
   }
 
@@ -288,23 +472,42 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     }
   }
 
+  // change the tracking of the chosen time period
+  void timeChange(
+      {required String? time,
+      required BuildContext context,
+      required Times times}) async {
+    if (_chosenTime != time || _chosenTime == 'custom'.tr) {
+      _chosenTime = time.toString();
+      _chosenTimeType = times;
+
+      await setTime(time: _chosenTimeType, context: context)
+          .then((value) async {
+        _chosenTimePeriod = value;
+        loadinganimation(load: true);
+        _chosenTimeType == Times.thisMonth
+            ? await calcLocal()
+            : await calcBackend();
+        loadinganimation(load: false);
+      });
+      update();
+    }
+  }
+
   // set start and end times
   Future<({DateTime start, DateTime end})> setTime(
       {Times? time, BuildContext? context}) async {
+    var controll = DateTime.now();
     switch (time) {
       case null:
       case Times.thisMonth:
-        var controll = DateTime.now();
         _startTime = DateTime(controll.year, controll.month, 1);
-        _endTime = controll.month < 12
-            ? DateTime(controll.year, controll.month + 1, 0)
-            : DateTime(controll.year + 1, 1, 0);
+        _endTime = DateTime(controll.year, controll.month, controll.day);
+        _chosenTimeType = Times.thisMonth;
 
         return (start: _startTime, end: _endTime);
 
       case Times.lastMonth:
-        var controll = DateTime.now();
-
         _startTime = DateTime(
             controll.month == 1 ? controll.year - 1 : controll.year,
             controll.month == 1 ? 12 : controll.month - 1,
@@ -312,13 +515,15 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
         _endTime = controll.month < 12
             ? DateTime(controll.year, controll.month, 0)
             : DateTime(controll.year + 1, 1, 0);
+        _chosenTimeType = Times.lastMonth;
         return (start: _startTime, end: _endTime);
 
       case Times.thisYear:
         var controll = DateTime.now();
 
         _startTime = DateTime(controll.year, 1, 1);
-        _endTime = DateTime(controll.year + 1, 1, 0);
+        _endTime = DateTime(controll.year, controll.month, controll.day);
+        _chosenTimeType = Times.thisYear;
         return (start: _startTime, end: _endTime);
 
       case Times.custom:
@@ -334,14 +539,13 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
             if (value != null && value.length == 2) {
               _startTime = value[0] as DateTime;
               _endTime = value[1] as DateTime;
-              _chosenTime =
-                  '${_startTime.year}/${_startTime.month}/${_startTime.day}  -  ${_endTime.year}/${_endTime.month}/${_endTime.day}';
             } else {
               _startTime = DateTime(1, 0, 0);
               _endTime = DateTime(1, 0, 0);
             }
           },
         );
+        _chosenTimeType = Times.custom;
 
         return (start: _startTime, end: _endTime);
     }
@@ -358,138 +562,137 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   // loading animation
   void loadinganimation({required bool load}) {
     _loading = load;
-    load ? _loadingController.repeat() : _loadingController.stop();
     update();
   }
 
   // calculate and gather the catagories
   Future<void> calculate(
       {required DateTime start, required DateTime end, bool? refresh}) async {
-    int tracker = 0;
-    _chartHigh = 0;
-    _chartLow = 0;
-    _catList = [];
-    _income = 0;
-    _expense = 0;
-    _vals = {};
-    _valsUp = {};
-    _valsDown = {};
-    _dates = {};
+    // int tracker = 0;
+    // _chartHigh = 0;
+    // _chartLow = 0;
+    // _catList = [];
+    // _income = 0;
+    // _expense = 0;
+    // _vals = {};
+    // _valsUp = {};
+    // _valsDown = {};
+    // _dates = {};
 
-    await _firebaseService
-        .filteredTransactions(
-      filter: FilterModel(
-        userId: _userModel.userId,
-        path: FirebasePaths.transactions.name,
-        timeStart: Timestamp.fromDate(start),
-        timeEnd: Timestamp.fromDate(end),
-      ),
-    )
-        .then(
-      (value) async {
-        if (value.docs.isNotEmpty) {
-          for (var i = 0; i < value.docs.length; i++) {
-            TransactionModel transaction = TransactionModel.fromMap(
-                value.docs[i].data() as Map<String, dynamic>);
+    // await _firebaseService
+    //     .filteredTransactions(
+    //   filter: FilterModel(
+    //     userId: _userModel.userId,
+    //     path: FirebasePaths.transactions.name,
+    //     timeStart: Timestamp.fromDate(start),
+    //     timeEnd: Timestamp.fromDate(end),
+    //   ),
+    // )
+    //     .then(
+    //   (value) async {
+    //     if (value.docs.isNotEmpty) {
+    //       for (var i = 0; i < value.docs.length; i++) {
+    //         TransactionModel transaction = TransactionModel.fromMap(
+    //             value.docs[i].data() as Map<String, dynamic>);
 
-            _dates[transaction.catagory] != null
-                ? _dates[transaction.catagory]!.add(transaction.date)
-                : _dates[transaction.catagory] = [transaction.date];
+    //         _dates[transaction.catagory] != null
+    //             ? _dates[transaction.catagory]!.add(transaction.date)
+    //             : _dates[transaction.catagory] = [transaction.date];
 
-            // add to the map to display from
+    //         // add to the map to display from
 
-            if (transaction.currency == _userModel.defaultCurrency) {
-              _vals[transaction.catagory] =
-                  (_vals[transaction.catagory] ?? 0) + transaction.amount;
-            } else {
-              await currencySwapp(
-                      base: transaction.currency,
-                      exTo: _userModel.defaultCurrency,
-                      amount: transaction.amount)
-                  .then((value) {
-                _vals[transaction.catagory] =
-                    (_vals[transaction.catagory] ?? 0) + double.parse(value);
-              });
-            }
+    //         if (transaction.currency == _userModel.defaultCurrency) {
+    //           _vals[transaction.catagory] =
+    //               (_vals[transaction.catagory] ?? 0) + transaction.amount;
+    //         } else {
+    //           await currencySwapp(
+    //                   base: transaction.currency,
+    //                   exTo: _userModel.defaultCurrency,
+    //                   amount: transaction.amount)
+    //               .then((value) {
+    //             _vals[transaction.catagory] =
+    //                 (_vals[transaction.catagory] ?? 0) + double.parse(value);
+    //           });
+    //         }
 
-            // calculate money in vs out
-            if (transaction.type == TransactionType.moneyIn) {
-              if (transaction.amount > _chartHigh) {
-                _chartHigh = transaction.amount;
-              }
-              _income = _income + transaction.amount;
-              if (_valsUp.containsKey(transaction.catagory)) {
-                _valsUp[transaction.catagory] =
-                    _valsUp[transaction.catagory]! + transaction.amount;
-              } else {
-                _valsUp[transaction.catagory] = transaction.amount;
-              }
-            } else if (transaction.type == TransactionType.moneyOut) {
-              if ((transaction.amount * -1) < _chartLow) {
-                _chartLow = (transaction.amount * -1);
-              }
-              _expense = _expense + transaction.amount;
-              if (_valsDown.containsKey(transaction.catagory)) {
-                _valsDown[transaction.catagory] =
-                    _valsDown[transaction.catagory]! + transaction.amount;
-              } else {
-                _valsDown[transaction.catagory] = transaction.amount;
-              }
-            }
+    //         // calculate money in vs out
+    //         if (transaction.type == TransactionType.moneyIn) {
+    //           if (transaction.amount > _chartHigh) {
+    //             _chartHigh = transaction.amount;
+    //           }
+    //           _income = _income + transaction.amount;
+    //           if (_valsUp.containsKey(transaction.catagory)) {
+    //             _valsUp[transaction.catagory] =
+    //                 _valsUp[transaction.catagory]! + transaction.amount;
+    //           } else {
+    //             _valsUp[transaction.catagory] = transaction.amount;
+    //           }
+    //         } else if (transaction.type == TransactionType.moneyOut) {
+    //           if ((transaction.amount * -1) < _chartLow) {
+    //             _chartLow = (transaction.amount * -1);
+    //           }
+    //           _expense = _expense + transaction.amount;
+    //           if (_valsDown.containsKey(transaction.catagory)) {
+    //             _valsDown[transaction.catagory] =
+    //                 _valsDown[transaction.catagory]! + transaction.amount;
+    //           } else {
+    //             _valsDown[transaction.catagory] = transaction.amount;
+    //           }
+    //         }
 
-            if (_catList.isEmpty) {
-              _catList.add(
-                Catagory(
-                  name: transaction.catagory,
-                  subCatagories: [transaction.subCatagory],
-                  icon: _userModel.catagories
-                      .firstWhere(
-                          (element) => element.name == transaction.catagory)
-                      .icon,
-                  color: _userModel.catagories
-                      .firstWhere(
-                          (element) => element.name == transaction.catagory)
-                      .color,
-                  transactions: [transaction],
-                ),
-              );
-            } else {
-              tracker = 0;
-              for (var i = 0; i < _catList.length; i++) {
-                if (_catList[i].name == transaction.catagory) {
-                  _catList[i].transactions != null
-                      ? _catList[i].transactions!.add(transaction)
-                      : _catList[i].transactions = [transaction];
-                  tracker = 1;
-                }
-              }
-              if (tracker == 0) {
-                _catList.add(
-                  Catagory(
-                    name: transaction.catagory,
-                    subCatagories: [transaction.subCatagory],
-                    icon: _userModel.catagories
-                        .firstWhere(
-                            (element) => element.name == transaction.catagory)
-                        .icon,
-                    color: _userModel.catagories
-                        .firstWhere(
-                            (element) => element.name == transaction.catagory)
-                        .color,
-                    transactions: [transaction],
-                  ),
-                );
-              }
-            }
-          }
-          if (refresh == true) {
-            update();
-          }
-        }
-      },
-    ).onError((error, stackTrace) {
-      print('= erroring $error');
-    });
+    //         if (_catList.isEmpty) {
+    //           _catList.add(
+    //             Catagory(
+    //               name: transaction.catagory,
+    //               subCatagories: [transaction.subCatagory],
+    //               icon: _userModel.catagories
+    //                   .firstWhere(
+    //                       (element) => element.name == transaction.catagory)
+    //                   .icon,
+    //               color: _userModel.catagories
+    //                   .firstWhere(
+    //                       (element) => element.name == transaction.catagory)
+    //                   .color,
+    //               transactions: [transaction],
+    //             ),
+    //           );
+    //         } else {
+    //           tracker = 0;
+    //           for (var i = 0; i < _catList.length; i++) {
+    //             if (_catList[i].name == transaction.catagory) {
+    //               _catList[i].transactions != null
+    //                   ? _catList[i].transactions!.add(transaction)
+    //                   : _catList[i].transactions = [transaction];
+    //               tracker = 1;
+    //             }
+    //           }
+    //           if (tracker == 0) {
+    //             _catList.add(
+    //               Catagory(
+    //                 name: transaction.catagory,
+    //                 subCatagories: [transaction.subCatagory],
+    //                 icon: _userModel.catagories
+    //                     .firstWhere(
+    //                         (element) => element.name == transaction.catagory)
+    //                     .icon,
+    //                 color: _userModel.catagories
+    //                     .firstWhere(
+    //                         (element) => element.name == transaction.catagory)
+    //                     .color,
+    //                 transactions: [transaction],
+    //               ),
+    //             );
+    //           }
+    //         }
+    //       }
+    //       if (refresh == true) {
+    //         update();
+    //       }
+    //     }
+    //   },
+    // ).onError((error, stackTrace) {
+    //   print('= erroring $error');
+    // });
   }
 
   // calculate subcategories of main catagories
@@ -553,6 +756,10 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
           (value) => res = value.status == 'success' ? value.result : '',
         );
     return res;
+  }
+
+  void tesst(double d) {
+    print(d % 1 == 0);
   }
 
   // remove zeros from double when showing amounts of wallets
@@ -678,158 +885,167 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   // update when adding transaction
   void addTransactionUpdate(
       {required TransactionModel transaction, required double amount}) {
-    if (transaction.date.isBefore(_endTime.add(const Duration(seconds: 1))) &&
-        transaction.date
-            .isAfter(_startTime.subtract(const Duration(seconds: 1)))) {
-      int index = _catList
-          .indexWhere((element) => element.name == transaction.catagory);
-      if (index != -1) {
-        _catList[index].transactions!.add(transaction);
-      } else {
-        IconData icon = _userModel.catagories
-            .firstWhere((element) => element.name == transaction.catagory)
-            .icon;
-        Color color = _userModel.catagories
-            .firstWhere((element) => element.name == transaction.catagory)
-            .color;
-        _catList.add(
-          Catagory(
-            transactions: [transaction],
-            name: transaction.catagory,
-            subCatagories: [transaction.subCatagory],
-            icon: icon,
-            color: color,
-          ),
-        );
-      }
-      _vals[transaction.catagory] = (_vals[transaction.catagory] ?? 0) + amount;
-      _dates[transaction.catagory] = [transaction.date];
-    }
+    // if (transaction.date.isBefore(_endTime.add(const Duration(seconds: 1))) &&
+    //     transaction.date
+    //         .isAfter(_startTime.subtract(const Duration(seconds: 1)))) {
+    //   int index = _catList
+    //       .indexWhere((element) => element.name == transaction.catagory);
+    //   if (index != -1) {
+    //     _catList[index].transactions!.add(transaction);
+    //   } else {
+    //     IconData icon = _userModel.catagories
+    //         .firstWhere((element) => element.name == transaction.catagory)
+    //         .icon;
+    //     Color color = _userModel.catagories
+    //         .firstWhere((element) => element.name == transaction.catagory)
+    //         .color;
+    //     _catList.add(
+    //       Catagory(
+    //         transactions: [transaction],
+    //         name: transaction.catagory,
+    //         subCatagories: [transaction.subCatagory],
+    //         icon: icon,
+    //         color: color,
+    //       ),
+    //     );
+    //   }
+    //   _vals[transaction.catagory] = (_vals[transaction.catagory] ?? 0) + amount;
+    //   _dates[transaction.catagory] = [transaction.date];
+    // }
   }
 
   // transaction operations
-  void addTransaction({required TransactionModel transaction}) async {
-    TransactionModel model = amountEdit(transaction: transaction);
+  void addTransaction({required TransactionDataModel transaction}) async {
+    TransactionDataModel model = amountEdit(transaction: transaction);
 
-    final String time = '${model.date.year}-${model.date.month}';
+    Map<String, dynamic> map = model.toMap();
+    map['notes'] = model.note.split(' ');
 
-    if (model.type == TransactionType.transfer) {
-      final String fromWalletCurrency = _userModel.wallets
-          .firstWhere((element) => element.name == model.fromWallet)
-          .currency;
-      final String toWlletCurrency = _userModel.wallets
-          .firstWhere((element) => element.name == model.toWallet)
-          .currency;
-      double fromAmount = fromWalletCurrency == model.currency
-          ? (model.amount * -1)
-          : double.parse(
-                await currencySwapp(
-                    base: model.currency,
-                    exTo: fromWalletCurrency,
-                    amount: model.amount),
-              ) *
-              -1;
-
-      double toAmount = toWlletCurrency == model.currency
-          ? (model.amount)
-          : double.parse(
-              await currencySwapp(
-                  base: model.currency,
-                  exTo: toWlletCurrency,
-                  amount: model.amount),
-            );
-
-      print(
-        'take $fromAmount $fromWalletCurrency from ${model.fromWallet} and put $toAmount $toWlletCurrency in ${model.toWallet}',
-      );
-      await updateMonthsetting(
-        date: model.date,
-        wallet: model.fromWallet,
-        amount: fromAmount,
-      ).then((value) async {
-        await updateMonthsetting(
-          date: model.date,
-          wallet: model.toWallet,
-          amount: toAmount,
-        ).then((value) async {
-          update();
-          await _firebaseService.addRecord(
-            docPath: time,
-            path: FirebasePaths.monthSetting.name,
-            userId: _userModel.userId,
-            map: _monhtMap[time]!.toMap(),
-          );
-        });
-      });
-    } else {
-      final String walletCurrency = _userModel.wallets
-          .firstWhere((element) => element.name == model.wallet)
-          .currency;
-
-      final bool transactionAndWallet = model.currency != walletCurrency;
-      final bool transactionAndDefault =
-          model.currency != _userModel.defaultCurrency;
-
-      final double tranWallet = transactionAndWallet
-          ? double.parse(await currencySwapp(
-              base: model.currency, exTo: walletCurrency, amount: model.amount))
-          : model.amount;
-      final double tranDefault = transactionAndDefault
-          ? double.parse(
-              await currencySwapp(
-                base: model.currency,
-                exTo: _userModel.defaultCurrency,
-                amount: model.amount,
-              ),
-            )
-          : transaction.amount;
-      await updateMonthsetting(
-        date: model.date,
-        wallet: model.wallet,
-        amount: tranWallet,
-      ).then((_) {
-        if (model.type == TransactionType.moneyIn) {
-          _income += tranDefault;
-          _valsUp[model.catagory] =
-              (_valsUp[model.catagory] ?? 0) + tranDefault;
-        }
-        if (model.type == TransactionType.moneyOut) {
-          _expense += tranDefault;
-          _valsDown[model.catagory] =
-              (_valsDown[model.catagory] ?? 0) + tranDefault;
-        }
-        _moneyTotal += tranDefault;
-        addTransactionUpdate(transaction: model, amount: tranDefault);
-      });
-    }
-    if (Get.isRegistered<AllTransactionsController>()) {
-      Get.find<AllTransactionsController>().transactionAdd(
-          model: TransactionModel.fromMap(model.toMap()), id: '');
-    }
-    update();
-
-    await _firebaseService
-        .addRecord(
-      docPath: time,
-      path: FirebasePaths.monthSetting.name,
-      userId: _userModel.userId,
-      map: _monhtMap[time]!.toMap(),
-    )
-        .then((value) async {
-      // break the note into a list of words to help with searching
-
-      Map<String, dynamic> map = model.toMap();
-      map['notes'] = model.note.split(' ');
-      await _firebaseService.addRecord(
+    await _repo.addRecord(
+        data: map,
         path: FirebasePaths.transactions.name,
         userId: _userModel.userId,
-        map: map,
-      );
-    });
+        docPath: transaction.id);
+
+    // final String time = '${model.date.year}-${model.date.month}';
+
+    // if (model.type == TransactionType.transfer) {
+    //   final String fromWalletCurrency = _userModel.wallets
+    //       .firstWhere((element) => element.name == model.fromWallet)
+    //       .currency;
+    //   final String toWlletCurrency = _userModel.wallets
+    //       .firstWhere((element) => element.name == model.toWallet)
+    //       .currency;
+    //   double fromAmount = fromWalletCurrency == model.currency
+    //       ? (model.amount * -1)
+    //       : double.parse(
+    //             await currencySwapp(
+    //                 base: model.currency,
+    //                 exTo: fromWalletCurrency,
+    //                 amount: model.amount),
+    //           ) *
+    //           -1;
+
+    //   double toAmount = toWlletCurrency == model.currency
+    //       ? (model.amount)
+    //       : double.parse(
+    //           await currencySwapp(
+    //               base: model.currency,
+    //               exTo: toWlletCurrency,
+    //               amount: model.amount),
+    //         );
+
+    //   print(
+    //     'take $fromAmount $fromWalletCurrency from ${model.fromWallet} and put $toAmount $toWlletCurrency in ${model.toWallet}',
+    //   );
+    //   await updateMonthsetting(
+    //     date: model.date,
+    //     wallet: model.fromWallet,
+    //     amount: fromAmount,
+    //   ).then((value) async {
+    //     await updateMonthsetting(
+    //       date: model.date,
+    //       wallet: model.toWallet,
+    //       amount: toAmount,
+    //     ).then((value) async {
+    //       update();
+    //       await _firebaseService.addRecord(
+    //         docPath: time,
+    //         path: FirebasePaths.monthSetting.name,
+    //         userId: _userModel.userId,
+    //         map: _monhtMap[time]!.toMap(),
+    //       );
+    //     });
+    //   });
+    // } else {
+    //   final String walletCurrency = _userModel.wallets
+    //       .firstWhere((element) => element.name == model.wallet)
+    //       .currency;
+
+    //   final bool transactionAndWallet = model.currency != walletCurrency;
+    //   final bool transactionAndDefault =
+    //       model.currency != _userModel.defaultCurrency;
+
+    //   final double tranWallet = transactionAndWallet
+    //       ? double.parse(await currencySwapp(
+    //           base: model.currency, exTo: walletCurrency, amount: model.amount))
+    //       : model.amount;
+    //   final double tranDefault = transactionAndDefault
+    //       ? double.parse(
+    //           await currencySwapp(
+    //             base: model.currency,
+    //             exTo: _userModel.defaultCurrency,
+    //             amount: model.amount,
+    //           ),
+    //         )
+    //       : transaction.amount;
+    //   await updateMonthsetting(
+    //     date: model.date,
+    //     wallet: model.wallet,
+    //     amount: tranWallet,
+    //   ).then((_) {
+    //     if (model.type == TransactionType.moneyIn) {
+    //       _income += tranDefault;
+    //       _valsUp[model.catagory] =
+    //           (_valsUp[model.catagory] ?? 0) + tranDefault;
+    //     }
+    //     if (model.type == TransactionType.moneyOut) {
+    //       _expense += tranDefault;
+    //       _valsDown[model.catagory] =
+    //           (_valsDown[model.catagory] ?? 0) + tranDefault;
+    //     }
+    //     _moneyTotal += tranDefault;
+    //     addTransactionUpdate(transaction: model, amount: tranDefault);
+    //   });
+    // }
+    // if (Get.isRegistered<AllTransactionsController>()) {
+    //   Get.find<AllTransactionsController>().transactionAdd(
+    //       model: TransactionModel.fromMap(model.toMap()), id: '');
+    // }
+    // update();
+
+    // await _firebaseService
+    //     .addRecord(
+    //   docPath: time,
+    //   path: FirebasePaths.monthSetting.name,
+    //   userId: _userModel.userId,
+    //   map: _monhtMap[time]!.toMap(),
+    // )
+    //     .then((value) async {
+    //   // break the note into a list of words to help with searching
+
+    //   Map<String, dynamic> map = model.toMap();
+    //   map['notes'] = model.note.split(' ');
+    //   await _firebaseService.addRecord(
+    //     path: FirebasePaths.transactions.name,
+    //     userId: _userModel.userId,
+    //     map: map,
+    //   );
+    // });
   }
 
-  TransactionModel amountEdit({required TransactionModel transaction}) {
-    TransactionModel model = transaction;
+  TransactionDataModel amountEdit({required TransactionDataModel transaction}) {
+    TransactionDataModel model = transaction;
     if (model.type == TransactionType.moneyOut && model.amount > 0) {
       model.amount = model.amount * -1;
     }
@@ -886,5 +1102,64 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
         _monhtMap[time] = model;
       }
     });
+  }
+
+  // get transactions and monthsetting data if not available locally
+  Future<void> getDataOnline() async {
+    if (_userModel.isSynced == false) {
+      await _repo
+          .getRecords(
+              userId: _userModel.userId, path: FirebasePaths.monthSetting.name)
+          .then(
+        (value) async {
+          if (value.docs.isNotEmpty) {
+            for (var i = 0; i < value.docs.length; i++) {
+              _monthSettingMap[value.docs[i].id] =
+                  MonthSettingDataModel.fromMap(
+                      value.docs[i].data() as Map<String, dynamic>);
+            }
+            await _repo.saveMonthSetting(model: _monthSettingMap);
+          }
+        },
+      );
+
+      await _repo
+          .getTransactionsOnline(
+        model: FilterModel(
+          userId: _userModel.userId,
+          path: FirebasePaths.transactions.name,
+          timeStart: Timestamp.fromDate(_chosenTimePeriod.start),
+          timeEnd: Timestamp.fromDate(
+            _chosenTimePeriod.end.add(
+              const Duration(hours: 23, minutes: 59, seconds: 59),
+            ),
+          ),
+        ),
+      )
+          .then(
+        (value) async {
+          if (value.docs.isNotEmpty) {
+            for (var i = 0; i < value.docs.length; i++) {
+              TransactionDataModel object = TransactionDataModel.fromMap(
+                value.docs[i].data() as Map<String, dynamic>,
+              );
+              _transactionList.add(object);
+            }
+            await _repo.saveTransactions(list: _transactionList);
+          }
+        },
+      );
+      await _repo
+          .setIsSynced(userId: _userModel.userId, val: true)
+          .then((value) async {
+        _userModel.isSynced = true;
+        await _repo.updateUserLocally(user: _userModel);
+      });
+    }
+  }
+
+  // check if image exists locally
+  bool imageExists({required String link}) {
+    return File(link).existsSync();
   }
 }

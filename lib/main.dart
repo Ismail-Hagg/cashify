@@ -1,10 +1,11 @@
+import 'package:cashify/data_models/user_data_model.dart';
 import 'package:cashify/firebase_options.dart';
 import 'package:cashify/gloable_controllers/auth_controller.dart';
 import 'package:cashify/gloable_controllers/controller_view.dart';
-import 'package:cashify/models/user_model.dart';
-import 'package:cashify/services/user_data_service.dart';
+import 'package:cashify/local_storage/local_storage.dart';
 import 'package:cashify/utils/constants.dart';
 import 'package:cashify/utils/translation.dart';
+import 'package:cashify/utils/util_functions.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,28 +17,25 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  await UserData().getUserData().then(
-    (user) {
-      Get.put(GloableAuthController(user));
-      runApp(
-        MyApp(
-          model: user,
-        ),
-      );
-    },
+  await LocalStorage().hiveInit();
+  final UserDataModel userModel = await LocalStorage().getUserData();
+  Get.put(GloableAuthController(userModel));
+  runApp(
+    const MyApp(),
   );
 }
 
 class MyApp extends StatelessWidget {
-  final UserModel model;
-  const MyApp({super.key, required this.model});
+  const MyApp({
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
       translations: Translation(),
-      locale: Locale(
-          model.language.substring(0, 2), model.language.substring(3, 5)),
+      locale:
+          Locale(languageDev().substring(0, 2), languageDev().substring(3, 5)),
       debugShowCheckedModeBanner: false,
       title: 'cashify',
       theme: ThemeData(

@@ -1,4 +1,4 @@
-import 'package:cashify/models/exchange_model.dart';
+import 'package:cashify/data_models/exchange_model.dart';
 import 'package:cashify/utils/constants.dart';
 import 'package:get/get.dart';
 

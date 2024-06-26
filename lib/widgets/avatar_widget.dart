@@ -12,12 +12,14 @@ class Avatar extends StatelessWidget {
   final String link;
   final bool border;
   final bool shadow;
+  final Color? borderColor;
   const Avatar({
     super.key,
     required this.type,
     required this.height,
     required this.width,
     required this.link,
+    this.borderColor,
     required this.border,
     required this.shadow,
   });
@@ -35,6 +37,7 @@ class Avatar extends StatelessWidget {
                 shadow: shadow)
             : type == AvatarType.online
                 ? AvatarOnline(
+                    borderColor: borderColor,
                     height: height,
                     width: width,
                     border: border,

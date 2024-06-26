@@ -8,10 +8,12 @@ class AvatarNon extends StatelessWidget {
   final bool border;
   final IconData? icon;
   final Color? color;
+  final Color? borderColor;
   const AvatarNon(
       {super.key,
       required this.height,
       required this.width,
+      this.borderColor,
       required this.border,
       this.icon,
       this.color});
@@ -25,7 +27,7 @@ class AvatarNon extends StatelessWidget {
         shape: BoxShape.circle,
         border: border == true
             ? Border.all(
-                color: mainColor.withOpacity(0.7),
+                color: borderColor ?? mainColor.withOpacity(0.7),
               )
             : null,
         color: Colors.grey.shade200,
