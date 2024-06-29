@@ -495,10 +495,11 @@ class AddTransactionController extends GetxController {
       );
       if (isUpdate) {
         _userModel.catagories[index] = newCat;
+        Get.find<HomeController>()
+            .updateCategory(model: newCat, user: _userModel);
       } else {
         _userModel.catagories.add(newCat);
       }
-      Get.find<HomeController>().update();
 
       update();
       resetModal(back: true);

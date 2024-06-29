@@ -1,7 +1,9 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:cashify/data_models/category_data_model.dart';
+import 'package:cashify/data_models/chart_data_model.dart';
 import 'package:cashify/data_models/export.dart';
 import 'package:cashify/data_models/filter_model.dart';
 import 'package:cashify/data_models/monthsetting_data_model.dart';
@@ -28,6 +30,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
+import 'package:get/get_instance/src/get_instance.dart';
 import 'package:intl/intl.dart';
 
 class HomeController extends GetxController {
@@ -77,6 +80,12 @@ class HomeController extends GetxController {
 
   bool _loading = false;
   bool get loading => _loading;
+
+  bool _walletLoading = false;
+  bool get walletLoading => _walletLoading;
+
+  bool _totalLoading = false;
+  bool get totalLoading => _totalLoading;
 
   bool _pieChart = true;
   bool get pieChart => _pieChart;
@@ -130,29 +139,22 @@ class HomeController extends GetxController {
   List<CatagoryModel> _catList = [];
   List<CatagoryModel> get catList => _catList;
 
+  CatagoryModel _chosenCat = CatagoryModel(
+      name: 'name',
+      subCatagories: [],
+      icon: 'icon',
+      color: 0,
+      transactions: []);
+  CatagoryModel get chosenCat => _chosenCat;
+
   double _income = 0.0;
   double get income => _income;
-
-  double _chartHigh = 0.0;
-  double get chartHigh => _chartHigh;
-
-  double _chartLow = 0.0;
-  double get chartLow => _chartLow;
 
   double _expense = 0.0;
   double get expense => _expense;
 
   Map<String, double> _vals = {};
   Map<String, double> get vals => _vals;
-
-  Map<String, double> _valsUp = {};
-  Map<String, double> get valsUp => _valsUp;
-
-  Map<String, double> _valsDown = {};
-  Map<String, double> get valsDown => _valsDown;
-
-  Map<String, List<DateTime>> _dates = {};
-  Map<String, List<DateTime>> get dates => _dates;
 
   final ValueNotifier<int> _modalIndex = ValueNotifier<int>(0);
   ValueNotifier<int> get modalIndex => _modalIndex;
@@ -198,7 +200,7 @@ class HomeController extends GetxController {
   final String _currentTime = '${DateTime.now().year}-${DateTime.now().month}';
   String get currentTime => _currentTime;
 
-  double _moneyTotal = 0.0;
+  double _moneyTotal = 30.0;
   double get moneyTotal => _moneyTotal;
 
   double _moneyTrans = 0.0;
@@ -218,6 +220,12 @@ class HomeController extends GetxController {
 
   Times _chosenTimeType = Times.thisMonth;
   Times get chosenTimeType => _chosenTimeType;
+
+  Map<String, ChartDataModel> _chartData = {};
+  Map<String, ChartDataModel> get chartData => _chartData;
+
+  bool _isCuved = true;
+  bool get isCuved => _isCuved;
 
   @override
   void onInit() async {
@@ -251,7 +259,7 @@ class HomeController extends GetxController {
 
   // initial function
   void initAll() async {
-    loadinganimation(load: true);
+    loadinganimation(load: true, total: true);
     _userModel = await _repo.getUserData();
     _monthSettingMap = await _repo.getMonthSetting();
     _transactionList = await _repo.getTransactions();
@@ -259,7 +267,8 @@ class HomeController extends GetxController {
     _transactionCurrency = _userModel.defaultCurrency;
 
     await getDataOnline().then((_) async {
-      await calcLocal().then((_) => loadinganimation(load: false));
+      await calcLocal()
+          .then((_) => {loadinganimation(load: false, total: true)});
     });
 
     // await getMonthSetting(date: _currentTime).then((_) async {
@@ -277,6 +286,29 @@ class HomeController extends GetxController {
     // });
   }
 
+  // change is curveed
+  void isCurved() {
+    _isCuved = !_isCuved;
+    update();
+  }
+
+  // return number of date titles
+  double dateTitle() {
+    int dif = _chosenTimePeriod.end.difference(_chosenTimePeriod.start).inDays;
+    double count = dif < 31
+        ? 6
+        : dif < 365
+            ? dif / 30
+            : 12;
+    double reg =
+        _chosenTimeType == Times.thisMonth || _chosenTimeType == Times.lastMonth
+            ? 6
+            : _chosenTimeType == Times.thisYear
+                ? 12
+                : count;
+    return reg;
+  }
+
   // change analysy view
   void changeAnalysyView({required int index}) {
     _analyticsPageIndex = index;
@@ -284,29 +316,53 @@ class HomeController extends GetxController {
   }
 
   // change currancy
-  void changeCurrancy({required String currency}) {
+  void changeCurrancy({required String currency}) async {
+    _moneyTrans = 0.0;
+    _totalchanged = false;
     if (currency != '' && currency != _transactionCurrency) {
       _transactionCurrency = currency;
-      update();
+      if (currency != _userModel.defaultCurrency) {
+        _totalLoading = true;
+        update();
+        await _repo
+            .getCurrencySwap(
+                from: _userModel.defaultCurrency,
+                to: currency,
+                amount: _moneyTotal)
+            .then(
+          (value) {
+            _totalchanged = true;
+            _moneyTrans = double.parse(value);
+            _totalLoading = false;
+            update();
+          },
+        );
+      } else {
+        _moneyTrans = 0.0;
+        _totalchanged = false;
+      }
     }
+    update();
   }
 
   // stage one calculation
   Future<void> calcBackend() async {
+    _chartData = {};
     _income = 0;
     _expense = 0;
-
     _catList = [];
     _vals = {};
     await _repo
         .getTransactionsOnline(
       model: FilterModel(
-          userId: _userModel.userId,
-          path: FirebasePaths.transactions.name,
-          timeStart: Timestamp.fromDate(_chosenTimePeriod.start),
-          timeEnd: Timestamp.fromDate(
-            _chosenTimePeriod.end,
-          )),
+        userId: _userModel.userId,
+        path: FirebasePaths.transactions.name,
+        timeStart: Timestamp.fromDate(_chosenTimePeriod.start),
+        timeEnd: Timestamp.fromDate(
+          _chosenTimePeriod.end
+              .add(const Duration(hours: 23, minutes: 59, seconds: 59)),
+        ),
+      ),
     )
         .then(
       (value) async {
@@ -315,21 +371,55 @@ class HomeController extends GetxController {
             TransactionDataModel transaction = TransactionDataModel.fromMap(
               value.docs[i].data() as Map<String, dynamic>,
             );
-            await postCalc(transaction: transaction);
+            await postCalc(transaction: transaction).then((_) {
+              if (_catList.isNotEmpty) {
+                _chosenCat = _catList[0];
+              }
+            });
           }
         }
+        maPrint(_chartData);
       },
     );
   }
 
+  void maPrint(Map<String, ChartDataModel> map) {
+    map.forEach((key, value) {
+      print(value.toMap());
+    });
+  }
+
   Future<void> calcLocal() async {
+    _chartData = {};
     _income = 0;
     _expense = 0;
     _catList = [];
     _vals = {};
     for (var i = 0; i < _transactionList.length; i++) {
       TransactionDataModel model = _transactionList[i];
-      await postCalc(transaction: model);
+
+      if (isTimeInPeriod(
+          start: _chosenTimePeriod.start,
+          end: _chosenTimePeriod.end,
+          time: model.date)) {
+        await postCalc(transaction: model);
+      } else {
+        _transactionList.removeAt(i);
+        await _repo.saveTransactions(list: _transactionList);
+      }
+    }
+    maPrint(_chartData);
+
+    if (_catList.isNotEmpty) {
+      _chosenCat = _catList[0];
+    }
+  }
+
+  // change chosen category
+  void changeChosenCategory({required CatagoryModel model}) {
+    if (model.name != _chosenCat.name) {
+      _chosenCat = model;
+      update();
     }
   }
 
@@ -340,35 +430,71 @@ class HomeController extends GetxController {
       icon: '57415-MaterialIcons',
       color: 4278190080,
     );
-    CatagoryModel model = CatagoryModel(
-      name: transaction.catagory,
-      subCatagories: [transaction.subCatagory],
-      icon: _userModel.catagories
-          .firstWhere((element) => element.name == transaction.catagory,
-              orElse: () => backup)
-          .icon,
-      color: _userModel.catagories
-          .firstWhere((element) => element.name == transaction.catagory,
-              orElse: () => backup)
-          .color,
-      transactions: [transaction],
-    );
 
     double amount = transaction.currency == _userModel.defaultCurrency
         ? transaction.amount
-        : double.parse(await _repo.getCurrencySwap(
-            from: transaction.currency,
-            to: _userModel.defaultCurrency,
-            amount: transaction.amount));
+        : double.parse(
+            await _repo.getCurrencySwap(
+              from: transaction.currency,
+              to: _userModel.defaultCurrency,
+              amount: transaction.amount,
+            ),
+          );
 
-    _vals[transaction.catagory] = (_vals[transaction.catagory] ?? 0) + amount;
+    switch (transaction.type) {
+      case TransactionType.moneyIn:
+        _income += transaction.amount;
+        _vals[transaction.catagory] =
+            (_vals[transaction.catagory] ?? 0) + amount;
+        await setChartData(model: transaction);
+        addToCatList(
+            model: CatagoryModel(
+              name: transaction.catagory,
+              subCatagories: [transaction.subCatagory],
+              icon: _userModel.catagories
+                  .firstWhere((element) => element.name == transaction.catagory,
+                      orElse: () => backup)
+                  .icon,
+              color: _userModel.catagories
+                  .firstWhere((element) => element.name == transaction.catagory,
+                      orElse: () => backup)
+                  .color,
+              transactions: [transaction],
+            ),
+            transaction: transaction);
 
-    if (transaction.type == TransactionType.moneyIn) {
-      _income = _income + transaction.amount;
-    } else {
-      _expense = _expense + transaction.amount;
+        break;
+      case TransactionType.moneyOut:
+        _expense += transaction.amount;
+        _vals[transaction.catagory] =
+            (_vals[transaction.catagory] ?? 0) + amount;
+        await setChartData(model: transaction);
+        addToCatList(
+            model: CatagoryModel(
+              name: transaction.catagory,
+              subCatagories: [transaction.subCatagory],
+              icon: _userModel.catagories
+                  .firstWhere((element) => element.name == transaction.catagory,
+                      orElse: () => backup)
+                  .icon,
+              color: _userModel.catagories
+                  .firstWhere((element) => element.name == transaction.catagory,
+                      orElse: () => backup)
+                  .color,
+              transactions: [transaction],
+            ),
+            transaction: transaction);
+
+        break;
+      case TransactionType.transfer:
+        break;
     }
+  }
 
+  //add to catList
+  void addToCatList(
+      {required CatagoryModel model,
+      required TransactionDataModel transaction}) {
     if (_catList.isEmpty) {
       _catList.add(model);
     } else {
@@ -385,6 +511,49 @@ class HomeController extends GetxController {
         _catList.add(model);
       }
     }
+  }
+
+  bool chartDataErrorl() {
+    return _loading || _chartData == {} || _chartData[_chosenCat.name] == null;
+  }
+
+  // set chart data
+  Future<void> setChartData({required TransactionDataModel model}) async {
+    DateTime simpleTime =
+        DateTime(model.date.year, model.date.month, model.date.day);
+
+    double amount = model.currency == _userModel.defaultCurrency
+        ? model.amount
+        : double.parse(
+            await _repo.getCurrencySwap(
+              from: model.currency,
+              to: _userModel.defaultCurrency,
+              amount: model.amount,
+            ),
+          );
+
+    ChartDataModel chartDataModel = _chartData[model.catagory] ??
+        ChartDataModel(
+            high: 0,
+            low: 0,
+            data: {},
+            name: model.catagory,
+            start: simpleTime,
+            end: simpleTime);
+    double newAmount = (chartDataModel.data[simpleTime] ?? 0.0) + amount;
+
+    chartDataModel.high = max(chartDataModel.high, newAmount);
+    chartDataModel.low = min(chartDataModel.low, newAmount);
+    chartDataModel.end = chartDataModel.end.isBefore(simpleTime)
+        ? simpleTime
+        : chartDataModel.end;
+    chartDataModel.start = chartDataModel.start.isAfter(simpleTime)
+        ? simpleTime
+        : chartDataModel.start;
+    chartDataModel.data[simpleTime] =
+        (chartDataModel.data[simpleTime] ?? 0.0) + amount;
+
+    _chartData[model.catagory] = chartDataModel;
   }
 
   // calculate total of wallets aka money now
@@ -484,11 +653,11 @@ class HomeController extends GetxController {
       await setTime(time: _chosenTimeType, context: context)
           .then((value) async {
         _chosenTimePeriod = value;
-        loadinganimation(load: true);
+        loadinganimation(load: true, total: false);
         _chosenTimeType == Times.thisMonth
             ? await calcLocal()
             : await calcBackend();
-        loadinganimation(load: false);
+        loadinganimation(load: false, total: false);
       });
       update();
     }
@@ -539,16 +708,24 @@ class HomeController extends GetxController {
             if (value != null && value.length == 2) {
               _startTime = value[0] as DateTime;
               _endTime = value[1] as DateTime;
+              _chosenTimeType = Times.custom;
             } else {
-              _startTime = DateTime(1, 0, 0);
-              _endTime = DateTime(1, 0, 0);
+              _startTime = DateTime(controll.year, controll.month, 1);
+              _endTime = DateTime(controll.year, controll.month, controll.day);
+              _chosenTimeType = Times.thisMonth;
             }
           },
         );
-        _chosenTimeType = Times.custom;
 
         return (start: _startTime, end: _endTime);
     }
+  }
+
+  // calculate averages
+  double average({required double amount}) {
+    int days =
+        _chosenTimePeriod.end.difference(_chosenTimePeriod.start).inDays + 1;
+    return amount == 0 ? 0.0 : double.parse((amount / days).toStringAsFixed(2));
   }
 
   // show income or expence in chart
@@ -560,8 +737,12 @@ class HomeController extends GetxController {
   }
 
   // loading animation
-  void loadinganimation({required bool load}) {
+  void loadinganimation({required bool load, required bool total}) {
     _loading = load;
+    if (total) {
+      _walletLoading = load;
+      _totalLoading = load;
+    }
     update();
   }
 
@@ -696,22 +877,30 @@ class HomeController extends GetxController {
   }
 
   // calculate subcategories of main catagories
-  void calculateSubcategories({required List<TransactionModel> transactions}) {
+  void calculateSubcategories(
+      {required List<TransactionDataModel> transactions}) async {
     _mainSub.clear();
     for (var i = 0; i < transactions.length; i++) {
       String title = transactions[i].subCatagory == ''
           ? 'No SubCatagory'
           : transactions[i].subCatagory;
+
+      double newAmount = transactions[i].currency == _userModel.defaultCurrency
+          ? transactions[i].amount
+          : double.parse(await _repo.getCurrencySwap(
+              from: transactions[i].currency,
+              to: _userModel.defaultCurrency,
+              amount: transactions[i].amount));
       if (_mainSub[title] != null) {
         _mainSub[title] = (
-          amount: _mainSub[title]!.amount + transactions[i].amount,
+          amount: _mainSub[title]!.amount + newAmount,
           cat: transactions[i].catagory
         );
       } else {
-        _mainSub[title] =
-            (amount: transactions[i].amount, cat: transactions[i].catagory);
+        _mainSub[title] = (amount: newAmount, cat: transactions[i].catagory);
       }
     }
+    update();
   }
 
   // flip main subCatagory view
@@ -758,10 +947,6 @@ class HomeController extends GetxController {
     return res;
   }
 
-  void tesst(double d) {
-    print(d % 1 == 0);
-  }
-
   // remove zeros from double when showing amounts of wallets
   String walletAmount({required dynamic amount}) {
     int post = amount.runtimeType == double
@@ -780,7 +965,7 @@ class HomeController extends GetxController {
   // change the tracking of the chosen time period
   void changeTimePeriod(
       {required String time, required BuildContext context}) async {
-    loadinganimation(load: true);
+    loadinganimation(load: true, total: false);
     _trackNum = _track[time] as int;
     _chosenTime = time;
     await setTime(
@@ -793,14 +978,14 @@ class HomeController extends GetxController {
                         : Times.custom,
             context: context)
         .then((value) async {
-      loadinganimation(load: true);
+      loadinganimation(load: true, total: false);
 
       if (value.start.year != 0) {
         await calculate(start: value.start, end: value.end).then((_) {
-          loadinganimation(load: false);
+          loadinganimation(load: false, total: false);
         });
       } else {
-        loadinganimation(load: false);
+        loadinganimation(load: false, total: false);
       }
     });
   }
@@ -854,32 +1039,6 @@ class HomeController extends GetxController {
     _chosenCategory = '';
     _commentController.clear();
     _modalIndex.value != 0 ? _modalIndex.value = 0 : null;
-  }
-
-  void currencyExchange({
-    required String base,
-    required String to,
-    required double amount,
-  }) async {
-    await MoneyExchange()
-        .changeCurrency(base: base, exchange: to, amount: amount)
-        .then(
-      (value) {
-        if (value.status == 'success') {
-          _moneyTrans = double.parse(value.result);
-          _totalchanged = true;
-          update();
-        }
-      },
-    );
-  }
-
-  // open dialog for currency swap
-  void openDialog({required Widget widget}) {
-    _moneyTrans = 0.0;
-    _totalchanged = false;
-    update();
-    dialogShowing(widget: widget);
   }
 
   // update when adding transaction
@@ -1161,5 +1320,30 @@ class HomeController extends GetxController {
   // check if image exists locally
   bool imageExists({required String link}) {
     return File(link).existsSync();
+  }
+
+  // update category
+  void updateCategory(
+      {required CatagoryModel model, required UserDataModel user}) {
+    int index = _catList.indexWhere((element) => element.name == model.name);
+    _catList[index].color = model.color;
+    _catList[index].icon = model.icon;
+    _catList[index].name = model.name;
+    _catList[index].subCatagories = model.subCatagories;
+    _userModel = user;
+    // _catList[_catList.indexWhere((element) => element.name == model.name)] =
+    //     model;
+    update();
+  }
+
+  // calculate interval
+  double interval(
+      {required double max,
+      required double min,
+      required double amount,
+      required int fallback}) {
+    double range = max - min;
+    double interval = (range == 0 ? fallback : range) / (amount - 1);
+    return interval;
   }
 }

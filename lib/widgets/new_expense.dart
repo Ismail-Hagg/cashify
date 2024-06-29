@@ -18,6 +18,7 @@ class ExpenceTileNew extends StatelessWidget {
   final double? budgetNum;
   final bool? budget;
   final String sign;
+  final String? reason;
 
   const ExpenceTileNew({
     super.key,
@@ -33,6 +34,7 @@ class ExpenceTileNew extends StatelessWidget {
     this.budgetNum,
     this.budget,
     required this.sign,
+    this.reason,
   });
 
   @override
@@ -88,6 +90,7 @@ class ExpenceTileNew extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           CustomText(
                             text: title,
@@ -98,17 +101,35 @@ class ExpenceTileNew extends StatelessWidget {
                           SizedBox(
                             height: width * 0.03,
                           ),
-                          CustomText(
-                            text: '${date!.year}/${date!.month}/${date!.day}',
-                            color: Colors.grey,
-                            size: 14,
-                          ),
+                          if (date != null) ...[
+                            CustomText(
+                              text: '${date!.year}/${date!.month}/${date!.day}',
+                              color: Colors.grey,
+                              size: 14,
+                            ),
+                          ]
                         ],
                       ),
-                      CustomText(
-                        text: '${zerosConvert(val: amount)} $sign',
-                        color: Colors.black,
-                        size: 16,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          CustomText(
+                            color: amount > 0 ? Colors.green : Colors.red,
+                            text: '${zerosConvert(val: amount)} $sign',
+                            size: 16,
+                          ),
+                          if (reason != null) ...[
+                            SizedBox(
+                              height: width * 0.03,
+                            ),
+                            CustomText(
+                              text: reason.toString(),
+                              color: Colors.black.withOpacity(0.5),
+                              size: 14,
+                              flow: TextOverflow.ellipsis,
+                            ),
+                          ]
+                        ],
                       ),
                     ],
                   )
@@ -130,7 +151,7 @@ class ExpenceTileNew extends StatelessWidget {
                               weight: FontWeight.w500,
                             ),
                             CustomText(
-                              text: '${zerosConvert(val: amount)} \$',
+                              text: '${zerosConvert(val: amount)} $sign',
                               color: amount > 0 ? Colors.green : Colors.red,
                               size: 16,
                             ),
