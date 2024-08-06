@@ -1,10 +1,7 @@
 import 'package:cashify/data_models/user_data_model.dart';
 import 'package:cashify/data_models/wallet_data_model.dart';
 import 'package:cashify/gloable_controllers/auth_controller.dart';
-import 'package:cashify/models/user_model.dart';
-import 'package:cashify/models/wallet_model.dart';
 import 'package:cashify/pages/login_page/repository.dart';
-import 'package:cashify/services/firebase_service.dart';
 import 'package:cashify/utils/enums.dart';
 import 'package:cashify/utils/util_functions.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';
@@ -24,7 +21,7 @@ class LoginController extends GetxController with GetTickerProviderStateMixin {
   final GloableAuthController _authController =
       Get.find<GloableAuthController>();
 
-  UserDataModel _userModel = Get.find<GloableAuthController>().userModel;
+  final UserDataModel _userModel = Get.find<GloableAuthController>().userModel;
   UserDataModel get userModel => _userModel;
 
   final PageController _pageController = PageController(initialPage: 0);

@@ -1,3 +1,4 @@
+import 'package:cashify/data_models/export.dart';
 import 'package:cashify/data_models/user_data_model.dart';
 import 'package:cashify/local_storage/local_storage.dart';
 import 'package:cashify/services/firebase_service.dart';
@@ -20,7 +21,7 @@ class SettingRepository {
     await _localStorage.deleteUser();
   }
 
-  // change user data in backend
+  // change user data synced in backend
   Future<void> changeUserData({required String userId}) async {
     await _firebaseService.cloudSync(userId: userId, val: false);
   }
@@ -39,5 +40,15 @@ class SettingRepository {
   Future<void> wipeAllData() async {
     await Future.wait(
         [wipeLocalData(), deleteTransactions(), deleteMonthSetting()]);
+  }
+
+  // change user data in backend
+  Future<void> changeUserDataBack({required UserDataModel user}) async {
+    await _firebaseService.updateUsers(model: user);
+  }
+
+  // change user data locally
+  Future<void> changeUserDataLocally({required UserDataModel model}) async {
+    await _localStorage.saveUser(model: model);
   }
 }

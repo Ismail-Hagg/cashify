@@ -1,5 +1,4 @@
 import 'package:cashify/data_models/category_data_model.dart';
-import 'package:cashify/models/catagory_model.dart';
 import 'package:cashify/pages/add_transaction_page/add_transaction_controller.dart';
 import 'package:cashify/utils/constants.dart';
 import 'package:cashify/utils/enums.dart';
@@ -7,7 +6,6 @@ import 'package:cashify/utils/util_functions.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';
 import 'package:cashify/widgets/icon_button.dart';
 import 'package:cashify/widgets/input_widget.dart';
-import 'package:cashify/widgets/modal_widget.dart';
 import 'package:cashify/widgets/text_button_widget.dart';
 import 'package:country_currency_pickers/country.dart';
 import 'package:country_currency_pickers/country_picker_dropdown.dart';
@@ -17,7 +15,6 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 class AddTransactionView extends StatelessWidget {
@@ -67,27 +64,6 @@ class AddTransactionView extends StatelessWidget {
                             controller.transactionAddTime,
                           ),
                         ),
-                        if (controller.newTransaction) ...[
-                          Row(
-                            children: [
-                              IconButtonPlatform(
-                                isIos: controller.isIos,
-                                icon: FontAwesomeIcons.camera,
-                                color: mainColor,
-                                click: () {},
-                              ),
-                              SizedBox(
-                                width: width * 0.025,
-                              ),
-                              IconButtonPlatform(
-                                isIos: controller.isIos,
-                                icon: FontAwesomeIcons.commentSms,
-                                color: mainColor,
-                                click: () {},
-                              ),
-                            ],
-                          ),
-                        ]
                       ],
                     ),
                     Row(
@@ -809,9 +785,8 @@ class AddTransactionView extends StatelessWidget {
                             : 'edittransaction'.tr,
                         textSize: 16,
                         type: ButtonType.raised,
-                        onClick: () => controller.transactionOperation(
-                            update: !controller.newTransaction,
-                            context: context),
+                        onClick: () =>
+                            controller.transactionOperation(context: context),
                       ),
                     )
                   ],

@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:cashify/data_models/export.dart';
 import 'package:cashify/pages/home_page/home_controller.dart';
 import 'package:cashify/utils/constants.dart';
@@ -14,12 +12,9 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:shape_of_view_null_safe/shape_of_view_null_safe.dart';
-import 'package:skeletonizer/skeletonizer.dart';
 
 class HomeBody extends StatelessWidget {
   const HomeBody({super.key});
@@ -146,6 +141,9 @@ class HomeBody extends StatelessWidget {
                                     SizedBox(
                                       width: width * 0.95,
                                       height: controller.loading == false &&
+                                              controller.haveMonthSetting(
+                                                  key:
+                                                      controller.currentTime) &&
                                               controller
                                                   .monthSettingMap[
                                                       controller.currentTime]!
@@ -165,12 +163,15 @@ class HomeBody extends StatelessWidget {
                                             children: List.generate(
                                               controller.walletLoading
                                                   ? 10
-                                                  : controller
-                                                          .monthSettingMap[
-                                                              controller
-                                                                  .currentTime]!
-                                                          .walletInfo
-                                                          .isNotEmpty
+                                                  : controller.haveMonthSetting(
+                                                              key: controller
+                                                                  .currentTime) &&
+                                                          controller
+                                                              .monthSettingMap[
+                                                                  controller
+                                                                      .currentTime]!
+                                                              .walletInfo
+                                                              .isNotEmpty
                                                       ? controller
                                                           .monthSettingMap[
                                                               controller
@@ -180,20 +181,20 @@ class HomeBody extends StatelessWidget {
                                                       : controller.userModel
                                                           .wallets.length,
                                               (index) {
-                                                String amount = controller
-                                                        .walletLoading
+                                                String amount = controller.walletLoading
                                                     ? ''
                                                     : zerosConvert(
-                                                        val: controller
-                                                                .monthSettingMap[
-                                                                    controller
+                                                        val: controller.haveMonthSetting(
+                                                                    key: controller
+                                                                        .currentTime) &&
+                                                                controller
+                                                                    .monthSettingMap[controller
                                                                         .currentTime]!
-                                                                .walletInfo
-                                                                .isNotEmpty
+                                                                    .walletInfo
+                                                                    .isNotEmpty
                                                             ? (controller
-                                                                    .monthSettingMap[
-                                                                        controller
-                                                                            .currentTime]!
+                                                                    .monthSettingMap[controller
+                                                                        .currentTime]!
                                                                     .walletInfo[
                                                                         index]
                                                                     .start +
@@ -246,11 +247,11 @@ class HomeBody extends StatelessWidget {
                                                               text: controller
                                                                       .walletLoading
                                                                   ? 'loading data'
-                                                                  : controller
-                                                                          .monthSettingMap[
-                                                                              controller.currentTime]!
-                                                                          .walletInfo
-                                                                          .isNotEmpty
+                                                                  : controller.haveMonthSetting(key: controller.currentTime) &&
+                                                                          controller
+                                                                              .monthSettingMap[controller.currentTime]!
+                                                                              .walletInfo
+                                                                              .isNotEmpty
                                                                       ? '${controller.monthSettingMap[controller.currentTime]!.walletInfo[index].wallet} $amount ${controller.monthSettingMap[controller.currentTime]!.walletInfo[index].currency}'
                                                                       : '${controller.userModel.wallets[index].name} $amount ${controller.userModel.wallets[index].currency}',
                                                             ),
@@ -367,50 +368,74 @@ class HomeBody extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.all(12.0),
                           child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Avatar(
-                                borderColor: oilColor,
-                                type: controller.userModel.localImage
-                                    ? controller.imageExists(
-                                        link: controller.userModel.localPath,
-                                      )
-                                        ? AvatarType.local
-                                        : AvatarType.none
-                                    : controller.userModel.onlinePath == ''
-                                        ? AvatarType.none
-                                        : AvatarType.online,
-                                height: width * 0.135,
-                                width: width * 0.135,
-                                link: controller.userModel.localImage
-                                    ? controller.userModel.localPath
-                                    : controller.userModel.onlinePath,
-                                border: true,
-                                shadow: false,
+                              Row(
+                                children: [
+                                  Avatar(
+                                    borderColor: oilColor,
+                                    type: controller.userModel.localImage
+                                        ? controller.imageExists(
+                                            link:
+                                                controller.userModel.localPath,
+                                          )
+                                            ? AvatarType.local
+                                            : AvatarType.none
+                                        : controller.userModel.onlinePath == ''
+                                            ? AvatarType.none
+                                            : AvatarType.online,
+                                    height: width * 0.135,
+                                    width: width * 0.135,
+                                    link: controller.userModel.localImage
+                                        ? controller.userModel.localPath
+                                        : controller.userModel.onlinePath,
+                                    border: true,
+                                    shadow: false,
+                                  ),
+                                  SizedBox(
+                                    height: width * 0.12,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12.0),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
+                                        children: [
+                                          CustomText(
+                                            text: 'welcome'.tr,
+                                            color: whiteColor.withOpacity(0.7),
+                                          ),
+                                          CustomText(
+                                            text: controller.userModel.username,
+                                            color: whiteColor,
+                                            weight: FontWeight.bold,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              SizedBox(
-                                height: width * 0.12,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12.0),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      CustomText(
-                                        text: 'welcome'.tr,
-                                        color: whiteColor.withOpacity(0.7),
-                                      ),
-                                      CustomText(
-                                        text: controller.userModel.username,
-                                        color: whiteColor,
-                                        weight: FontWeight.bold,
-                                      ),
-                                    ],
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12.0),
+                                child: Container(
+                                  height: width * 0.1,
+                                  width: width * 0.1,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: whiteColor.withOpacity(0.5),
+                                  ),
+                                  child: const Center(
+                                    child: FaIcon(
+                                      FontAwesomeIcons.bell,
+                                      size: 18,
+                                    ),
                                   ),
                                 ),
-                              ),
+                              )
                             ],
                           ),
                         ),
@@ -433,8 +458,8 @@ class HomeBody extends StatelessWidget {
                             children: [
                               GestureDetector(
                                 onTap: () => controller.isCurved(),
-                                child: const CustomText(
-                                  text: 'Analytics',
+                                child: CustomText(
+                                  text: 'anal'.tr,
                                   size: 16,
                                   weight: FontWeight.bold,
                                 ),
@@ -507,236 +532,261 @@ class HomeBody extends StatelessWidget {
                             padding: const EdgeInsets.only(top: 4.0),
                             child: Column(
                               children: [
-                                SizedBox(
-                                  width: width,
-                                  height: width * 0.58,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(5),
-                                      color: mainColor.withOpacity(0.2),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(12.0),
-                                      child: LineChart(
-                                        curve: Curves.ease,
-                                        duration:
-                                            const Duration(milliseconds: 500),
-                                        LineChartData(
-                                          gridData:
-                                              const FlGridData(show: true),
-                                          titlesData: FlTitlesData(
-                                            bottomTitles: AxisTitles(
-                                              axisNameSize: width * 0.05,
-                                              axisNameWidget: SizedBox(
-                                                width: width,
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children:
-                                                      List.generate(3, (index) {
-                                                    List<String> title = [
-                                                      'income'.tr,
-                                                      'expence'.tr,
-                                                      'total'.tr
-                                                    ];
-                                                    List<double> values = [
-                                                      controller.income,
-                                                      controller.expense == 0
-                                                          ? controller.expense
-                                                          : controller.expense *
-                                                              -1,
-                                                      controller.income +
-                                                          controller.expense
-                                                    ];
+                                SingleChildScrollView(
+                                  // physics: const BouncingScrollPhysics(),
+                                  // scrollDirection: Axis.horizontal,
+                                  child: SizedBox(
+                                    // make dynamic
+                                    width: width,
+                                    height: width * 0.58,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(5),
+                                        color: mainColor.withOpacity(0.2),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(12.0),
+                                        child: LineChart(
+                                          curve: Curves.ease,
+                                          duration:
+                                              const Duration(milliseconds: 500),
+                                          LineChartData(
+                                            gridData:
+                                                const FlGridData(show: true),
+                                            titlesData: FlTitlesData(
+                                              bottomTitles: AxisTitles(
+                                                axisNameSize: width * 0.05,
+                                                axisNameWidget: SizedBox(
+                                                  width: width,
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                    children: List.generate(3,
+                                                        (index) {
+                                                      List<String> title = [
+                                                        'income'.tr,
+                                                        'expence'.tr,
+                                                        'total'.tr
+                                                      ];
+                                                      List<double> values = [
+                                                        controller.income,
+                                                        controller.expense == 0
+                                                            ? controller.expense
+                                                            : controller
+                                                                    .expense *
+                                                                -1,
+                                                        controller.income +
+                                                            controller.expense
+                                                      ];
 
-                                                    return controller.loading
-                                                        ? LoadingWidget(
-                                                            width: width * 0.2,
-                                                            height: height,
-                                                            loading: controller
-                                                                .loading)
-                                                        : CustomText(
-                                                            text:
-                                                                '${title[index]} : ${controller.humanFormat(values[index])}');
-                                                  }),
+                                                      return controller.loading
+                                                          ? LoadingWidget(
+                                                              width:
+                                                                  width * 0.2,
+                                                              height: height,
+                                                              loading:
+                                                                  controller
+                                                                      .loading)
+                                                          : CustomText(
+                                                              text:
+                                                                  '${title[index]} : ${controller.humanFormat(values[index])}');
+                                                    }),
+                                                  ),
+                                                ),
+                                                sideTitles: SideTitles(
+                                                  showTitles: true,
+                                                  reservedSize: 32,
+                                                  interval: controller
+                                                          .chartDataErrorl()
+                                                      ? 1
+                                                      : controller.interval(
+                                                          fallback: 10,
+                                                          amount: controller
+                                                              .dateTitle(),
+                                                          max: (controller
+                                                                      .chartData[controller
+                                                                          .chosenCat
+                                                                          .name]!
+                                                                      .end
+                                                                      .millisecondsSinceEpoch /
+                                                                  1000000)
+                                                              .toDouble(),
+                                                          min: (controller
+                                                                      .chartData[controller
+                                                                          .chosenCat
+                                                                          .name]!
+                                                                      .start
+                                                                      .millisecondsSinceEpoch /
+                                                                  1000000)
+                                                              .toDouble()),
+                                                  getTitlesWidget:
+                                                      (double value,
+                                                          TitleMeta meta) {
+                                                    DateTime time = controller
+                                                            .chartDataErrorl()
+                                                        ? DateTime.now()
+                                                        : DateTime
+                                                            .fromMillisecondsSinceEpoch(
+                                                                BigInt.from(value *
+                                                                        1000000)
+                                                                    .toInt());
+
+                                                    return GestureDetector(
+                                                      onTap: () => controller
+                                                          .rotateXAxis(),
+                                                      child: RotationTransition(
+                                                        turns: AlwaysStoppedAnimation(
+                                                            controller
+                                                                    .rotation /
+                                                                360),
+                                                        child: CustomText(
+                                                          size: 10,
+                                                          text:
+                                                              '${time.year == DateTime.now().year ? '' : '${time.year}/'}${time.month}/${time.day}',
+                                                          align:
+                                                              TextAlign.start,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
                                                 ),
                                               ),
-                                              sideTitles: SideTitles(
-                                                showTitles: true,
-                                                reservedSize: 32,
-                                                interval: controller
-                                                        .chartDataErrorl()
-                                                    ? 1
-                                                    : controller.interval(
-                                                        fallback: 10,
-                                                        amount: controller
-                                                            .dateTitle(),
-                                                        max: (controller
-                                                                    .chartData[controller
-                                                                        .chosenCat
-                                                                        .name]!
-                                                                    .end
-                                                                    .millisecondsSinceEpoch /
-                                                                1000000)
-                                                            .toDouble(),
-                                                        min: (controller
-                                                                    .chartData[controller
-                                                                        .chosenCat
-                                                                        .name]!
-                                                                    .start
-                                                                    .millisecondsSinceEpoch /
-                                                                1000000)
-                                                            .toDouble()),
-                                                getTitlesWidget: (double value,
-                                                    TitleMeta meta) {
-                                                  DateTime time = controller
+                                              rightTitles: const AxisTitles(
+                                                sideTitles: SideTitles(
+                                                    showTitles: false),
+                                              ),
+                                              topTitles: const AxisTitles(
+                                                sideTitles: SideTitles(
+                                                    showTitles: false),
+                                              ),
+                                              leftTitles: AxisTitles(
+                                                sideTitles: SideTitles(
+                                                  reservedSize: 32,
+                                                  getTitlesWidget:
+                                                      (double value,
+                                                          TitleMeta meta) {
+                                                    String text = value
+                                                        .toStringAsFixed(0);
+
+                                                    return CustomText(
+                                                      text: text,
+                                                      size: 12,
+                                                    );
+                                                  },
+                                                  showTitles: true,
+                                                  interval: controller
                                                           .chartDataErrorl()
-                                                      ? DateTime.now()
-                                                      : DateTime
-                                                          .fromMillisecondsSinceEpoch(
-                                                              BigInt.from(value *
-                                                                      1000000)
-                                                                  .toInt());
-                                                  // print('=== ${time.month}');
-
-                                                  return CustomText(
-                                                      size: 14,
-                                                      text:
-                                                          '${time.year == DateTime.now().year ? '' : time.year} ${time.month}/${time.day}',
-                                                      align: TextAlign.start);
-                                                },
-                                              ),
-                                            ),
-                                            rightTitles: const AxisTitles(
-                                              sideTitles:
-                                                  SideTitles(showTitles: false),
-                                            ),
-                                            topTitles: const AxisTitles(
-                                              sideTitles:
-                                                  SideTitles(showTitles: false),
-                                            ),
-                                            leftTitles: AxisTitles(
-                                              sideTitles: SideTitles(
-                                                reservedSize: 32,
-                                                getTitlesWidget: (double value,
-                                                    TitleMeta meta) {
-                                                  String text =
-                                                      value.toStringAsFixed(0);
-
-                                                  return CustomText(
-                                                    text: text,
-                                                    size: 12,
-                                                  );
-                                                },
-                                                showTitles: true,
-                                                interval: controller
-                                                        .chartDataErrorl()
-                                                    ? 1
-                                                    : controller.interval(
-                                                        fallback: 10,
-                                                        amount: 6,
-                                                        max: controller
-                                                            .chartData[
-                                                                controller
-                                                                    .chosenCat
-                                                                    .name]!
-                                                            .high,
-                                                        min: controller
-                                                            .chartData[
-                                                                controller
-                                                                    .chosenCat
-                                                                    .name]!
-                                                            .low),
-                                              ),
-                                            ),
-                                          ),
-                                          borderData: FlBorderData(
-                                            show: false,
-                                          ),
-                                          lineBarsData: [
-                                            LineChartBarData(
-                                              isCurved: controller.isCuved,
-                                              color:
-                                                  mainColor.withOpacity(0.75),
-                                              barWidth: 4,
-                                              isStrokeCapRound: true,
-                                              dotData:
-                                                  const FlDotData(show: false),
-                                              belowBarData:
-                                                  BarAreaData(show: false),
-                                              spots:
-                                                  controller.chartDataErrorl()
-                                                      ? []
-                                                      : List.generate(
-                                                          controller
+                                                      ? 1
+                                                      : controller.interval(
+                                                          fallback: 10,
+                                                          amount: 6,
+                                                          max: controller
                                                               .chartData[
                                                                   controller
                                                                       .chosenCat
                                                                       .name]!
-                                                              .data
-                                                              .length,
-                                                          (index) {
-                                                            DateTime dataTime =
-                                                                controller
-                                                                    .chartData[controller
-                                                                        .chosenCat
-                                                                        .name]!
-                                                                    .data
-                                                                    .entries
-                                                                    .elementAt(
-                                                                        index)
-                                                                    .key;
-                                                            double dataValue = controller
+                                                              .high,
+                                                          min: controller
+                                                              .chartData[
+                                                                  controller
+                                                                      .chosenCat
+                                                                      .name]!
+                                                              .low),
+                                                ),
+                                              ),
+                                            ),
+                                            borderData: FlBorderData(
+                                              show: false,
+                                            ),
+                                            lineBarsData: [
+                                              LineChartBarData(
+                                                isCurved: controller.isCuved,
+                                                color:
+                                                    mainColor.withOpacity(0.75),
+                                                barWidth: 4,
+                                                isStrokeCapRound: true,
+                                                dotData: const FlDotData(
+                                                    show: false),
+                                                belowBarData:
+                                                    BarAreaData(show: false),
+                                                spots:
+                                                    controller.chartDataErrorl()
+                                                        ? []
+                                                        : List.generate(
+                                                            controller
                                                                 .chartData[
                                                                     controller
                                                                         .chosenCat
                                                                         .name]!
                                                                 .data
-                                                                .entries
-                                                                .elementAt(
-                                                                    index)
-                                                                .value;
+                                                                .length,
+                                                            (index) {
+                                                              DateTime dataTime = controller
+                                                                  .chartData[
+                                                                      controller
+                                                                          .chosenCat
+                                                                          .name]!
+                                                                  .data
+                                                                  .entries
+                                                                  .elementAt(
+                                                                      index)
+                                                                  .key;
+                                                              double dataValue = controller
+                                                                  .chartData[
+                                                                      controller
+                                                                          .chosenCat
+                                                                          .name]!
+                                                                  .data
+                                                                  .entries
+                                                                  .elementAt(
+                                                                      index)
+                                                                  .value;
 
-                                                            return FlSpot(
-                                                                (dataTime.millisecondsSinceEpoch /
-                                                                        1000000)
-                                                                    .toDouble(),
-                                                                dataValue);
-                                                          },
-                                                        ),
-                                            )
-                                          ],
-                                          maxX: controller.chartDataErrorl()
-                                              ? 1
-                                              : (controller
-                                                          .chartData[controller
-                                                              .chosenCat.name]!
-                                                          .end
-                                                          .millisecondsSinceEpoch /
-                                                      1000000)
-                                                  .toDouble(),
-                                          minX: controller.chartDataErrorl()
-                                              ? 0
-                                              : (controller
-                                                          .chartData[controller
-                                                              .chosenCat.name]!
-                                                          .start
-                                                          .millisecondsSinceEpoch /
-                                                      1000000)
-                                                  .toDouble(),
-                                          maxY: controller.chartDataErrorl()
-                                              ? 1
-                                              : controller
-                                                  .chartData[controller
-                                                      .chosenCat.name]!
-                                                  .high,
-                                          minY: controller.chartDataErrorl()
-                                              ? 0
-                                              : controller
-                                                  .chartData[controller
-                                                      .chosenCat.name]!
-                                                  .low,
+                                                              return FlSpot(
+                                                                  (dataTime.millisecondsSinceEpoch /
+                                                                          1000000)
+                                                                      .toDouble(),
+                                                                  dataValue);
+                                                            },
+                                                          ),
+                                              )
+                                            ],
+                                            maxX: controller.chartDataErrorl()
+                                                ? 1
+                                                : (controller
+                                                            .chartData[
+                                                                controller
+                                                                    .chosenCat
+                                                                    .name]!
+                                                            .end
+                                                            .millisecondsSinceEpoch /
+                                                        1000000)
+                                                    .toDouble(),
+                                            minX: controller.chartDataErrorl()
+                                                ? 0
+                                                : (controller
+                                                            .chartData[
+                                                                controller
+                                                                    .chosenCat
+                                                                    .name]!
+                                                            .start
+                                                            .millisecondsSinceEpoch /
+                                                        1000000)
+                                                    .toDouble(),
+                                            maxY: controller.chartDataErrorl()
+                                                ? 1
+                                                : controller
+                                                    .chartData[controller
+                                                        .chosenCat.name]!
+                                                    .high,
+                                            minY: controller.chartDataErrorl()
+                                                ? 0
+                                                : controller
+                                                    .chartData[controller
+                                                        .chosenCat.name]!
+                                                    .low,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -812,293 +862,317 @@ class HomeBody extends StatelessWidget {
                               controller.loading
                                   ? 10
                                   : controller.catList.length,
-                              (index) => Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 6.0),
-                                child: GestureDetector(
-                                  onTap: () {
-                                    controller.calculateSubcategories(
-                                        transactions: controller
-                                                .catList[index].transactions ??
-                                            []);
-                                    showModal(
-                                      xFunction: () {},
-                                      context: context,
-                                      title: controller.catList[index].name,
-                                      child: GetBuilder<HomeController>(
-                                        init: Get.find<HomeController>(),
-                                        builder: (controller) => Column(
-                                          children: [
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 12.0),
-                                              child: SizedBox(
-                                                width: width,
-                                                height: width * 0.135,
-                                                child: Row(
-                                                  children: [
-                                                    GestureDetector(
-                                                      onTap: () => controller
-                                                          .mainSubFlip(
-                                                              all: false),
-                                                      child: Column(
-                                                        children: [
-                                                          SizedBox(
-                                                            width: (width / 2) -
-                                                                12,
-                                                            height: (width *
-                                                                    0.135) *
-                                                                0.95,
-                                                            child: Center(
-                                                              child: CustomText(
-                                                                text:
-                                                                    'calced'.tr,
-                                                                color: controller
-                                                                        .mainSubAll
-                                                                    ? mainColor
-                                                                        .withOpacity(
-                                                                            0.5)
-                                                                    : mainColor,
+                              (index) {
+                                return Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 6.0),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      controller.calculateSubcategories(
+                                          transactions: controller
+                                                  .catList[index]
+                                                  .transactions ??
+                                              []);
+                                      showModal(
+                                        xFunction: () {},
+                                        context: context,
+                                        title: controller.catList[index].name,
+                                        child: GetBuilder<HomeController>(
+                                          init: Get.find<HomeController>(),
+                                          builder: (controller) => Column(
+                                            children: [
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 12.0),
+                                                child: SizedBox(
+                                                  width: width,
+                                                  height: width * 0.135,
+                                                  child: Row(
+                                                    children: [
+                                                      GestureDetector(
+                                                        onTap: () => controller
+                                                            .mainSubFlip(
+                                                                all: false),
+                                                        child: Column(
+                                                          children: [
+                                                            SizedBox(
+                                                              width:
+                                                                  (width / 2) -
+                                                                      12,
+                                                              height: (width *
+                                                                      0.135) *
+                                                                  0.95,
+                                                              child: Center(
+                                                                child:
+                                                                    CustomText(
+                                                                  text: 'calced'
+                                                                      .tr,
+                                                                  color: controller
+                                                                          .mainSubAll
+                                                                      ? mainColor
+                                                                          .withOpacity(
+                                                                              0.5)
+                                                                      : mainColor,
+                                                                ),
                                                               ),
                                                             ),
-                                                          ),
-                                                          Container(
-                                                            width: (width / 2) -
-                                                                12,
-                                                            height: (width *
-                                                                    0.135) *
-                                                                0.05,
-                                                            color: controller
-                                                                    .mainSubAll
-                                                                ? mainColor
-                                                                    .withOpacity(
-                                                                        0.5)
-                                                                : mainColor,
-                                                          ),
-                                                        ],
+                                                            Container(
+                                                              width:
+                                                                  (width / 2) -
+                                                                      12,
+                                                              height: (width *
+                                                                      0.135) *
+                                                                  0.05,
+                                                              color: controller
+                                                                      .mainSubAll
+                                                                  ? mainColor
+                                                                      .withOpacity(
+                                                                          0.5)
+                                                                  : mainColor,
+                                                            ),
+                                                          ],
+                                                        ),
                                                       ),
-                                                    ),
-                                                    GestureDetector(
-                                                      onTap: () => controller
-                                                          .mainSubFlip(
-                                                              all: true),
-                                                      child: Column(
-                                                        children: [
-                                                          SizedBox(
-                                                            width: (width / 2) -
-                                                                12,
-                                                            height: (width *
-                                                                    0.135) *
-                                                                0.95,
-                                                            child: Center(
-                                                              child: CustomText(
-                                                                text:
-                                                                    'totals'.tr,
-                                                                color: controller
-                                                                        .mainSubAll
-                                                                    ? mainColor
-                                                                    : mainColor
-                                                                        .withOpacity(
-                                                                            0.5),
+                                                      GestureDetector(
+                                                        onTap: () => controller
+                                                            .mainSubFlip(
+                                                                all: true),
+                                                        child: Column(
+                                                          children: [
+                                                            SizedBox(
+                                                              width:
+                                                                  (width / 2) -
+                                                                      12,
+                                                              height: (width *
+                                                                      0.135) *
+                                                                  0.95,
+                                                              child: Center(
+                                                                child:
+                                                                    CustomText(
+                                                                  text: 'totals'
+                                                                      .tr,
+                                                                  color: controller
+                                                                          .mainSubAll
+                                                                      ? mainColor
+                                                                      : mainColor
+                                                                          .withOpacity(
+                                                                              0.5),
+                                                                ),
                                                               ),
                                                             ),
-                                                          ),
-                                                          Container(
-                                                            width: (width / 2) -
-                                                                12,
-                                                            height: (width *
-                                                                    0.135) *
-                                                                0.05,
-                                                            color: controller
-                                                                    .mainSubAll
-                                                                ? mainColor
-                                                                : mainColor
-                                                                    .withOpacity(
-                                                                        0.5),
-                                                          ),
-                                                        ],
+                                                            Container(
+                                                              width:
+                                                                  (width / 2) -
+                                                                      12,
+                                                              height: (width *
+                                                                      0.135) *
+                                                                  0.05,
+                                                              color: controller
+                                                                      .mainSubAll
+                                                                  ? mainColor
+                                                                  : mainColor
+                                                                      .withOpacity(
+                                                                          0.5),
+                                                            ),
+                                                          ],
+                                                        ),
                                                       ),
-                                                    ),
-                                                  ],
+                                                    ],
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                            SingleChildScrollView(
-                                              physics:
-                                                  const BouncingScrollPhysics(),
-                                              child: Column(
-                                                children: List.generate(
-                                                  controller.mainSubAll
-                                                      ? controller
-                                                          .catList[index]
-                                                          .transactions!
-                                                          .length
-                                                      : controller
-                                                          .mainSub.length,
-                                                  (i) {
-                                                    String cat = controller
-                                                            .mainSubAll
+                                              SingleChildScrollView(
+                                                physics:
+                                                    const BouncingScrollPhysics(),
+                                                child: Column(
+                                                  children: List.generate(
+                                                    controller.mainSubAll
                                                         ? controller
                                                             .catList[index]
-                                                            .transactions![i]
-                                                            .catagory
+                                                            .transactions!
+                                                            .length
                                                         : controller
-                                                            .mainSub[controller
-                                                                .mainSub.keys
-                                                                .elementAt(i)]!
-                                                            .cat;
+                                                            .mainSub.length,
+                                                    (i) {
+                                                      String cat = controller
+                                                              .mainSubAll
+                                                          ? controller
+                                                              .catList[index]
+                                                              .transactions![i]
+                                                              .catagory
+                                                          : controller
+                                                              .mainSub[controller
+                                                                  .mainSub.keys
+                                                                  .elementAt(
+                                                                      i)]!
+                                                              .cat;
 
-                                                    Color transColor = colorConvert(
-                                                        code: controller
-                                                            .userModel
-                                                            .catagories
-                                                            .firstWhere(
-                                                                (element) =>
-                                                                    element
-                                                                        .name ==
-                                                                    cat)
-                                                            .color);
+                                                      Color transColor = colorConvert(
+                                                          code: controller
+                                                              .userModel
+                                                              .catagories
+                                                              .firstWhere(
+                                                                  (element) =>
+                                                                      element
+                                                                          .name ==
+                                                                      cat)
+                                                              .color);
 
-                                                    IconData iconDat = iconConvert(
-                                                        code: controller
-                                                            .userModel
-                                                            .catagories
-                                                            .firstWhere(
-                                                                (element) =>
-                                                                    element
-                                                                        .name ==
-                                                                    cat)
-                                                            .icon);
-                                                    TransactionDataModel
-                                                        chosenTransaction =
-                                                        controller.mainSubAll
-                                                            ? controller
-                                                                .catList[index]
-                                                                .transactions![i]
-                                                            : TransactionDataModel(
-                                                                id: '',
-                                                                catagory:
-                                                                    'catagory',
-                                                                subCatagory:
-                                                                    'subCatagory',
-                                                                currency:
-                                                                    currency,
-                                                                amount: 0,
-                                                                note: 'note',
-                                                                date: DateTime
-                                                                    .now(),
-                                                                wallet:
-                                                                    'wallet',
-                                                                fromWallet:
-                                                                    'fromWallet',
-                                                                toWallet:
-                                                                    'toWallet',
-                                                                type: TransactionType
-                                                                    .transfer,
-                                                              );
-                                                    return Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              8.0),
-                                                      child: ExpenceTileNew(
-                                                        sign: controller
-                                                                .mainSubAll
-                                                            ? (countries[codes[codes.indexWhere(
-                                                                    (element) =>
-                                                                        element ==
-                                                                        chosenTransaction
-                                                                            .currency)]]!['symbolNative']) ??
-                                                                ''
-                                                            : '',
-                                                        type:
-                                                            ExpenseTile.expense,
-                                                        width: width,
-                                                        color: transColor,
-                                                        title: controller
-                                                                .mainSubAll
-                                                            ? chosenTransaction
-                                                                .catagory
-                                                            : controller
-                                                                .mainSub.keys
-                                                                .elementAt(i),
-                                                        date: controller
-                                                                .mainSubAll
-                                                            ? chosenTransaction
-                                                                .date
-                                                            : null,
-                                                        amount: controller
-                                                                .mainSubAll
-                                                            ? chosenTransaction
-                                                                .amount
-                                                            : controller
-                                                                .mainSub.values
-                                                                .elementAt(i)
-                                                                .amount,
-                                                        budget: false,
-                                                        icon: iconDat,
-                                                        reason: controller
-                                                                .mainSubAll
-                                                            ? chosenTransaction
-                                                                        .subCatagory ==
-                                                                    ''
-                                                                ? 'noavailable'
-                                                                    .tr
-                                                                : chosenTransaction
-                                                                    .subCatagory
-                                                            : null,
-                                                      ),
-                                                    );
-                                                  },
+                                                      IconData iconDat = iconConvert(
+                                                          code: controller
+                                                              .userModel
+                                                              .catagories
+                                                              .firstWhere(
+                                                                  (element) =>
+                                                                      element
+                                                                          .name ==
+                                                                      cat)
+                                                              .icon);
+                                                      TransactionDataModel
+                                                          chosenTransaction =
+                                                          controller.mainSubAll
+                                                              ? controller
+                                                                  .catList[
+                                                                      index]
+                                                                  .transactions![i]
+                                                              : TransactionDataModel(
+                                                                  id: '',
+                                                                  catagory:
+                                                                      'catagory',
+                                                                  subCatagory:
+                                                                      'subCatagory',
+                                                                  currency:
+                                                                      currency,
+                                                                  amount: 0,
+                                                                  note: 'note',
+                                                                  date: DateTime
+                                                                      .now(),
+                                                                  wallet:
+                                                                      'wallet',
+                                                                  fromWallet:
+                                                                      'fromWallet',
+                                                                  toWallet:
+                                                                      'toWallet',
+                                                                  type: TransactionType
+                                                                      .transfer,
+                                                                );
+                                                      return Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(8.0),
+                                                        child: ExpenceTileNew(
+                                                          sign: controller
+                                                                  .mainSubAll
+                                                              ? (countries[codes[codes.indexWhere((element) =>
+                                                                      element ==
+                                                                      chosenTransaction
+                                                                          .currency)]]!['symbolNative']) ??
+                                                                  ''
+                                                              : '',
+                                                          type: ExpenseTile
+                                                              .expense,
+                                                          width: width,
+                                                          color: transColor,
+                                                          title: controller
+                                                                  .mainSubAll
+                                                              ? chosenTransaction
+                                                                  .catagory
+                                                              : controller
+                                                                  .mainSub.keys
+                                                                  .elementAt(i),
+                                                          date: controller
+                                                                  .mainSubAll
+                                                              ? chosenTransaction
+                                                                  .date
+                                                              : null,
+                                                          amount:
+                                                              controller
+                                                                      .mainSubAll
+                                                                  ? chosenTransaction
+                                                                      .amount
+                                                                  : controller
+                                                                      .mainSub
+                                                                      .values
+                                                                      .elementAt(
+                                                                          i)
+                                                                      .amount,
+                                                          budget: false,
+                                                          icon: iconDat,
+                                                          reason: controller
+                                                                  .mainSubAll
+                                                              ? chosenTransaction
+                                                                          .subCatagory ==
+                                                                      ''
+                                                                  ? 'noavailable'
+                                                                      .tr
+                                                                  : chosenTransaction
+                                                                      .subCatagory
+                                                              : null,
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
+                                        button: Container(),
+                                      );
+                                    },
+                                    child: ExpenceTileNew(
+                                      type: controller.loading
+                                          ? ExpenseTile.loading
+                                          : ExpenseTile.category,
+                                      sign: '',
+                                      ave: controller.average(
+                                        amount: controller.loading
+                                            ? 0.0
+                                            : controller.vals[controller
+                                                .catList[index].name] as double,
                                       ),
-                                      button: Container(),
-                                    );
-                                  },
-                                  child: ExpenceTileNew(
-                                    type: controller.loading
-                                        ? ExpenseTile.loading
-                                        : ExpenseTile.category,
-                                    sign: '',
-                                    ave: controller.average(
-                                      amount: controller.loading
+                                      count: controller.loading
+                                          ? 0
+                                          : controller.catList[index]
+                                              .transactions!.length,
+                                      budget: controller.loading ||
+                                              controller.catList.isEmpty
+                                          ? false
+                                          : controller.budgetShow(
+                                              category: controller
+                                                  .catList[index].name),
+                                      budgetNum: controller.loading ||
+                                              controller.catList.isEmpty
+                                          ? 0
+                                          : controller.budgetAmount(
+                                              category: controller
+                                                  .catList[index].name),
+                                      width: width,
+                                      title: controller.loading
+                                          ? 'Loading...'
+                                          : controller.catList[index].name,
+                                      date: DateTime.now(),
+                                      amount: controller.loading ||
+                                              controller.catList.isEmpty
                                           ? 0.0
                                           : controller.vals[controller
                                               .catList[index].name] as double,
+                                      color: controller.loading
+                                          ? Colors.transparent
+                                          : colorConvert(
+                                              code: controller
+                                                  .catList[index].color),
+                                      icon: controller.loading
+                                          ? Icons.add
+                                          : iconConvert(
+                                              code: controller
+                                                  .catList[index].icon,
+                                            ),
                                     ),
-                                    count: controller.loading
-                                        ? 0
-                                        : controller.catList[index]
-                                            .transactions!.length,
-                                    budget: false,
-                                    budgetNum: index * 22,
-                                    width: width,
-                                    title: controller.loading
-                                        ? 'Loading...'
-                                        : controller.catList[index].name,
-                                    date: DateTime.now(),
-                                    amount: controller.loading
-                                        ? 0.0
-                                        : controller.vals[controller
-                                            .catList[index].name] as double,
-                                    color: controller.loading
-                                        ? Colors.transparent
-                                        : colorConvert(
-                                            code: controller
-                                                .catList[index].color),
-                                    icon: controller.loading
-                                        ? Icons.add
-                                        : iconConvert(
-                                            code:
-                                                controller.catList[index].icon,
-                                          ),
                                   ),
-                                ),
-                              ),
+                                );
+                              },
                             ),
                           )
                         ],

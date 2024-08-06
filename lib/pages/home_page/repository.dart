@@ -1,4 +1,3 @@
-import 'package:cashify/data_models/exchange_model.dart';
 import 'package:cashify/data_models/filter_model.dart';
 import 'package:cashify/data_models/monthsetting_data_model.dart';
 import 'package:cashify/data_models/user_data_model.dart';
@@ -86,8 +85,38 @@ class HomeRepository {
     await _localStorage.saveTransaction(list: list);
   }
 
+  // save month setting locally
   Future<void> saveMonthSetting(
       {required Map<String, MonthSettingDataModel> model}) async {
     await _localStorage.saveMonthSetting(list: model);
+  }
+
+  // delete recoed
+  Future<void> deleteRec(
+      {required String path,
+      required String userId,
+      required String docId}) async {
+    await _firebaseService.deleteRecord(
+        path: path, userId: userId, recId: docId);
+  }
+
+  // check if record exists
+  Future<bool> checkRecordExists(
+      {required String path,
+      required String userId,
+      required String docId}) async {
+    var docu = await _firebaseService.getRecordDocu(
+        userId: userId, path: path, docId: docId);
+    return docu.exists;
+  }
+
+  // get document data
+  Future<Map<String, dynamic>> getDocuData(
+      {required String path,
+      required String userId,
+      required String docId}) async {
+    var docu = await _firebaseService.getRecordDocu(
+        userId: userId, path: path, docId: docId);
+    return docu.data() as Map<String, dynamic>;
   }
 }

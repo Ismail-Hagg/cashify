@@ -9,6 +9,8 @@ enum FieldType { email, password, username, phone, otp }
 
 enum FirebasePaths { users, transactions, monthSetting }
 
+enum OperationTyoe { add, delete, update }
+
 @HiveType(typeId: 7)
 enum TransactionType {
   @HiveField(0)

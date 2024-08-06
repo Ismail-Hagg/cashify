@@ -111,9 +111,12 @@ String zerosConvert({required double val}) {
 // decide if time is in period
 bool isTimeInPeriod(
     {required DateTime start, required DateTime end, required DateTime time}) {
-  return time.isAfter(start) &&
+  return time.add(const Duration(seconds: 1)).isAfter(start) &&
       time.isBefore(
-          end.add(const Duration(hours: 23, minutes: 59, seconds: 59)));
+        end.add(
+          const Duration(hours: 23, minutes: 59, seconds: 59),
+        ),
+      );
 }
 
 // show modal

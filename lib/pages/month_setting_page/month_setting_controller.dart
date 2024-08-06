@@ -1,10 +1,8 @@
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
+import 'package:cashify/data_models/export.dart';
 import 'package:cashify/gloable_controllers/auth_controller.dart';
-import 'package:cashify/models/catagory_model.dart';
-import 'package:cashify/models/month_setting_model.dart';
-import 'package:cashify/models/user_model.dart';
 import 'package:cashify/pages/home_page/home_controller.dart';
-import 'package:cashify/services/firebase_service.dart';
+import 'package:cashify/pages/month_setting_page/repository.dart';
 import 'package:cashify/utils/enums.dart';
 import 'package:cashify/utils/util_functions.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';
@@ -13,8 +11,9 @@ import 'package:get/get.dart';
 import 'package:toastification/toastification.dart';
 
 class MonthSettingController extends GetxController {
-  late UserModel _userModel;
-  UserModel get userModel => _userModel;
+  final MonthSeettingRepository _repo = MonthSeettingRepository();
+  late UserDataModel _userModel;
+  UserDataModel get userModel => _userModel;
 
   final bool _isIos = Get.find<GloableAuthController>().isIos;
   bool get isIos => _isIos;
@@ -22,12 +21,10 @@ class MonthSettingController extends GetxController {
   DateTime _date = DateTime.now();
   DateTime get date => _date;
 
-  MonthSettingModel? _model;
-  MonthSettingModel? get model => _model;
+  Map<String, MonthSettingDataModel> _monthSettingMap = {};
+  Map<String, MonthSettingDataModel> get monthSettingMap => _monthSettingMap;
 
-  final FirebaseService _firebaseService = FirebaseService();
-
-  bool _loading = false;
+  final bool _loading = false;
   bool get loading => _loading;
 
   final TextEditingController _catController = TextEditingController();
@@ -68,17 +65,20 @@ class MonthSettingController extends GetxController {
   bool _budgetActive = false;
   bool get budgetActive => _budgetActive;
 
-  Catagory? _chodenCat;
-  Catagory? get chodenCat => _chodenCat;
+  CatagoryModel? _chosenCategory;
+  CatagoryModel? get chosenCategory => _chosenCategory;
+
+  bool _calcLoader = false;
+  bool get calcLoader => _calcLoader;
 
   @override
   void onInit() {
     super.onInit();
-    // _userModel = Get.find<GloableAuthController>().userModel;
+    _monthSettingMap = Get.find<HomeController>().monthSettingMap;
+    _userModel = Get.find<GloableAuthController>().userModel;
     _startNode.addListener(_startListen);
     _endNode.addListener(_endListen);
     _budgetNode.addListener(_budgetListen);
-    getData();
   }
 
   @override
@@ -102,7 +102,7 @@ class MonthSettingController extends GetxController {
     _startActive = _startNode.hasFocus;
     update();
     if (_startActive == false) {
-      valsChanges(start: true);
+      changeVals(start: true);
     }
   }
 
@@ -110,7 +110,7 @@ class MonthSettingController extends GetxController {
     _endActive = _endNode.hasFocus;
     update();
     if (_startActive == false) {
-      valsChanges(start: false);
+      changeVals(start: false);
     }
   }
 
@@ -119,54 +119,66 @@ class MonthSettingController extends GetxController {
     update();
   }
 
+  String dateKey() {
+    return '${date.year}-${date.month}';
+  }
+
   // add budget item
-  // apply yoda method instead of nested if statments
-  void addBudget({required BuildContext context}) {
-    if (_chodenCat != null && _budgetAmount.text.trim() != '') {
-      if (_model != null) {
-        if (_model!.budgetCat.contains(_chodenCat!.name)) {
-          showToast(
-            title: CustomText(text: 'infoadd'.tr),
-            context: context,
-            type: ToastificationType.error,
-            isEng: _userModel.language == 'en_US',
-          );
-          return;
-        } else {
-          _model!.budgetCat.add(_chodenCat!.name);
-          _model!.budgetVal.add(double.parse(_budgetAmount.text.trim()));
-          _model!.catagory.add(_chodenCat as Catagory);
-        }
-      } else {
-        _model = MonthSettingModel(
-          walletInfo: [],
-          budgetCat: [_chodenCat!.name],
-          budgetVal: [double.parse(_budgetAmount.text.trim())],
-          year: _date.year,
-          month: _date.month,
-          catagory: [_chodenCat as Catagory],
-        );
-      }
-      Get.back();
-      update();
-      addOrUpdateMonthSetting();
-    } else {
+  void budgetAdd({required BuildContext context}) async {
+    if (_chosenCategory == null || _budgetAmount.text.trim() == '') {
       showToast(
         title: CustomText(text: 'infoadd'.tr),
         context: context,
         type: ToastificationType.error,
         isEng: _userModel.language == 'en_US',
       );
+      return;
     }
+    if (_monthSettingMap[dateKey()] != null) {
+      if (_monthSettingMap[dateKey()]!
+          .budgetCat
+          .contains(_chosenCategory!.name)) {
+        showToast(
+          title: CustomText(text: 'infoadd'.tr),
+          context: context,
+          type: ToastificationType.error,
+          isEng: _userModel.language == 'en_US',
+        );
+        return;
+      }
+      _monthSettingMap[dateKey()]!.budgetCat.add(_chosenCategory!.name);
+      _monthSettingMap[dateKey()]!
+          .budgetVal
+          .add(double.parse(_budgetAmount.text.trim()));
+      _monthSettingMap[dateKey()]!
+          .catagory
+          .add(_chosenCategory as CatagoryModel);
+    } else {
+      _monthSettingMap[dateKey()] = MonthSettingDataModel(
+        walletInfo: [],
+        budgetCat: [_chosenCategory!.name],
+        budgetVal: [double.parse(_budgetAmount.text.trim())],
+        year: _date.year,
+        month: _date.month,
+        catagory: [_chosenCategory as CatagoryModel],
+      );
+    }
+
+    update();
+    Get.back();
+
+    await Get.find<HomeController>()
+        .saveMonthSetting(map: _monthSettingMap, dateKey: dateKey());
   }
 
   // delete budget item
-  void budgetDeleteItem({required int index}) {
-    _model!.budgetCat.removeAt(index);
-    _model!.budgetVal.removeAt(index);
-    _model!.catagory.removeAt(index);
+  void budgetDeleteItem({required int index}) async {
+    _monthSettingMap[dateKey()]!.budgetCat.removeAt(index);
+    _monthSettingMap[dateKey()]!.budgetVal.removeAt(index);
+    _monthSettingMap[dateKey()]!.catagory.removeAt(index);
     update();
-    addOrUpdateMonthSetting();
+    await Get.find<HomeController>()
+        .saveMonthSetting(map: _monthSettingMap, dateKey: dateKey());
   }
 
   // chose catagory
@@ -174,79 +186,28 @@ class MonthSettingController extends GetxController {
     if (cat != '') {
       int index =
           _userModel.catagories.indexWhere((element) => element.name == cat);
-      _chodenCat = _userModel.catagories[index];
+      _chosenCategory = _userModel.catagories[index];
       update();
     }
   }
 
-  // get month setting data
-  void getData() async {
-    _loading = true;
-    _model = null;
-    _startController.clear();
-    _endController.clear();
-    update();
-    if (Get.find<HomeController>().monhtMap['${_date.year}-${_date.month}'] ==
-        null) {
-      await _firebaseService
-          .getRecordDocu(
-              userId: _userModel.userId,
-              path: FirebasePaths.monthSetting.name,
-              docId: '${_date.year}-${_date.month}')
-          .then(
-        (value) {
-          if (value.exists) {
-            MonthSettingModel item =
-                MonthSettingModel.fromMap(value.data() as Map<String, dynamic>);
-            _model = item;
-            Get.find<HomeController>()
-                .monhtMap['${_date.year}-${_date.month}'] = item;
-
-            if (_catController.text.trim() != '') {
-              changeWallet(wallet: _catController.text.trim());
-            }
-          }
-          _loading = false;
-          update();
-        },
-      );
-    } else {
-      _model =
-          Get.find<HomeController>().monhtMap['${_date.year}-${_date.month}'];
-      _loading = false;
-      update();
+  // wallet change
+  void walletChange({required String wallet}) {
+    if (wallet == '') {
+      return;
     }
-  }
 
-  // add or update month setting
-  void addOrUpdateMonthSetting() async {
-    if (_model != null) {
-      Get.find<HomeController>().monhtMap['${_date.year}-${_date.month}'] =
-          _model!;
-      await _firebaseService.addRecord(
-        docPath: '${_date.year}-${_date.month}',
-        path: FirebasePaths.monthSetting.name,
-        userId: _userModel.userId,
-        map: _model!.toMap(),
-      );
-      await Get.find<HomeController>().moneyNow().then(
-            (value) => Get.find<HomeController>().update(),
-          );
-    }
-  }
-
-  // change wallet
-  void changeWallet({required String wallet}) {
-    if (_model != null) {
-      int index = _model!.walletInfo.indexWhere(
+    if (_monthSettingMap[dateKey()] != null) {
+      MonthSettingDataModel model =
+          _monthSettingMap[dateKey()] as MonthSettingDataModel;
+      int index = model.walletInfo.indexWhere(
         (element) => element.wallet == wallet,
       );
 
       if (index != -1) {
-        _startController.text = Get.find<HomeController>()
-            .walletAmount(amount: _model!.walletInfo[index].start);
-        _endController.text = Get.find<HomeController>()
-            .walletAmount(amount: _model!.walletInfo[index].end);
+        _startController.text =
+            zerosConvert(val: model.walletInfo[index].start);
+        _endController.text = zerosConvert(val: model.walletInfo[index].end);
       } else {
         _startController.clear();
         _endController.clear();
@@ -255,59 +216,61 @@ class MonthSettingController extends GetxController {
     update();
   }
 
-  // after changing start end values
-  void valsChanges({required bool start}) {
+  // change start or end values
+  void changeVals({required bool start}) async {
     TextEditingController controll = start ? _startController : _endController;
-    if (controll.text.trim() != '' && _catController.text.trim() != '') {
-      String curr = _userModel.wallets
-          .firstWhere((element) => element.name == _catController.text.trim())
-          .currency;
-      if (_model == null) {
-        _model = MonthSettingModel(
+    if (controll.text.trim() == '' || _catController.text.trim() == '') {
+      return;
+    }
+    String curr = _userModel.wallets
+        .firstWhere((element) => element.name == _catController.text.trim())
+        .currency;
+    if (_monthSettingMap[dateKey()] == null) {
+      _monthSettingMap[dateKey()] = MonthSettingDataModel(
           walletInfo: [
-            WalletInfo(
-                currency: curr,
-                opSum: 0,
+            WalletInfoModel(
                 wallet: _catController.text.trim(),
                 start: start ? double.parse(controll.text.trim()) : 0,
-                end: start == false ? double.parse(controll.text.trim()) : 0)
+                currency: curr,
+                end: start == false ? double.parse(controll.text.trim()) : 0,
+                opSum: 0)
           ],
           budgetCat: [],
           budgetVal: [],
           year: _date.year,
           month: _date.month,
-          catagory: [],
+          catagory: []);
+    } else {
+      int index = _monthSettingMap[dateKey()]!.walletInfo.indexWhere(
+          (element) => element.wallet == _catController.text.trim());
+
+      if (index != -1) {
+        _monthSettingMap[dateKey()]!.walletInfo[index] = WalletInfoModel(
+          currency: curr,
+          opSum: _monthSettingMap[dateKey()]!.walletInfo[index].opSum,
+          wallet: _monthSettingMap[dateKey()]!.walletInfo[index].wallet,
+          start: start
+              ? double.parse(controll.text.trim())
+              : _monthSettingMap[dateKey()]!.walletInfo[index].start,
+          end: start == false
+              ? double.parse(controll.text.trim())
+              : _monthSettingMap[dateKey()]!.walletInfo[index].end,
         );
       } else {
-        int index = _model!.walletInfo.indexWhere(
-            (element) => element.wallet == _catController.text.trim());
-
-        if (index != -1) {
-          _model!.walletInfo[index] = WalletInfo(
-            currency: curr,
-            opSum: _model!.walletInfo[index].opSum,
-            wallet: _catController.text.trim(),
-            start: start
-                ? double.parse(controll.text.trim())
-                : _model!.walletInfo[index].start,
-            end: start == false
-                ? double.parse(controll.text.trim())
-                : _model!.walletInfo[index].start,
-          );
-        } else {
-          _model!.walletInfo.add(
-            WalletInfo(
-              currency: curr,
-              opSum: 0,
-              wallet: _catController.text.trim(),
-              start: start ? double.parse(controll.text.trim()) : 0,
-              end: start == false ? double.parse(controll.text.trim()) : 0,
-            ),
-          );
-        }
+        _monthSettingMap[dateKey()]!.walletInfo.add(
+              WalletInfoModel(
+                currency: curr,
+                opSum: 0,
+                wallet: _catController.text.trim(),
+                start: start ? double.parse(controll.text.trim()) : 0,
+                end: start == false ? double.parse(controll.text.trim()) : 0,
+              ),
+            );
       }
-      addOrUpdateMonthSetting();
     }
+
+    await Get.find<HomeController>()
+        .saveMonthSetting(map: _monthSettingMap, dateKey: dateKey());
   }
 
   // change month
@@ -315,7 +278,10 @@ class MonthSettingController extends GetxController {
     await showCalendarDatePicker2Dialog(
       context: context,
       config: CalendarDatePicker2WithActionButtonsConfig(
-          currentDate: _date, calendarType: CalendarDatePicker2Type.single),
+          firstDate: DateTime(2015, 1, 1),
+          lastDate: DateTime(2500, 12, 31),
+          currentDate: _date,
+          calendarType: CalendarDatePicker2Type.single),
       dialogSize: const Size(325, 400),
       value: [_date],
       borderRadius: BorderRadius.circular(15),
@@ -326,9 +292,68 @@ class MonthSettingController extends GetxController {
             value[0] != null &&
             (value[0]!.year != _date.year || value[0]!.month != _date.month)) {
           _date = value[0] as DateTime;
-          getData();
+          update();
         }
       },
     );
+  }
+
+  // start claculate inventory
+  void inventoryCalc() async {
+    if (_calcLoader == false) {
+      _calcLoader = true;
+      update();
+      await endTrigger().then((value) {
+        _calcLoader = false;
+        update();
+      });
+    }
+  }
+
+  // claculate inventory when value of end changes
+  Future<void> endTrigger() async {
+    if (_catController.text.trim() == '') {
+      return;
+    }
+    bool exist = await _repo.checkRecordExists(
+        path: FirebasePaths.transactions.name,
+        userId: _userModel.userId,
+        docId: '${dateKey()}-${_catController.text.trim()}');
+    if (exist) {
+      TransactionDataModel oldModel = TransactionDataModel.fromMap(
+        await _repo.getDocuData(
+          path: FirebasePaths.transactions.name,
+          userId: _userModel.userId,
+          docId: '${dateKey()}-${_catController.text.trim()}',
+        ),
+      );
+      if (oldModel.id == '${dateKey()}-${_catController.text.trim()}') {
+        await Get.find<HomeController>().transactionOperation(
+            excuse: true, transaction: oldModel, type: OperationTyoe.delete);
+      }
+    }
+    double realEnd = double.parse(_endController.text.trim());
+    var model = _monthSettingMap[dateKey()]!;
+    int index = model.walletInfo
+        .indexWhere((element) => element.wallet == _catController.text.trim());
+    double summ = realEnd -
+        (model.walletInfo[index].start + model.walletInfo[index].opSum);
+    if (summ != 0) {
+      TransactionDataModel transaction = TransactionDataModel(
+        catagory: 'inventory',
+        subCatagory: model.walletInfo[index].wallet,
+        currency: model.walletInfo[index].currency,
+        amount: summ,
+        note: '',
+        date: DateTime(_date.year, _date.month + 1, 0),
+        wallet: model.walletInfo[index].wallet,
+        fromWallet: '',
+        toWallet: '',
+        id: '${dateKey()}-${model.walletInfo[index].wallet}',
+        type: summ > 0 ? TransactionType.moneyIn : TransactionType.moneyOut,
+      );
+      await Get.find<HomeController>().transactionOperation(
+          transaction: transaction, type: OperationTyoe.add);
+    }
   }
 }

@@ -1,23 +1,21 @@
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
-import 'package:cashify/data_models/user_data_model.dart';
+import 'package:cashify/data_models/export.dart';
 import 'package:cashify/gloable_controllers/auth_controller.dart';
 import 'package:cashify/data_models/filter_model.dart';
-import 'package:cashify/models/transaction_model.dart';
-import 'package:cashify/models/user_model.dart';
 import 'package:cashify/pages/add_transaction_page/add_transaction_view.dart';
+import 'package:cashify/pages/all_transactions_page/repository.dart';
 import 'package:cashify/pages/home_page/home_controller.dart';
 import 'package:cashify/services/firebase_service.dart';
 import 'package:cashify/utils/enums.dart';
 import 'package:cashify/utils/util_functions.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:toastification/toastification.dart';
 
 class AllTransactionsController extends GetxController {
+  final AllTransactionsRepository _repo = AllTransactionsRepository();
   final FirebaseService _firebaseService = FirebaseService();
 
   late UserDataModel _userModel;
@@ -29,20 +27,14 @@ class AllTransactionsController extends GetxController {
   bool _descending = true;
   bool get descending => _descending;
 
-  final List<TransactionModel> _transactionList = [];
-  List<TransactionModel> get transactionList => _transactionList;
+  final List<TransactionDataModel> _transactionList = [];
+  List<TransactionDataModel> get transactionList => _transactionList;
 
-  final List<TransactionModel> _searchRes = [];
-  List<TransactionModel> get searchRes => _searchRes;
+  final List<TransactionDataModel> _searchRes = [];
+  List<TransactionDataModel> get searchRes => _searchRes;
 
   String _order = 'date';
   String get order => _order;
-
-  String _exchangeVal = '';
-  String get exchangeVal => _exchangeVal;
-
-  final List<String> _ids = [];
-  List<String> get ids => _ids;
 
   final List<String> _searchedIds = [];
   List<String> get searchedIds => _searchedIds;
@@ -68,9 +60,6 @@ class AllTransactionsController extends GetxController {
   bool _searchActive = false;
   bool get searchActive => _searchActive;
 
-  bool _exchangeActive = false;
-  bool get exchangeActive => _exchangeActive;
-
   bool _rangeStartActive = false;
   bool get rangeStartActive => _rangeStartActive;
 
@@ -86,17 +75,17 @@ class AllTransactionsController extends GetxController {
   final Map<int, Map<String, dynamic>> _container = {
     1: {
       'ids': <String>[],
-      'transactions': <TransactionModel>[],
+      'transactions': <TransactionDataModel>[],
       'loading': false
     },
     2: {
       'ids': <String>[],
-      'transactions': <TransactionModel>[],
+      'transactions': <TransactionDataModel>[],
       'loading': false
     },
     3: {
       'ids': <String>[],
-      'transactions': <TransactionModel>[],
+      'transactions': <TransactionDataModel>[],
       'loading': false
     }
   };
@@ -154,7 +143,8 @@ class AllTransactionsController extends GetxController {
   void changeAscending() {
     if (_container[_pointer]!['loading'] == false && _pointer == 1) {
       _descending = !_descending;
-      (_container[_pointer]!['transactions'] as List<TransactionModel>).clear();
+      (_container[_pointer]!['transactions'] as List<TransactionDataModel>)
+          .clear();
       _lastDocument = null;
       getAllTransactions();
     }
@@ -183,30 +173,26 @@ class AllTransactionsController extends GetxController {
   void getAllTransactions() async {
     _container[_pointer]!['loading'] = true;
     update();
-    await _firebaseService
-        .getTransactions(
-      userId: _userModel.userId,
-      order: _order,
-      descending: _descending,
-      lastDocu: _lastDocument,
-    )
-        .then(
-      (value) {
-        if (value.docs.isNotEmpty) {
-          _lastDocument = value.docs.last;
-          for (var i = 0; i < value.docs.length; i++) {
-            TransactionModel model = TransactionModel.fromMap(
-                value.docs[i].data() as Map<String, dynamic>);
-            (_container[_pointer]!['transactions'] as List<TransactionModel>)
-                .add(model);
-            (_container[_pointer]!['ids'] as List<String>)
-                .add(value.docs[i].id);
-          }
-          _container[_pointer]!['loading'] = false;
-          update();
+    await _repo
+        .getAllTransactions(
+            userId: _userModel.userId,
+            order: _order,
+            descending: _descending,
+            lastDocu: _lastDocument)
+        .then((value) {
+      if (value.docs.isNotEmpty) {
+        _lastDocument = value.docs.last;
+        for (var i = 0; i < value.docs.length; i++) {
+          TransactionDataModel model = TransactionDataModel.fromMap(
+              value.docs[i].data() as Map<String, dynamic>);
+          (_container[_pointer]!['transactions'] as List<TransactionDataModel>)
+              .add(model);
+          (_container[_pointer]!['ids'] as List<String>).add(value.docs[i].id);
         }
-      },
-    );
+      }
+      _container[_pointer]!['loading'] = false;
+      update();
+    });
   }
 
   // search in notes
@@ -214,7 +200,8 @@ class AllTransactionsController extends GetxController {
     if (query.trim() != '') {
       _pointer = 2;
       _container[_pointer]!['loading'] = true;
-      (_container[_pointer]!['transactions'] as List<TransactionModel>).clear();
+      (_container[_pointer]!['transactions'] as List<TransactionDataModel>)
+          .clear();
       (_container[_pointer]!['ids'] as List<String>).clear();
       update();
       String q = query.trim();
@@ -232,9 +219,10 @@ class AllTransactionsController extends GetxController {
         (value) {
           if (value.docs.isNotEmpty) {
             for (var i = 0; i < value.docs.length; i++) {
-              TransactionModel model = TransactionModel.fromMap(
+              TransactionDataModel model = TransactionDataModel.fromMap(
                   value.docs[i].data() as Map<String, dynamic>);
-              (_container[_pointer]!['transactions'] as List<TransactionModel>)
+              (_container[_pointer]!['transactions']
+                      as List<TransactionDataModel>)
                   .add(model);
               (_container[_pointer]!['ids'] as List<String>)
                   .add(value.docs[i].id);
@@ -254,69 +242,14 @@ class AllTransactionsController extends GetxController {
     update();
   }
 
-  // get icon
-  IconData getIcon({required String category}) {
-    return Icons.add;
-    //  _userModel.catagories
-    //     .firstWhere((element) => element.name == category)
-    //     .icon;
-  }
-
-  // get color
-  Color getColor({required String category}) {
-    return Colors.red;
-    // _userModel.catagories
-    //     .firstWhere((element) => element.name == category)
-    //     .color;
-  }
-
-  // format amount
-  String ammount({required TransactionModel model, required bool real}) {
-    return real
-        ? Get.find<HomeController>().walletAmount(amount: model.amount)
-        : Get.find<HomeController>().humanFormat(model.amount);
-  }
-
-  String moneyFormat({required double amount}) {
-    return Get.find<HomeController>().moneyFormat(amount: amount);
-  }
-
-  // show dialog
-  void dialogShow({
-    required Widget widget,
-    required BuildContext context,
-  }) {
-    _exchangeActive = false;
-    _exchangeVal = '';
-    dialogShowing(widget: widget);
-  }
-
-  // currency exchange
-  void currencyExchange(
-      {required String base,
-      required String to,
-      required double amount}) async {
-    if (to != '') {
-      await Get.find<HomeController>()
-          .currencySwapp(base: base, exTo: to, amount: amount)
-          .then(
-        (value) {
-          if (value != '') {
-            _exchangeActive = true;
-            _exchangeVal = value;
-            update();
-          }
-        },
-      );
-    }
-  }
-
   // edit a transaction
-  void queryTransaction({required TransactionModel model, required String id}) {
-    // Get.to(
-    //   () => const AddTRansactionView(),
-    //   arguments: {'model': model, 'id': id},
-    // );
+  void queryTransaction({required TransactionDataModel model}) {
+    Get.to(
+      () => const AddTransactionView(),
+      arguments: {
+        'model': model,
+      },
+    );
   }
 
   // load more transactions
@@ -335,38 +268,60 @@ class AllTransactionsController extends GetxController {
   }
 
   // add a transaction
-  void transactionAdd({required TransactionModel model, required String id}) {
+  void transactionAdd(
+      {required TransactionDataModel model, required String id}) {
     (_container[1]!['ids'] as List<String>).insert(0, id);
-    (_container[1]!['transactions'] as List<TransactionModel>).insert(0, model);
+    (_container[1]!['transactions'] as List<TransactionDataModel>)
+        .insert(0, model);
     update();
   }
 
-  // update or delete transaction locally
-  void updateTransaction(
-      {required TransactionModel model,
-      required String id,
-      required bool change}) {
+  // update transaction
+  void updateTransaction({
+    required TransactionDataModel model,
+  }) {
     Get.back();
     for (var i = 1; i < 4; i++) {
-      if ((_container[i]!['ids'] as List<String>).contains(id)) {
-        int index = (_container[i]!['ids'] as List<String>).indexOf(id);
-        if (change) {
-          (_container[i]!['transactions'] as List<TransactionModel>)[index] =
-              model;
-          update();
-        } else {
-          (_container[i]!['transactions'] as List<TransactionModel>)
-              .removeAt(index);
-          (_container[i]!['ids'] as List<String>).removeAt(index);
-          update();
-          _firebaseService.deleteRecord(
-            path: FirebasePaths.transactions.name,
-            recId: id,
-            userId: _userModel.userId,
-          );
-        }
+      int index = (_container[i]!['ids'] as List<String>).indexOf(model.id);
+
+      if (index != -1) {
+        (_container[i]!['transactions'] as List<TransactionDataModel>)
+          ..removeAt(index)
+          ..insert(index, model);
+        update();
       }
     }
+  }
+
+  // delete a transaction
+  Future<void> transDelete(
+      {required TransactionDataModel transaction,
+      required BuildContext context}) async {
+    for (var i = 1; i < 4; i++) {
+      int index =
+          (_container[i]!['ids'] as List<String>).indexOf(transaction.id);
+      if (index != -1) {
+        (_container[i]!['transactions'] as List<TransactionDataModel>)
+            .removeAt(index);
+        (_container[i]!['ids'] as List<String>).removeAt(index);
+        update();
+        Get.back();
+      }
+    }
+    await Get.find<HomeController>()
+        .transactionOperation(
+            transaction: transaction, type: OperationTyoe.delete)
+        .onError(
+          (error, stackTrace) => showToast(
+            title: CustomText(
+              text: 'error'.tr,
+            ),
+            description: CustomText(text: error.toString()),
+            context: context,
+            type: ToastificationType.error,
+            isEng: _userModel.language == 'en_US',
+          ),
+        );
   }
 
   // filter
@@ -382,7 +337,7 @@ class AllTransactionsController extends GetxController {
             : null;
         _pointer = 3;
         _container[_pointer]!['loading'] = true;
-        (_container[_pointer]!['transactions'] as List<TransactionModel>)
+        (_container[_pointer]!['transactions'] as List<TransactionDataModel>)
             .clear();
         (_container[_pointer]!['ids'] as List<String>).clear();
         update();
@@ -392,11 +347,11 @@ class AllTransactionsController extends GetxController {
         )
             .then(
           (value) {
-            print(value.docs.length);
             for (var i = 0; i < value.docs.length; i++) {
-              TransactionModel model = TransactionModel.fromMap(
+              TransactionDataModel model = TransactionDataModel.fromMap(
                   value.docs[i].data() as Map<String, dynamic>);
-              (_container[_pointer]!['transactions'] as List<TransactionModel>)
+              (_container[_pointer]!['transactions']
+                      as List<TransactionDataModel>)
                   .add(model);
               (_container[_pointer]!['ids'] as List<String>)
                   .add(value.docs[i].id);

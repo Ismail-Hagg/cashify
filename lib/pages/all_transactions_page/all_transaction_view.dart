@@ -1,12 +1,15 @@
-import 'package:cashify/models/transaction_model.dart';
+import 'package:cashify/data_models/category_data_model.dart';
+import 'package:cashify/data_models/transaction_data_model.dart';
 import 'package:cashify/pages/all_transactions_page/all_transactoins_controller.dart';
 import 'package:cashify/utils/constants.dart';
+import 'package:cashify/utils/countries.dart';
 import 'package:cashify/utils/enums.dart';
+import 'package:cashify/utils/util_functions.dart';
 import 'package:cashify/widgets/custom_text_widget.dart';
-import 'package:cashify/widgets/expense_tile_widget.dart';
 import 'package:cashify/widgets/icon_button.dart';
 import 'package:cashify/widgets/input_widget.dart';
 import 'package:cashify/widgets/modal_widget.dart';
+import 'package:cashify/widgets/new_expense.dart';
 import 'package:cashify/widgets/text_button_widget.dart';
 import 'package:country_currency_pickers/country.dart';
 import 'package:country_currency_pickers/country_picker_dropdown.dart';
@@ -17,7 +20,6 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:skeletonizer/skeletonizer.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
 class AllTransactionsView extends StatelessWidget {
@@ -437,218 +439,136 @@ class AllTransactionsView extends StatelessWidget {
                   const SizedBox(
                     height: 10,
                   ),
-                  SingleChildScrollView(
-                    child: Column(
-                        children: List.generate(
+                  Column(
+                    children: List.generate(
                       controller.container[controller.pointer]['loading'] ==
                                   true &&
                               (controller.container[controller.pointer]
                                           ['transactions']
-                                      as List<TransactionModel>)
+                                      as List<TransactionDataModel>)
                                   .isEmpty
                           ? 10
                           : (controller.container[controller.pointer]
-                                  ['transactions'] as List<TransactionModel>)
+                                      ['transactions']
+                                  as List<TransactionDataModel>)
                               .length,
                       (index) {
-                        if (controller.container[controller.pointer]
+                        bool loading = controller.container[controller.pointer]
                                     ['loading'] ==
                                 true &&
                             (controller.container[controller.pointer]
-                                    ['transactions'] as List<TransactionModel>)
-                                .isEmpty) {
-                          return Skeletonizer(
-                            enabled: true,
-                            child: ExpenceTile(
-                              width: width,
-                              color: Colors.grey.shade300,
-                              title: ' slkdjflkjsd f sdlf jlsdkjf lksdjflksj ',
-                              subtitle: ';aoijdf kdj f;lk ',
-                              amount: '',
-                              budget: false,
-                              icon: Icons.add,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 6,
-                              ),
-                              loading: true,
-                            ),
-                          );
-                        } else {
-                          TransactionModel transaction = (controller
-                                  .container[controller.pointer]['transactions']
-                              as List<TransactionModel>)[index];
-                          String tranId =
-                              (controller.container[controller.pointer]['ids']
-                                  as List<String>)[index];
-                          bool isTransfer =
-                              transaction.type == TransactionType.transfer;
+                                        ['transactions']
+                                    as List<TransactionDataModel>)
+                                .isEmpty;
 
-                          return Slidable(
+                        TransactionDataModel? transaction = loading
+                            ? null
+                            : (controller.container[controller.pointer]
+                                    ['transactions']
+                                as List<TransactionDataModel>)[index];
+
+                        CatagoryModel? category = loading
+                            ? null
+                            : controller.userModel.catagories.firstWhere(
+                                (element) =>
+                                    element.name == transaction!.catagory,
+                                orElse: () => CatagoryModel(
+                                    name: 'thingyy',
+                                    subCatagories: [],
+                                    icon:
+                                        '${Icons.add.codePoint}-${Icons.add.fontFamily}',
+                                    color: 4283471689));
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 6.0, horizontal: 10),
+                          child: Slidable(
+                            enabled: loading == false,
                             endActionPane: ActionPane(
                               motion: const ScrollMotion(),
                               children: [
                                 IconButtonPlatform(
                                   isIos: controller.isIos,
                                   icon: FontAwesomeIcons.trash,
-                                  color: tranId == '' ? Colors.grey : mainColor,
-                                  click: () => tranId == ''
-                                      ? null
-                                      : controller.deleteDialog(
-                                          dilog: AlertDialog(
-                                            title: CustomText(
-                                              text: 'deletetrans'.tr,
-                                            ),
-                                            actions: [
-                                              ButtonWidget(
-                                                isIos: controller.isIos,
-                                                textSize: 12,
-                                                type: ButtonType.text,
-                                                onClick: () => controller
-                                                    .updateTransaction(
-                                                  change: false,
-                                                  id: tranId,
-                                                  model: transaction,
-                                                ),
-                                                text: 'yes'.tr,
-                                              )
-                                            ],
+                                  color: mainColor,
+                                  click: () => controller.deleteDialog(
+                                    dilog: AlertDialog(
+                                      title: CustomText(
+                                        text: 'deletetrans'.tr,
+                                      ),
+                                      actions: [
+                                        ButtonWidget(
+                                          isIos: controller.isIos,
+                                          textSize: 12,
+                                          type: ButtonType.text,
+                                          onClick: () => controller.transDelete(
+                                            context: context,
+                                            transaction: transaction!,
                                           ),
-                                        ),
+                                          text: 'yes'.tr,
+                                        )
+                                      ],
+                                    ),
+                                  ),
                                 ),
                                 IconButtonPlatform(
                                   isIos: controller.isIos,
                                   icon: FontAwesomeIcons.penToSquare,
-                                  color: tranId == '' ? Colors.grey : mainColor,
-                                  click: () => tranId == ''
-                                      ? null
-                                      : controller.queryTransaction(
-                                          id: tranId, model: transaction),
+                                  color: mainColor,
+                                  click: () => controller.queryTransaction(
+                                      model: transaction!),
                                 ),
                                 IconButtonPlatform(
                                   isIos: controller.isIos,
                                   icon: FontAwesomeIcons.comment,
-                                  color: transaction.note != ''
+                                  color: loading
                                       ? mainColor
-                                      : Colors.grey,
+                                      : transaction!.note != ''
+                                          ? mainColor
+                                          : Colors.grey,
                                   click: () => controller.deleteDialog(
                                     dilog: AlertDialog(
                                       content: CustomText(
-                                        text: transaction.note,
+                                        text: transaction!.note,
                                       ),
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                            enabled: true,
-                            child: GestureDetector(
-                              onLongPress: () => controller.dialogShow(
-                                context: context,
-                                widget: GetBuilder<AllTransactionsController>(
-                                  init: Get.find<AllTransactionsController>(),
-                                  builder: (controller) => AlertDialog(
-                                    title: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        CustomText(
-                                          text: controller.moneyFormat(
-                                            amount: controller.exchangeActive
-                                                ? double.parse(
-                                                    controller.exchangeVal)
-                                                : double.parse(
-                                                    controller.ammount(
-                                                      model: transaction,
-                                                      real: true,
-                                                    ),
-                                                  ),
-                                          ),
-                                        ),
-                                        CountryPickerDropdown(
-                                          initialValue: CountryPickerUtils
-                                                  .getCountryByCurrencyCode(
-                                                      transaction.currency)
-                                              .isoCode,
-                                          itemBuilder: (Country country) =>
-                                              SizedBox(
-                                            height: width * 0.14,
-                                            width: (width - 24) * 0.2,
-                                            child: FittedBox(
-                                              child: Row(
-                                                children: <Widget>[
-                                                  CountryPickerUtils
-                                                      .getDefaultFlagImage(
-                                                          country),
-                                                  const SizedBox(
-                                                    width: 8.0,
-                                                  ),
-                                                  Text(country.currencyCode
-                                                      .toString()),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                          onValuePicked: (Country? country) =>
-                                              controller.currencyExchange(
-                                                  base: transaction.currency,
-                                                  to: country != null
-                                                      ? country.currencyCode ??
-                                                          ''
-                                                      : '',
-                                                  amount: transaction.amount),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              child: ExpenceTile(
-                                aveFit: false,
-                                ave: isTransfer
-                                    ? null
-                                    : transaction.subCatagory == ''
-                                        ? 'noavailable'.tr
-                                        : transaction.subCatagory,
+                            child: ExpenceTileNew(
+                                type: loading
+                                    ? ExpenseTile.loading
+                                    : ExpenseTile.expense,
                                 width: width,
-                                color: isTransfer
-                                    ? Colors.red.shade500
-                                    : controller.getColor(
-                                        category: transaction.catagory,
-                                      ),
-                                title: isTransfer
-                                    ? transaction.type.name
-                                    : transaction.catagory,
-                                subtitle: DateFormat.yMd()
-                                    .format(transaction.date)
-                                    .toString(),
-                                amount: controller
-                                    .ammount(model: transaction, real: false)
-                                    .toString(),
-                                budget: isTransfer ? true : false,
-                                icon: isTransfer
-                                    ? FontAwesomeIcons.arrowsRotate
-                                    : controller.getIcon(
-                                        category: transaction.catagory,
-                                      ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 6,
-                                ),
-                                loading: false,
-                                transferInfo: CustomText(
-                                  color: Colors.grey.shade500,
-                                  isFit: true,
-                                  text:
-                                      'From ${transaction.fromWallet} To ${transaction.toWallet} ',
-                                ),
-                              ),
-                            ),
-                          );
-                        }
+                                title: loading
+                                    ? 'loading ...'
+                                    : transaction!.catagory,
+                                amount: loading ? 0 : transaction!.amount,
+                                date: loading
+                                    ? DateTime.now()
+                                    : transaction!.date,
+                                reason: loading
+                                    ? null
+                                    : transaction!.subCatagory == ''
+                                        ? null
+                                        : transaction.subCatagory,
+                                color: loading
+                                    ? Colors.red
+                                    : colorConvert(code: category!.color),
+                                icon: loading
+                                    ? Icons.add
+                                    : iconConvert(code: category!.icon),
+                                sign: loading ||
+                                        transaction!.currency ==
+                                            controller.userModel.defaultCurrency
+                                    ? ''
+                                    : '${countries[codes[codes.indexWhere((element) => element == transaction.currency)]]!['symbolNative']}'),
+                          ),
+                        );
                       },
-                    )),
-                  )
+                    ),
+                  ),
                 ],
               ),
             );

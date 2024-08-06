@@ -21,6 +21,12 @@ const transactionBox = 'transactionBox';
 const userMonthSetting = 'monthSetting';
 const monthSettingBox = 'monthSettingBox';
 
+const userPointer = 'userPointer';
+const pointerBox = 'pointerBox';
+
+const userOldData = 'userOldDataa';
+const oldDataBox = 'oldDataBoxx';
+
 var moneyApiKey = 'b9ad649d1f6a7a8ca3abf37d';
 var moneyApiKey2 = 'fb18004b31c07e5233dc6c0c';
 

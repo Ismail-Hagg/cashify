@@ -43,4 +43,19 @@ class MoneyExchange extends GetConnect {
     }
     return model;
   }
+
+  Future<int> getCalls() async {
+    int count = 0;
+    try {
+      await get('https://v6.exchangerate-api.com/v6/$moneyApiKey/quota')
+          .then((value) {
+        if (value.statusCode == 200 && value.body['result'] == 'success') {
+          count = value.body['requests_remaining'];
+        }
+      });
+    } catch (e) {
+      print('=== error : $e');
+    }
+    return count;
+  }
 }

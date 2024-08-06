@@ -39,8 +39,9 @@ class ExpenceTileNew extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    double newAmount = amount < 0 ? amount * -1 : amount;
     double budgetPercent = budget == true && budgetNum != 0
-        ? (int.parse(amount.toStringAsFixed(0))) /
+        ? (int.parse(newAmount.toStringAsFixed(0))) /
             int.parse(budgetNum!.toStringAsFixed(0))
         : 0;
     return Container(
@@ -95,6 +96,7 @@ class ExpenceTileNew extends StatelessWidget {
                           CustomText(
                             text: title,
                             color: Colors.black,
+                            flow: TextOverflow.ellipsis,
                             size: 18,
                             weight: FontWeight.w500,
                           ),
@@ -220,7 +222,7 @@ class ExpenceTileNew extends StatelessWidget {
                               CustomText(
                                 isFit: true,
                                 text:
-                                    '${amount.toStringAsFixed(0)}/${budgetNum!.toStringAsFixed(0)}',
+                                    '${newAmount.toStringAsFixed(0)}/${budgetNum!.toStringAsFixed(0)}',
                                 color: Colors.grey,
                                 size: 12,
                               ),

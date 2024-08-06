@@ -17,6 +17,7 @@ class HomeView extends StatelessWidget {
       canPop: false,
       onPopInvoked: (val) => controller.backButton(),
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         backgroundColor: backgroundColor,
         body: GetBuilder<HomeController>(
             init: controller,

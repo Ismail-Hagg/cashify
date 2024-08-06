@@ -92,7 +92,15 @@ class Translation extends Translations {
           'totals': 'All',
           'wallmpt': 'Wallet Must Be Empty',
           'welcome': 'WELCOME',
-          'balance': 'Total Balance'
+          'balance': 'Total Balance',
+          'userchange': 'Change Ussername',
+          'currchange': 'Change The Currency',
+          'langchange': 'Change Language',
+          'about': 'About',
+          'logout': 'Logout',
+          'remaincall': 'Api Calls Remaining',
+          'anal': 'Analytics',
+          'cancel': 'cancel'
         },
         'ar_SA': {
           'email': 'البريد الالكتروني',
@@ -183,7 +191,15 @@ class Translation extends Translations {
           'totals': 'الكل',
           'wallmpt': 'يجب ان تكون المحفظة فارغة',
           'welcome': 'مرحبا',
-          'balance': 'الرصيد الحالي'
+          'balance': 'الرصيد الحالي',
+          'userchange': 'تغيير اسم المستخدم',
+          'currchange': 'تغيير العملة',
+          'langchange': 'تغيير اللغة',
+          'about': 'عن التطبيق',
+          'logout': 'تسجيل الخروج',
+          'remaincall': 'عدد المرات المتبقية',
+          'anal': 'تحليلات',
+          'cancel': 'الغاء'
         },
       };
 }

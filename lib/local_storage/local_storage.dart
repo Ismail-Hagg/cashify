@@ -26,6 +26,26 @@ class LocalStorage {
     return Hive.box<T>(boxName);
   }
 
+  Future<void> deletePointer() async {
+    Box<int> box = await getBox<int>(boxName: pointerBox);
+    await box.delete(userPointer);
+  }
+
+  Future<void> saveOldData({required List<dynamic> list}) async {
+    Box<List<dynamic>> box = await getBox<List<dynamic>>(boxName: oldDataBox);
+    await box.put(userOldData, list);
+  }
+
+  Future<List<dynamic>> getOldData() async {
+    Box<List<dynamic>> box = await getBox<List<dynamic>>(boxName: oldDataBox);
+    return box.get(userOldData) ?? [];
+  }
+
+  Future<void> deleteOldData() async {
+    Box<List<dynamic>> box = await getBox<List<dynamic>>(boxName: oldDataBox);
+    await box.delete(userOldData);
+  }
+
   // creaet or update user data
   Future<void> saveUser({required UserDataModel model}) async {
     Box<UserDataModel> box = await getBox<UserDataModel>(boxName: userBox);
@@ -105,35 +125,43 @@ class LocalStorage {
   // get month setting list
   Future<Map<String, MonthSettingDataModel>> getMonthSettingList() async {
     DateTime time = DateTime.now();
-    Box<Map<String, MonthSettingDataModel>> box =
-        await getBox<Map<String, MonthSettingDataModel>>(
-            boxName: monthSettingBox);
-    return box.get(userMonthSetting) ??
-        {
-          '${time.year}-${time.month}': MonthSettingDataModel(
-              budgetCat: [],
-              walletInfo: [],
-              budgetVal: [],
-              year: time.year,
-              month: time.month,
-              catagory: [])
-        };
+    Box<Map<dynamic, dynamic>> box =
+        await getBox<Map<dynamic, dynamic>>(boxName: monthSettingBox);
+    Map? dyno = box.get(userMonthSetting);
+
+    Map<String, MonthSettingDataModel> last = {};
+    if (dyno == null) {
+      return {
+        '${time.year}-${time.month}': MonthSettingDataModel(
+          budgetCat: [],
+          walletInfo: [],
+          budgetVal: [],
+          year: time.year,
+          month: time.month,
+          catagory: [],
+        )
+      };
+    }
+
+    dyno.forEach((key, value) {
+      last[key] = value;
+    });
+
+    return last;
   }
 
   // save list of month setting
   Future<void> saveMonthSetting(
       {required Map<String, MonthSettingDataModel> list}) async {
-    Box<Map<String, MonthSettingDataModel>> box =
-        await getBox<Map<String, MonthSettingDataModel>>(
-            boxName: monthSettingBox);
+    Box<Map<dynamic, dynamic>> box =
+        await getBox<Map<dynamic, dynamic>>(boxName: monthSettingBox);
     await box.put(userMonthSetting, list);
   }
 
   // delete month setting
   Future<void> deleteMonthSetting() async {
-    Box<Map<String, MonthSettingDataModel>> box =
-        await getBox<Map<String, MonthSettingDataModel>>(
-            boxName: monthSettingBox);
+    Box<Map<dynamic, dynamic>> box =
+        await getBox<Map<dynamic, dynamic>>(boxName: monthSettingBox);
     await box.delete(userMonthSetting);
   }
 }
