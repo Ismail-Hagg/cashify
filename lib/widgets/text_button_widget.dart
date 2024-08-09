@@ -100,7 +100,7 @@ class ButtonWidget extends StatelessWidget {
                     width: width,
                     child: ElevatedButton(
                       style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all(
+                        backgroundColor: WidgetStateProperty.all(
                           color,
                         ),
                       ),
@@ -118,7 +118,7 @@ class ButtonWidget extends StatelessWidget {
                     width: width,
                     child: OutlinedButton(
                       style: ButtonStyle(
-                        side: MaterialStateProperty.all(
+                        side: WidgetStateProperty.all(
                           BorderSide(
                               color: borderColor ?? textColor ?? mainColor),
                         ),

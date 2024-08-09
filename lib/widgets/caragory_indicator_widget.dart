@@ -53,7 +53,7 @@ class CatagoryIndicator extends StatelessWidget {
                 // CustomText(text: catagory)
                 ButtonWidget(
                     buttonStyle: const ButtonStyle(
-                        padding: MaterialStatePropertyAll(EdgeInsets.zero)),
+                        padding: WidgetStatePropertyAll(EdgeInsets.zero)),
                     isIos: false,
                     textSize: 14,
                     type: ButtonType.text,

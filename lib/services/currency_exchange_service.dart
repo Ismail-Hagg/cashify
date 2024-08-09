@@ -54,7 +54,7 @@ class MoneyExchange extends GetConnect {
         }
       });
     } catch (e) {
-      print('=== error : $e');
+      count = 0;
     }
     return count;
   }
